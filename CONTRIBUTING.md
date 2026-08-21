@@ -14,6 +14,21 @@ Ce projet suit des standards élevés pour garantir la fiabilité et la sécurit
 - **Bandit** : scan de sécurité (`bandit -r src/`)
 - **Zéro warning** : aucun warning mypy ou ruff avant merge
 
+### Convention de nommage
+
+**Identifiants du code en anglais, docstrings en français.**
+
+| Élément | Langue |
+|---------|--------|
+| Noms de variables/fonctions/classes | EN |
+| Docstrings | FR |
+| Messages d'erreur | EN |
+| Commentaires | FR |
+| Noms de fichiers | EN |
+| Contenu visible (CLI) | FR |
+
+Raisons : pas de switching mental à la lecture, convention open-source, signature La Décodeuse.
+
 ### Tests
 
 - **Coverage minimale** : tous les chemins critiques testés

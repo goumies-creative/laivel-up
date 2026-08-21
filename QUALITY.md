@@ -23,6 +23,38 @@
 | Python 3.11+ | pyproject.toml | requires-python |
 | Type hints sur toutes les fonctions publiques | mypy | 100% |
 
+### 2.1 Convention de nommage FR→EN
+
+**Identifiants du code en anglais, docstrings en français.**
+
+| Élément | Langue | Raison |
+|---------|--------|--------|
+| Noms de variables/fonctions/classes | EN | Convention open-source, réduit le mapping mental à la lecture |
+| Docstrings | FR | Signature La Décodeuse, accessible aux non-anglophones |
+| Messages d'erreur | EN | Convention Python, interopérabilité |
+| Commentaires | FR | Documentation interne, accessibilité |
+| Noms de fichiers | EN | Convention universelle, pas d'accents dans les chemins |
+| Contenu visible (CLI) | FR | UX pour l'utilisateur final |
+
+**Avant/après (exemples LAIVEL UP) :**
+
+```python
+# ✗ Avant (FR) — switching mental à la lecture
+taille_max(profile)
+parallele_max(profile)
+reprises_apres_coup
+
+# ✓ Après (EN) — naturel en lecture code
+size_max(profile)
+parallel_max(profile)
+retries_after_fact
+```
+
+**Bénéfices :**
+- Pas de switching FR/EN quand on lit le code
+- Convention respectée par les outils (ruff, mypy, IDE)
+- Docstrings FR = signature La Décodeuse (pas de neurotype, pas de jargon technique)
+
 ### 3. Tests
 
 | Standard | Outil | Couverture |
