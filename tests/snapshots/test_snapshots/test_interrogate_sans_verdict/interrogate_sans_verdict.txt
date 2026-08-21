@@ -1,0 +1,28 @@
+Mode entretien guidé · je pose les questions ouvertes, tu réponds, je réévalue 
+à chaque fois.
+Fin de l'entretien sans verdict ferme : le refus reste explicite.
+         Verdict · entretien         
+┌──────────────┬────────┬───────────┐
+│ Axe          │ Niveau │ Confiance │
+├──────────────┼────────┼───────────┤
+│ Taille       │ —      │ —         │
+│ Harness      │ —      │ —         │
+│ Intervention │ —      │ —         │
+│ En parallèle │ —      │ —         │
+└──────────────┴────────┴───────────┘
+Refus de trancher : données insuffisantes ou contradictoires.
+Questions à poser :
+  · Quelle est la taille habituelle de tes features livrées avec l'IA (S, M, L,
+XL) ?
+  · Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?
+  · Quelle part de tes PR est reprise ou corrigée par toi après coup ? (Et 
+vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)
+  · As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
+  · Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont
+au bout ?
+Rapport Markdown : 
+<TMP>
+_verdict0\entretien-24e8cdb9.md
+Rapport HTML : 
+<TMP>
+_verdict0\entretien-24e8cdb9.html

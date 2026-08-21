@@ -1,0 +1,117 @@
+[project]
+name = "laivelup"
+version = "0.1.0"
+description = "CLI d'évaluation AIDD · LAIVEL UP · Décodeuse way (cadrage, confiance, red flags)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["typer>=0.20", "rich"]
+license = {text = "MIT"}
+
+[project.scripts]
+laivelup = "laivelup.cli:app"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.1",
+    "hypothesis>=6.90",
+    "pytest-snapshot>=0.8",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+    "pre-commit>=3.7",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "T20", # flake8-print (allow in CLI)
+    "ARG", # flake8-unused-arguments
+    "PTH", # pathlib
+    "ERA", # eradicate
+    "RUF", # ruff-specific
+]
+ignore = ["T201", "T203", "B008", "B904", "SIM108", "E741", "ARG005", "RUF005", "C408", "E501", "ARG001", "ARG002", "B007", "RUF015", "I001", "F401", "RUF059", "PTH123", "W292"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_optional = true
+show_error_codes = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "typer.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "rich.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-ra -q --strict-markers --strict-config"
+markers = [
+    "slow: marks tests as slow",
+    "install: marks tests that test installation",
+    "security: marks security tests",
+    "snapshot: marks snapshot tests",
+    "property: marks property-based tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src/laivelup"]
+omit = ["tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.bandit]
+targets = ["src"]
+exclude_dirs = ["tests"]
+skips = ["B101", "B601"]
+
+[tool.pip-audit]
+desc = "on"
+skip = []

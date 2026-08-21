@@ -1,0 +1,18 @@
+      Verdict · profil-maison-2      
+┌──────────────┬────────┬───────────┐
+│ Axe          │ Niveau │ Confiance │
+├──────────────┼────────┼───────────┤
+│ Taille       │ 🔺 Red │ 70%       │
+│ Harness      │ —      │ —         │
+│ Intervention │ 🔺 Red │ 40%       │
+│ En parallèle │ —      │ —         │
+└──────────────┴────────┴───────────┘
+Refus de trancher : données insuffisantes ou contradictoires.
+Questions à poser :
+  · Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?
+  · Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir quelques 
+PR typiques pour le corroborer ?
+  · As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
+  · Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont
+au bout ?
+Rapport Markdown : rapports\profil-maison-2-a7564097.md

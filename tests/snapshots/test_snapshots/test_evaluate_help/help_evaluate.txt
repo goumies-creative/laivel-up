@@ -1,0 +1,15 @@
+                                                                               
+ Usage: root evaluate [OPTIONS] PROFIL                                         
+                                                                               
+ Évalue un profil et écrit les rapports Markdown (+ HTML).                     
+                                                                               
+┌─ Arguments ─────────────────────────────────────────────────────────────────┐
+│ *    profil      PATH  Profil JSON à évaluer. [required]                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌─ Options ───────────────────────────────────────────────────────────────────┐
+│ --out                       PATH  Dossier des rapports. [default: rapports] │
+│ --html         --no-html          Générer le rapport HTML. [default: html]  │
+│ --verbose  -v                     Sortie détaillée technique.               │
+│ --help                            Show this message and exit.               │
+└─────────────────────────────────────────────────────────────────────────────┘
+

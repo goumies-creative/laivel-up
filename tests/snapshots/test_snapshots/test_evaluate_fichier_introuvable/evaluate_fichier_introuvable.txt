@@ -1,0 +1,5 @@
+Usage: root evaluate [OPTIONS] PROFIL
+Try 'root evaluate --help' for help.
+┌─ Error ─────────────────────────────────────────────────────────────────────┐
+│ Invalid value: Fichier introuvable : exemples\inexistant.json               │
+└─────────────────────────────────────────────────────────────────────────────┘

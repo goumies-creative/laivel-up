@@ -1,0 +1,15 @@
+                                                                               
+ Usage: root [OPTIONS] COMMAND [ARGS]...                                       
+                                                                               
+ Évaluation du niveau AIDD d'un développeur (piste Décodeuse).                 
+                                                                               
+┌─ Options ───────────────────────────────────────────────────────────────────┐
+│ --help          Show this message and exit.                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌─ Commands ──────────────────────────────────────────────────────────────────┐
+│ evaluate     Évalue un profil et écrit les rapports Markdown (+ HTML).      │
+│ interrogate  Mode entretien guidé (Décodeuse) : pose les questions,         │
+│              fusionne les réponses, re-score.                               │
+│ team         Gestion d'équipes et suivi multi-membres.                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+

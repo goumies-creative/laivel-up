@@ -1,0 +1,15 @@
+       Verdict · profil-maison-1       
+┌──────────────┬──────────┬───────────┐
+│ Axe          │ Niveau   │ Confiance │
+├──────────────┼──────────┼───────────┤
+│ Taille       │ 🔹 Blue  │ 90%       │
+│ Harness      │ —        │ —         │
+│ Intervention │ 🔺 Red   │ 40%       │
+│ En parallèle │ 🟢 Green │ 80%       │
+└──────────────┴──────────┴───────────┘
+Refus de trancher : données insuffisantes ou contradictoires.
+Questions à poser :
+  · Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir quelques 
+PR typiques pour le corroborer ?
+  · As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
+Rapport Markdown : rapports\profil-maison-1-8f2edaf9.md

@@ -1,0 +1,21 @@
+Mode entretien guidé · je pose les questions ouvertes, tu réponds, je réévalue 
+à chaque fois.
+Verdict établi : 🔹 Blue
+          Verdict · entretien          
+┌──────────────┬──────────┬───────────┐
+│ Axe          │ Niveau   │ Confiance │
+├──────────────┼──────────┼───────────┤
+│ Taille       │ 🔹 Blue  │ 60%       │
+│ Harness      │ 🔹 Blue  │ 90%       │
+│ Intervention │ 🔹 Blue  │ 80%       │
+│ En parallèle │ 🟢 Green │ 80%       │
+└──────────────┴──────────┴───────────┘
+Niveau : 🔹 Blue · axe plancher : size
+· comment monter d'un cran ·
+  · Passer à des features L : enchaîner plusieurs étapes dans une même PR.
+Rapport Markdown : 
+<TMP>
+ict_attei0\entretien-24e8cdb9.md
+Rapport HTML : 
+<TMP>
+ict_attei0\entretien-24e8cdb9.html

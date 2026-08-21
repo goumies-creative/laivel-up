@@ -1,0 +1,16 @@
+                                                                               
+ Usage: root interrogate [OPTIONS] [PROFIL]                                    
+                                                                               
+ Mode entretien guidé (Décodeuse) : pose les questions, fusionne les réponses, 
+ re-score.                                                                     
+                                                                               
+┌─ Arguments ─────────────────────────────────────────────────────────────────┐
+│   profil      [PROFIL]  Profil JSON de départ (optionnel).                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+┌─ Options ───────────────────────────────────────────────────────────────────┐
+│ --out                PATH     Dossier des rapports. [default: rapports]     │
+│ --max-turns          INTEGER  Nombre max de questions posées. [default: 6]  │
+│ --verbose    -v               Sortie détaillée technique.                   │
+│ --help                        Show this message and exit.                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
