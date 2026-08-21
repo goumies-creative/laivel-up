@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/goumies-creative/laivel-up/schemas/profile.schema.json",
+  "title": "Profil AIDD — LAIVEL UP",
+  "description": "Schéma de validation du profil d'entrée pour l'évaluation AIDD. Aligné sur la grille officielle (4 axes, 7 niveaux).",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifiant du profil (nom ou slug). Utilisé dans les rapports."
+    },
+    "declared_level": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": ["WHITE", "RED", "BLUE", "GREEN", "COPPER", "SILVER", "GOLD"]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Niveau déclaré par le développeur (optionnel, null = non déclaré)."
+    },
+    "traces": {
+      "type": "object",
+      "description": "Traces techniques observables du workflow AIDD.",
+      "properties": {
+        "pr_sizes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["S", "M", "L", "XL"]
+          },
+          "minItems": 1,
+          "description": "Tailles habituelles des PR livrées avec l'IA (S, M, L, XL)."
+        },
+        "context_versioned": {
+          "type": "boolean",
+          "description": "Mémoire projet versionnée présente et maintenue."
+        },
+        "agent_rules_versioned": {
+          "type": "boolean",
+          "description": "Règles et agents versionnés dans le dépôt (behavior)."
+        },
+        "retry_loops": {
+          "type": "boolean",
+          "description": "Boucles de relance automatique tant que la validation échoue."
+        },
+        "retries_after_fact": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Ratio de PR reprises ou corrigées après coup (0 = jamais, 1 = toujours)."
+        },
+        "retries_triangulated": {
+          "type": "boolean",
+          "description": "Le ratio de reprise est corroboré par des PR réelles (pas seulement auto-déclaré)."
+        },
+        "parallel_projects": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Nombre de chantiers menés en parallèle habituellement."
+        },
+        "projects_completed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Nombre de chantiers menés jusqu'au bout."
+        },
+        "agents_autonomous": {
+          "type": "boolean",
+          "description": "Les agents prennent les tâches en autonomie (cadrage compris)."
+        },
+        "prompts": {
+          "type": "boolean",
+          "description": "Utilisation de prompts structurés (pas de contexte versionné)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "answers": {
+      "type": "object",
+      "description": "Réponses au questionnaire de cadrage (mode interrogate).",
+      "additionalProperties": true
+    },
+    "meta": {
+      "type": "object",
+      "description": "Métadonnées additionnelles (horodatage, source, etc.).",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

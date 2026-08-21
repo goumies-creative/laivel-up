@@ -21,6 +21,7 @@ from rich.table import Table
 
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
 from .report import write_reports
+from .schema import validate_profile
 from .scoring import evaluate
 from .team import (
     Team,
@@ -59,6 +60,14 @@ def _load_profile(path: Path) -> ProfileData:
         raise typer.Exit(code=2)
     if not isinstance(data, dict):
         console.print("[bold red]Le JSON doit contenir un objet profil.[/bold red]")
+        raise typer.Exit(code=2)
+
+    # Validation schema (fail fast)
+    schema_errors = validate_profile(data)
+    if schema_errors:
+        console.print("[bold red]Profil invalide :[/bold red]")
+        for e in schema_errors:
+            console.print(f"  · {e}")
         raise typer.Exit(code=2)
 
     declared = data.get("declared_level")

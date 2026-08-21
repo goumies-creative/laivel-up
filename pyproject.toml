@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "CLI d'évaluation AIDD · LAIVEL UP · Décodeuse way (cadrage, confiance, red flags)"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["typer>=0.20", "rich"]
+dependencies = ["typer>=0.20", "rich", "jsonschema>=4.20"]
 license = {text = "MIT"}
 
 [project.scripts]

@@ -82,6 +82,7 @@ retries_after_fact
 | METHODE.md | Algorithme complet, grille, heuristiques |
 | CONTRIBUTING.md | Standards, dev local, PR process |
 | LICENSE | MIT complet |
+| docs/asciinema-cli-demo-workflow.md | Workflow démo vidéo : asciinema → GIF → MP4 → sous-titres |
 
 ### 6. Installation
 
