@@ -100,3 +100,31 @@ jobs:
       - name: Run calibration
         if: steps.check.outputs.exists == 'true'
         run: python scripts/calibrate.py --expected grille/profils-officiels/expected.json
+
+  calibrate-degraded:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e .
+      - name: Check expected.json exists
+        id: check
+        run: |
+          if [ -f "grille/profils-officiels/expected.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "::notice expected.json non trouvé — diagnostic dégradé sauté"
+          fi
+      - name: Run degraded diagnostic
+        if: steps.check.outputs.exists == 'true'
+        run: python scripts/calibrate_degraded.py --official-dir grille/profils-officiels/ --expected grille/profils-officiels/expected.json --output diagnostic.json --format table
+      - name: Upload diagnostic
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: calibration-diagnostic
+          path: diagnostic.json
