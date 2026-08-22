@@ -1,0 +1,54 @@
+# Changelog
+
+Toutes les changements notables de LAIVEL UP sont documentés dans ce fichier.
+
+Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
+et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
+
+## [Unreleased]
+
+### Added
+- `scripts/demo.py` : script de démo 2 min pour enregistrement asciinema
+- `scripts/version_bump.py` : bump SemVer automatique + tag + commit
+- `.github/workflows/release.yml` : tag v* → build → PyPI + GitHub Release
+- `docs/VIDEO_PRODUCTION.md` : guide complet production vidéo (asciinema + Aegisub + FFmpeg)
+- `aidd_docs/.../video-demo-prompt.md` : prompt Claude Desktop pour génération script démo
+- `tests/test_demo.py` : tests structurels et d'exécution de demo.py
+
+### Changed
+- `CONTRIBUTING.md` : ajout section "Release Process" complète
+
+## [0.2.0] - 2026-08-22
+
+### Added
+- `scoring_defaults.py` : extraction SCORING_DEFAULTS (seuils modifiables par scripts Plan B)
+- `scripts/calibrate_degraded.py` : mode dégradé diagnostic (strict/graceful, json/table/markdown)
+- `scripts/apply_calibration_fix.py` : scénarios A/B/C de patch calibration
+- `scripts/release_hackathon.sh` : release atomique (tag + push + GH Release + CI check)
+- `tests/test_calibrate_degraded.py` : 9 tests mode dégradé
+- `tests/test_apply_calibration_fix.py` : 6 tests patch calibration
+- `tests/test_scoring_defaults.py` : 5 tests extraction constantes
+- CI job `calibrate-degraded` dans `ci.yml`
+
+### Changed
+- `scoring.py` : import depuis `scoring_defaults.py`, aliases backward-compatible
+- `scoring.py` : remplacement `_SIZE_LEVEL` par dict lookup `SCORING_DEFAULTS["SIZE_LEVEL"]`
+
+## [0.1.0] - 2026-08-21
+
+### Added
+- CLI Typer + Rich : `evaluate`, `interrogate`, `team create/evaluate/export`
+- Moteur de scoring : 4 axes (Size, Harness, Intervention, Parallel) × 7 niveaux
+- Méthode La Décodeuse : refus de deviner, questions ciblées
+- Validation JSON Schema Draft 2020-12
+- Team Tracker RGPD : pseudo-anonymisation SHA-256
+- Rapports Markdown + HTML
+- CI matrix : Ubuntu/Windows/macOS × Python 3.11/3.12/3.13
+- Tests : 143+ tests (unit, property, snapshot, security)
+- 16 ADR (Architecture Decision Records)
+- Encoding cross-platform : `sys.stdout.reconfigure` + `emoji=False` fallback
+- Documentation : README, METHODE, QUALITY, CONTRIBUTING, TRANSPARENCE, TESTING_STRATEGY
+- Profils d'exemple : `profil-maison-1.json`, `profil-maison-2.json`
+- Grille officielle AIDD : `grille/aidd.md`
+- Quick reference grille → code : `docs/GRID_QUICKREF.md`
+- Quickstart juges : `docs/QUICKSTART_JUDGES.md`

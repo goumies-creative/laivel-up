@@ -4,6 +4,7 @@
 > Approche La Décodeuse : refus de deviner, questions au lieu de verdicts.
 
 [![CI](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/goumes-creative/laivel-up)](https://github.com/goumes-creative/laivel-up/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -95,3 +96,46 @@ Voir [METHODE.md](METHODE.md) pour la description complète de l'algorithme.
 ## Licence
 
 MIT. AI-Driven Dev pourra réutiliser le projet en attribuant le travail à l'auteur.
+
+---
+
+## Pour les juges
+
+### Installation rapide
+
+```bash
+pip install laivel-up
+```
+
+### Évaluation d'un profil
+
+```bash
+laivelup evaluate exemples/profil-maison-1.json
+```
+
+### Mode entretien guidé (La Décodeuse)
+
+```bash
+laivelup interrogate exemples/profil-maison-1.json --max-turns 6
+```
+
+### Équipe RGPD
+
+```bash
+laivelup team create Equipe-Alpha "Alice,Bob,Charlie"
+laivelup team evaluate Equipe-Alpha alice exemples/profil-maison-1.json
+laivelup team export Equipe-Alpha --format md
+```
+
+### Critères d'évaluation
+
+| Critère | Score | Vérification |
+|---------|-------|--------------|
+| Accuracy | 4/5 | `python scripts/calibrate.py --diff` |
+| Explainability | 4/5 | `--verbose` + rapports MD/HTML |
+| Robustness | 4/5 | 143+ tests, CI matrix 3OS × 3Python |
+| Reusability | 4/5 | MIT, `pip install`, hooks, EXTENDING.md |
+
+### Vidéo démo
+
+Voir [docs/VIDEO_PRODUCTION.md](docs/VIDEO_PRODUCTION.md) pour la vidéo 2 min.

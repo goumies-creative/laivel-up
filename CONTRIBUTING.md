@@ -90,6 +90,53 @@ Types : `feat`, `fix`, `docs`, `test`, `refactor`, `ci`, `chore`
 4. Mettre à jour la documentation si nécessaire
 5. Demander une review
 
+## Release Process
+
+### Prérequis
+
+1. **PyPI token** : compte PyPI → API tokens → Create token → scope "Project: laivel-up"
+2. **GitHub secret** : repo Settings → Secrets → Actions → `PYPI_API_TOKEN` = `pypi-...`
+3. **CHANGELOG.md** : documenter les changements dans la section `[version]`
+
+### Bumper la version
+
+```bash
+# SemVer strict : patch, minor, major
+python scripts/version_bump.py patch   # 0.1.0 → 0.1.1
+python scripts/version_bump.py minor   # 0.1.1 → 0.2.0
+python scripts/version_bump.py major   # 0.2.0 → 1.0.0
+```
+
+Le script :
+1. Met à jour `version` dans `pyproject.toml`
+2. Met à jour `__version__` dans `src/laivelup/__init__.py`
+3. Crée un commit `chore(release): vX.Y.Z`
+4. Crée un tag `vX.Y.Z`
+5. Push (si `--push`)
+
+### Lancer la release
+
+```bash
+# Push le tag pour déclencher le workflow
+git push origin main --tags
+```
+
+Le workflow `.github/workflows/release.yml` :
+1. Build le package (whl + tar.gz)
+2. Test l'installation sur 3OS × 3Python
+3. Publish sur PyPI
+4. Crée une GitHub Release avec les notes du CHANGELOG
+
+### Vérification post-release
+
+```bash
+# Vérifier PyPI
+pip install laivel-up==X.Y.Z
+
+# Vérifier GitHub Release
+gh release view vX.Y.Z -R goumes-creative/laivel-up
+```
+
 ## Code de conduite
 
 Respectueux, inclusif, bienveillant. Pas de jugement sur les personnes,
