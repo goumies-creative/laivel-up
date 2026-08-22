@@ -4,18 +4,20 @@ Usage:
     python scripts/apply_calibration_fix.py \
         --scenario A \
         --diagnostic diagnostic.json \
+        --thresholds expected.json \
         --dry-run
 """
 from __future__ import annotations
 
 import json
+import re
 import sys
 import typing
 from dataclasses import dataclass
 from pathlib import Path
 
-if typing.TYPE_CHECKING:
-    pass
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from laivelup.scoring_defaults import SCORING_DEFAULTS
 
 
 @dataclass
@@ -35,10 +37,15 @@ def _load_diagnostic(path: Path) -> dict:
         sys.exit(1)
 
 
-def apply_scenario_a(diagnostic: dict, dry_run: bool = True) -> FixResult:
-    """Apply scenario A: patch thresholds.
+def apply_scenario_a(
+    diagnostic: dict,
+    dry_run: bool = True,
+    thresholds_path: Path | None = None,
+) -> FixResult:
+    """Apply scenario A: patch thresholds in SCORING_DEFAULTS.
 
-    Modifies SCORING_THRESHOLDS and LEVEL_BOUNDARIES in scoring.py.
+    Reads expected thresholds from --thresholds file or diagnostic.json,
+    computes deltas against current SCORING_DEFAULTS, and patches scoring_defaults.py.
     """
     changes = []
     errors = []
@@ -50,13 +57,57 @@ def apply_scenario_a(diagnostic: dict, dry_run: bool = True) -> FixResult:
         errors.append(f'Scenario A requires total_mismatch <= 2, got {total_mismatch}')
         return FixResult(scenario='A', applied=False, changes=changes, errors=errors)
 
-    if dry_run:
-        changes.append('[DRY RUN] Would patch SCORING_THRESHOLDS in scoring.py')
-        changes.append('[DRY RUN] Would patch LEVEL_BOUNDARIES in scoring.py')
+    # Load thresholds from file or diagnostic
+    if thresholds_path and thresholds_path.exists():
+        expected = json.loads(thresholds_path.read_text(encoding='utf-8'))
     else:
-        # TODO: implement actual patching
-        changes.append('Patched SCORING_THRESHOLDS')
-        changes.append('Patched LEVEL_BOUNDARIES')
+        expected = diagnostic.get('scoring_defaults_used', {})
+
+    if not expected:
+        errors.append('No thresholds found in --thresholds file or diagnostic.json')
+        return FixResult(scenario='A', applied=False, changes=changes, errors=errors)
+
+    # Compute deltas
+    scoring_defaults_path = (
+        Path(__file__).resolve().parent.parent / 'src' / 'laivelup' / 'scoring_defaults.py'
+    )
+    current_source = scoring_defaults_path.read_text(encoding='utf-8')
+
+    for key in ('CONFIDENCE_THRESHOLD', 'CONFIDENCE_PEAK', 'CONFIDENCE_MEDIUM',
+                'CONFIDENCE_LOW', 'CONFIDENCE_HARNESS_ONLY'):
+        old_val = SCORING_DEFAULTS.get(key)
+        new_val = expected.get(key)
+        if new_val is not None and old_val != new_val:
+            if dry_run:
+                changes.append(f'[DRY RUN] {key}: {old_val} -> {new_val}')
+            else:
+                current_source = current_source.replace(
+                    f'"{key}": {old_val}',
+                    f'"{key}": {new_val}',
+                )
+                changes.append(f'{key}: {old_val} -> {new_val}')
+
+    rpl = expected.get('RETRIES_PER_LEVEL', {})
+    current_rpl = SCORING_DEFAULTS.get('RETRIES_PER_LEVEL', {})
+    for sub_key in ('gold', 'copper_or_green', 'blue'):
+        old_val = current_rpl.get(sub_key)
+        new_val = rpl.get(sub_key)
+        if new_val is not None and old_val != new_val:
+            if dry_run:
+                changes.append(f'[DRY RUN] RETRIES_PER_LEVEL.{sub_key}: {old_val} -> {new_val}')
+            else:
+                current_source = current_source.replace(
+                    f'"{sub_key}": {old_val}',
+                    f'"{sub_key}": {new_val}',
+                )
+                changes.append(f'RETRIES_PER_LEVEL.{sub_key}: {old_val} -> {new_val}')
+
+    if not dry_run and changes:
+        scoring_defaults_path.write_text(current_source, encoding='utf-8')
+        changes.insert(0, f'Patched {scoring_defaults_path}')
+
+    if not changes:
+        changes.append('No changes needed — SCORING_DEFAULTS already matches expected')
 
     return FixResult(scenario='A', applied=not dry_run, changes=changes, errors=errors)
 
@@ -121,6 +172,8 @@ def main() -> None:
                         help='Mode dry-run (par défaut)')
     parser.add_argument('--apply', action='store_true',
                         help='Appliquer réellement (désactive dry-run)')
+    parser.add_argument('--thresholds', type=Path, default=None,
+                        help='Chemin vers expected.json avec seuils attendus')
 
     args = parser.parse_args()
 
@@ -128,7 +181,10 @@ def main() -> None:
     dry_run = not args.apply
 
     handler = SCENARIO_HANDLERS[args.scenario]
-    result = handler(diagnostic, dry_run=dry_run)
+    if args.scenario == 'A':
+        result = handler(diagnostic, dry_run=dry_run, thresholds_path=args.thresholds)
+    else:
+        result = handler(diagnostic, dry_run=dry_run)
 
     print(f'Scenario: {result.scenario}')
     print(f'Applied: {result.applied}')

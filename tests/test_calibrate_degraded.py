@@ -83,3 +83,39 @@ class TestCalibrateDegraded:
         diag = Diagnostic(**sample_diagnostic)
         output = _format_markdown(diag)
         assert '# Calibration Degraded Diagnostic' in output
+
+    def test_strict_mode_fails_on_invalid_profile(self, tmp_path: Path) -> None:
+        """Strict mode raises on invalid profile."""
+        from scripts.calibrate_degraded import diagnose
+        bad_profile = tmp_path / 'bad.json'
+        bad_profile.write_text('NOT JSON', encoding='utf-8')
+        expected_path = tmp_path / 'expected.json'
+        expected_path.write_text('{"levels": {}}', encoding='utf-8')
+        with pytest.raises((json.JSONDecodeError, ValueError)):
+            diagnose(tmp_path, expected_path, strict=True)
+
+    def test_graceful_mode_skips_invalid_profiles(self, tmp_path: Path) -> None:
+        """Graceful mode skips invalid profiles and continues."""
+        from scripts.calibrate_degraded import diagnose
+        bad_profile = tmp_path / 'bad.json'
+        bad_profile.write_text('NOT JSON', encoding='utf-8')
+        good_profile = tmp_path / 'good.json'
+        good_profile.write_text(json.dumps({
+            'name': 'good', 'declared_level': 'GREEN', 'traces': {},
+        }), encoding='utf-8')
+        expected_path = tmp_path / 'expected.json'
+        expected_path.write_text('{"levels": {}}', encoding='utf-8')
+        result = diagnose(tmp_path, expected_path, strict=False)
+        assert result.profiles_analyzed == 1
+
+    def test_reads_scoring_defaults(self) -> None:
+        """Diagnostic includes scoring_defaults_used."""
+        from scripts.calibrate_degraded import diagnose
+        from pathlib import Path
+        from laivelup.scoring_defaults import SCORING_DEFAULTS
+        tmp = Path('/tmp/test_sd')
+        tmp.mkdir(exist_ok=True)
+        expected_path = tmp / 'expected.json'
+        expected_path.write_text('{"levels": {}}', encoding='utf-8')
+        result = diagnose(tmp, expected_path)
+        assert result.scoring_defaults_used == dict(SCORING_DEFAULTS)

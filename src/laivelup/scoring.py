@@ -26,16 +26,10 @@ from __future__ import annotations
 from collections import Counter
 
 from .model import AXES, AxisScore, Level, ProfileData, RedFlag, Verdict
+from .scoring_defaults import SCORING_DEFAULTS
 
 SIZE_VALUES = {"S", "M", "L", "XL"}
 SIZE_ORDER = ["S", "M", "L", "XL"]
-CONFIDENCE_THRESHOLD = 0.5
-CONFIDENCE_PEAK = 0.9
-CONFIDENCE_MEDIUM = 0.8
-CONFIDENCE_LOW = 0.4  # CONFIDENCE_THRESHOLD - 0.1 : sous le seuil, on refuse de trancher
-CONFIDENCE_HARNESS_ONLY = 0.7
-
-# Keys signaling harness adoption (context engineering / behavior / retry loops / prompts).
 ADOPTION_SIGNALS = (
     "context_versioned",
     "agent_rules_versioned",
@@ -43,10 +37,13 @@ ADOPTION_SIGNALS = (
     "prompts",
 )
 
-# "Intervention" cells from the grid: decreasing retry threshold.
-# Silver/Gold share "never"; Silver/Gold distinction hinges on
-# agent autonomy (agents_autonomous), confirmed by question.
-RETRIES_PER_LEVEL = {"gold": 0.05, "copper_or_green": 0.2, "blue": 0.5}
+# Backward-compatible aliases reading from SCORING_DEFAULTS
+CONFIDENCE_THRESHOLD: float = SCORING_DEFAULTS["CONFIDENCE_THRESHOLD"]  # type: ignore[assignment]
+CONFIDENCE_PEAK: float = SCORING_DEFAULTS["CONFIDENCE_PEAK"]  # type: ignore[assignment]
+CONFIDENCE_MEDIUM: float = SCORING_DEFAULTS["CONFIDENCE_MEDIUM"]  # type: ignore[assignment]
+CONFIDENCE_LOW: float = SCORING_DEFAULTS["CONFIDENCE_LOW"]  # type: ignore[assignment]
+CONFIDENCE_HARNESS_ONLY: float = SCORING_DEFAULTS["CONFIDENCE_HARNESS_ONLY"]  # type: ignore[assignment]
+RETRIES_PER_LEVEL: dict[str, float] = SCORING_DEFAULTS["RETRIES_PER_LEVEL"]  # type: ignore[assignment]
 
 
 def _as_float(value: object) -> float | None:
@@ -145,9 +142,6 @@ def _peak_info(pr_sizes: list[str]) -> tuple[str | None, float]:
     return max_present, counts[max_present] / n
 
 
-_SIZE_LEVEL = {"S": Level.RED, "M": Level.BLUE, "L": Level.GOLD, "XL": Level.GOLD}
-
-
 def size_max(traces: dict) -> tuple[Level | None, float, list[str]]:
     """Cellule « Size » : S=>Red, M=>Blue, L/XL=>Gold (L-XL covers Copper to Gold).
     Un pic isolé (XL minoritaire) est signalé sans fixer le niveau, l'habituel
@@ -165,7 +159,7 @@ def size_max(traces: dict) -> tuple[Level | None, float, list[str]]:
     tied = [s for s in SIZE_ORDER if counts[s] == best]
     if len(tied) > 1:
         evidence.append(f"tailles à égalité ({'/'.join(tied)}) : habituel ambigu")
-        return _SIZE_LEVEL[tied[-1]], CONFIDENCE_LOW, evidence
+        return SCORING_DEFAULTS["SIZE_LEVEL"][tied[-1]], CONFIDENCE_LOW, evidence  # type: ignore[index]
 
     isolated_peak = max_present is not None and ratio < 0.5
     if isolated_peak:
@@ -176,7 +170,7 @@ def size_max(traces: dict) -> tuple[Level | None, float, list[str]]:
         return Level.BLUE, CONFIDENCE_LOW, evidence
     # La confiance croît avec le nombre de PR observées, plafonnée à 0.9.
     confidence = min(CONFIDENCE_PEAK, 0.5 + 0.1 * n)
-    return _SIZE_LEVEL[dominant], confidence, evidence
+    return SCORING_DEFAULTS["SIZE_LEVEL"][dominant], confidence, evidence  # type: ignore[index]
 
 
 def harness_max(traces: dict) -> tuple[Level | None, float, list[str]]:

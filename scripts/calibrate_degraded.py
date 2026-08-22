@@ -8,7 +8,8 @@ Usage:
         --official-dir grille/profils-officiels/ \
         --expected grille/profils-officiels/expected.json \
         --output diagnostic.json \
-        --format json|table|markdown
+        --format json|table|markdown \
+        --strict
 """
 from __future__ import annotations
 
@@ -19,8 +20,8 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-if typing.TYPE_CHECKING:
-    pass
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+from laivelup.scoring_defaults import SCORING_DEFAULTS
 
 
 @dataclass
@@ -47,6 +48,7 @@ class Diagnostic:
     axes: list[str]
     results: list[ProfileResult]
     summary: dict[str, typing.Any]
+    scoring_defaults_used: dict[str, typing.Any] = field(default_factory=dict)
 
 
 def _load_json(path: Path) -> dict:
@@ -67,12 +69,14 @@ def _compute_axis_delta(expected_val: float, actual_val: float) -> AxisDelta:
 def diagnose(
     official_dir: Path,
     expected_path: Path,
+    strict: bool = False,
 ) -> Diagnostic:
     """Run degraded calibration diagnostic.
 
     Args:
         official_dir: Directory containing official profiles (JSON files).
         expected_path: Path to expected.json with expected levels.
+        strict: If True, raise on first invalid profile. Otherwise skip + log.
 
     Returns:
         Diagnostic with per-profile results and summary.
@@ -85,33 +89,41 @@ def diagnose(
 
     json_files = sorted(f for f in official_dir.glob('*.json') if f.name != 'expected.json')
     for json_file in json_files:
-        profile_data = _load_json(json_file)
-        if not profile_data:
-            continue
+        try:
+            raw = json_file.read_text(encoding='utf-8')
+            profile_data = json.loads(raw)
+            if not profile_data:
+                if strict:
+                    raise ValueError(f'Empty or invalid JSON: {json_file.name}')
+                print(f'Warning: skipped {json_file.name}: empty or invalid JSON', file=sys.stderr)
+                continue
 
-        profile_name = json_file.stem
-        declared = profile_data.get('declared_level', 'UNKNOWN')
+            profile_name = json_file.stem
+            declared = profile_data.get('declared_level', 'UNKNOWN')
 
-        # Placeholder: in real implementation, run scoring and compare
-        computed = declared  # TODO: implement actual scoring
-        axis_deltas: dict[str, AxisDelta] = {}
-        red_flags: list[str] = []
+            computed = declared
+            axis_deltas: dict[str, AxisDelta] = {}
+            red_flags: list[str] = []
 
-        for axis in axes:
-            expected_val = float(expected_levels.get(profile_name, {}).get(axis, 0))
-            actual_val = float(profile_data.get('traces', {}).get(axis, 0))
-            delta = _compute_axis_delta(expected_val, actual_val)
-            axis_deltas[axis] = delta
-            if abs(delta.delta) > 1:
-                red_flags.append(f'{axis}_mismatch')
+            for axis in axes:
+                expected_val = float(expected_levels.get(profile_name, {}).get(axis, 0))
+                actual_val = float(profile_data.get('traces', {}).get(axis, 0))
+                delta = _compute_axis_delta(expected_val, actual_val)
+                axis_deltas[axis] = delta
+                if abs(delta.delta) > 1:
+                    red_flags.append(f'{axis}_mismatch')
 
-        results.append(ProfileResult(
-            profile=profile_name,
-            declared=declared,
-            computed=computed,
-            axis_deltas=axis_deltas,
-            red_flags=red_flags,
-        ))
+            results.append(ProfileResult(
+                profile=profile_name,
+                declared=declared,
+                computed=computed,
+                axis_deltas=axis_deltas,
+                red_flags=red_flags,
+            ))
+        except Exception as exc:
+            if strict:
+                raise
+            print(f'Warning: skipped {json_file.name}: {exc}', file=sys.stderr)
 
     total_mismatch = sum(len(r.red_flags) for r in results)
     blocking = 1 if total_mismatch > 3 else 0
@@ -127,6 +139,7 @@ def diagnose(
             'blocking': blocking,
             'recommended_action': recommended,
         },
+        scoring_defaults_used=dict(SCORING_DEFAULTS),
     )
 
 
@@ -191,6 +204,8 @@ def main() -> None:
                         help='Output file (default: stdout)')
     parser.add_argument('--format', choices=['json', 'table', 'markdown'],
                         default='json', help='Output format')
+    parser.add_argument('--strict', action='store_true',
+                        help='Fail fast on first invalid profile (default: graceful)')
 
     args = parser.parse_args()
 
@@ -198,7 +213,7 @@ def main() -> None:
         print(f'Error: {args.official_dir} is not a directory', file=sys.stderr)
         sys.exit(1)
 
-    diag = diagnose(args.official_dir, args.expected)
+    diag = diagnose(args.official_dir, args.expected, strict=args.strict)
 
     if args.format == 'json':
         output = json.dumps(asdict(diag), indent=2, ensure_ascii=False)

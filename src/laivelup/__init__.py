@@ -7,3 +7,7 @@ quand les données mentent, avec la question à poser à la place.
 """
 
 __version__ = "0.1.0"
+
+from .scoring_defaults import SCORING_DEFAULTS
+
+__all__ = ["SCORING_DEFAULTS"]
