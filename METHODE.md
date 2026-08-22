@@ -115,6 +115,22 @@ libres dans les traces avant de re-scorer.
 - **Neurotype** : jamais demandé, jamais inféré
 - **Pseudo-anonyme** : slug RGPD pour les rapports partagés
 
+## Traçabilité grille ↔ code
+
+| Élément grille | Fichier | Fonction/Const | Ligne |
+|----------------|---------|----------------|-------|
+| Niveaux (White→Gold) | `model.py` | `Level` enum | 17-25 |
+| Labels niveaux | `model.py` | `LEVEL_LABELS` | 27-35 |
+| 4 axes | `model.py` | `AXES` | 37 |
+| Labels axes | `model.py` | `AXIS_LABELS` | 40-45 |
+| Règle AND | `scoring.py` | `evaluate()` | globale |
+| Seuils confiance | `scoring_defaults.py` | `SCORING_DEFAULTS` | globale |
+| Seuils taille (S/M/L/XL) | `scoring_defaults.py` | `SIZE_LEVEL` | dict |
+| Retries par palier | `scoring_defaults.py` | `RETRIES_PER_LEVEL` | dict |
+| Validation profil | `schema.py` | `validate_profile()` | globale |
+| Rapport MD | `report.py` | `write_reports()` | globale |
+| CLI | `cli.py` | `app` (Typer) | globale |
+
 ## Limites
 
 - La séniorité n'est pas mesurée

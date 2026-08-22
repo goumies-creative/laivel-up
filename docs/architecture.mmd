@@ -1,0 +1,84 @@
+---
+title: LAIVEL UP — Architecture
+---
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
+graph TD
+    subgraph CLI ["CLI (Typer + Rich)"]
+        EVAL["laivelup evaluate"]
+        INTER["laivelup interrogate"]
+        TEAM["laivelup team"]
+    end
+
+    subgraph Core ["Core"]
+        SCHEMA["schema.py<br/>JSON Schema v1"]
+        MODEL["model.py<br/>Level, Axes, Verdict"]
+        SCORING["scoring.py<br/>evaluate()"]
+        REPORT["report.py<br/>MD/HTML"]
+        TEAM_MOD["team.py<br/>RGPD slug/sha256"]
+        ENCODING["encoding.py<br/>UTF-8 cross-platform"]
+    end
+
+    subgraph Config ["Config"]
+        SCORING_DEF["scoring_defaults.py<br/>SCORING_DEFAULTS dict"]
+    end
+
+    subgraph Scripts ["Scripts"]
+        CALIBRATE["calibrate.py"]
+        CALIBRATE_D["calibrate_degraded.py<br/>Plan B"]
+        APPLY_FIX["apply_calibration_fix.py"]
+        DEMO["demo.py<br/>asciinema 2 min"]
+        VERSION["version_bump.py"]
+    end
+
+    subgraph CI ["CI/CD"]
+        CI_YML[".github/workflows/ci.yml<br/>3OS × 3Py"]
+        RELEASE[".github/workflows/release.yml<br/>Tag → PyPI"]
+    end
+
+    subgraph Profiles ["Profils"]
+        USER["Profil utilisateur<br/>profil.json"]
+        OFFICIAL["Profils officiels<br/>28/08 12h"]
+    end
+
+    subgraph Output ["Sorties"]
+        VERDICT["Verdict JSON"]
+        MD["Rapport Markdown"]
+        HTML["Rapport HTML"]
+    end
+
+    EVAL --> SCHEMA
+    EVAL --> SCORING
+    EVAL --> REPORT
+    INTER --> SCORING
+    INTER --> MODEL
+    TEAM --> TEAM_MOD
+
+    SCHEMA --> MODEL
+    SCORING --> MODEL
+    SCORING --> SCORING_DEF
+    REPORT --> MODEL
+    TEAM_MOD --> MODEL
+
+    CALIBRATE --> SCORING
+    CALIBRATE_D --> SCORING
+    CALIBRATE_D --> SCORING_DEF
+    APPLY_FIX --> SCORING_DEF
+
+    CI_YML --> CALIBRATE
+    CI_YML --> CALIBRATE_D
+    RELEASE --> VERSION
+
+    USER --> SCHEMA
+    OFFICIAL --> CALIBRATE
+
+    SCORING --> VERDICT
+    REPORT --> MD
+    REPORT --> HTML
+
+    style CLI fill:#e3f2fd,stroke:#1565c0
+    style Core fill:#f3e5f5,stroke:#7b1fa2
+    style Config fill:#fff3e0,stroke:#ef6c00
+    style Scripts fill:#e8f5e9,stroke:#2e7d32
+    style CI fill:#fce4ec,stroke:#c62828
+    style Profiles fill:#f1f8e9,stroke:#558b2f
+    style Output fill:#e0f7fa,stroke:#00838f
