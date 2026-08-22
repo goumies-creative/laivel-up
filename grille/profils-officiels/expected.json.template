@@ -1,0 +1,7 @@
+{
+  "_comment": "Niveaux attendus par profil. Modifier quand les profils officiels (28/08 12h) sont disponibles.",
+  "levels": {
+    "profil-maison-1": "UNDECIDED",
+    "profil-maison-2": "UNDECIDED"
+  }
+}

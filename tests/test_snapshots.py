@@ -21,7 +21,9 @@ runner = CliRunner()
 
 
 def _normalize(output: str) -> str:
-    """Normalise les chemins temporaires pour des snapshots stables."""
+    """Normalise les chemins temporaires et codes ANSI pour des snapshots stables."""
+    # Strip ANSI escape codes (Rich force_terminal=True les ajoute)
+    output = re.sub(r"\x1b\[[0-9;]*m", "", output)
     output = re.sub(r"C:\\Users\\[^\\]+\\AppData\\Local\\Temp\\[^\n]+", "<TMP>", output)
     output = re.sub(r"/tmp/[^/\n]+", "<TMP>", output)
     output = re.sub(r"pytest-\d+", "pytest-N", output)

@@ -84,7 +84,7 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "-ra -q --strict-markers --strict-config"
+addopts = "-ra -q --strict-markers --strict-config --cov=src/laivelup --cov-fail-under=85 --cov-branch"
 markers = [
     "slow: marks tests as slow",
     "install: marks tests that test installation",
@@ -108,6 +108,10 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[[tool.coverage.overrides]]
+module = "laivelup.scoring"
+fail_under = 100
 
 [tool.bandit]
 targets = ["src"]

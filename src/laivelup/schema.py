@@ -91,9 +91,8 @@ def _validate_minimal(data: dict) -> list[str]:
 
             for key in ("parallel_projects", "projects_completed"):
                 val = traces.get(key)
-                if val is not None:
-                    if not isinstance(val, int) or val < 0:
-                        errors.append(f"traces.{key} : entier >= 0 requis.")
+                if val is not None and (not isinstance(val, int) or val < 0):
+                    errors.append(f"traces.{key} : entier >= 0 requis.")
 
             for key in ("context_versioned", "agent_rules_versioned", "retry_loops",
                         "retries_triangulated", "agents_autonomous", "prompts"):

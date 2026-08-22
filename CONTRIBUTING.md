@@ -31,10 +31,12 @@ Raisons : pas de switching mental à la lecture, convention open-source, signatu
 
 ### Tests
 
-- **Coverage minimale** : tous les chemins critiques testés
+- **Coverage minimale** : 80% globale, 100% pour `scoring.py`
+- **Tests sécurité** : `pytest tests/security/` — répertoire dédié
 - **Property-based** : tests hypothesis pour les invariantes
 - **Snapshot** : sorties CLI capturées et vérifiées
 - **CI matrix** : tests sur Ubuntu, Windows, macOS × Python 3.11, 3.12, 3.13
+- **Baseline bandit** : versionné dans `tests/security/bandit-baseline.json`
 
 ### Sécurité
 

@@ -59,11 +59,14 @@ retries_after_fact
 
 | Standard | Outil | Couverture |
 |----------|-------|-----------|
-| Tests unitaires | pytest | Tous les chemins critiques |
+| Tests unitaires | pytest | 80% minimum globale |
+| Tests scoring | pytest-cov | 100% (non-négociable) |
+| Tests sécurité | pytest | `tests/security/` — 21 tests |
 | Tests property-based | hypothesis | Invariantes fondamentaux |
 | Tests snapshot | pytest-snapshot | Sorties CLI stables |
 | Tests team tracker | pytest | Module team complet |
 | CI matrix | GitHub Actions | Ubuntu × Win × Mac × Py3.11/3.12/3.13 |
+| Baseline bandit | bandit | Versionné + auto-généré en CI |
 
 ### 4. CI/CD
 
@@ -107,6 +110,18 @@ retries_after_fact
 - **Pseudo-anonyme** : slug RGPD pour les rapports partagés
 - **Pas de jugement personne** : seulement des traces observables
 - **Accessibilité** : sortie par défaut lisible, technique en `--verbose`
+
+### 7. Encodage cross-platform
+
+| Standard | Détail |
+|----------|--------|
+| UTF-8 forcé | `ensure_utf8_env()` appelé avant tout import Rich/Typer |
+| Console auto-détectée | `make_console()` avec `emoji=None` (détection via `supports_utf8()`) |
+| Labels avec fallback | `level_label(ascii_fallback=None)` → auto-détection |
+| Pas de wrapper stdout | `reconfigure(encoding='utf-8')` uniquement, jamais `Utf8Writer` |
+| Tests snapshot | `_normalize()` strippe les codes ANSI (`\x1b[...m`) |
+
+**Référence :** `docs/solutions/encoding-cross-platform-python-cli.md`
 
 ## Vérification pré-merge
 
