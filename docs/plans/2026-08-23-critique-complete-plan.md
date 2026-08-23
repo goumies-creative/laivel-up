@@ -6,7 +6,7 @@
 
 ---
 
-## 1. Audit Global — 7 Piliers AIDD
+## [x] 1. Audit Global — 7 Piliers AIDD
 
 | # | Skill | Type | Emplacement Local | Sortie |
 |---|-------|------|-------------------|--------|
