@@ -13,3 +13,10 @@ rapports/
 .coverage
 correctness_review.json
 tests/snapshots/
+
+# Generated artifacts (CI, benchmarks, local runs)
+*.verdict.md
+verdict.md
+benchmark-results.json
+profil.json
+profil-*.json
