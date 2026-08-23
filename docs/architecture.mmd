@@ -28,11 +28,15 @@ graph TD
         APPLY_FIX["apply_calibration_fix.py"]
         DEMO["demo.py<br/>asciinema 2 min"]
         VERSION["version_bump.py"]
+        GEN_PROFILE["generate_profile.py<br/>GitHub clone → JSON"]
+        CI_EVAL["ci_evaluate.py<br/>CI verdict writer"]
+        BENCHMARK["benchmark.py<br/>CLI perf p50/p95"]
     end
 
     subgraph CI ["CI/CD"]
         CI_YML[".github/workflows/ci.yml<br/>3OS × 3Py"]
         RELEASE[".github/workflows/release.yml<br/>Tag → PyPI"]
+        AIDD_EVAL[".github/workflows/aidd-eval.yml<br/>PR eval"]
     end
 
     subgraph Profiles ["Profils"]
@@ -63,9 +67,16 @@ graph TD
     CALIBRATE_D --> SCORING
     CALIBRATE_D --> SCORING_DEF
     APPLY_FIX --> SCORING_DEF
+    GEN_PROFILE --> TEAM_MOD
+    CI_EVAL --> SCORING
+    CI_EVAL --> GEN_PROFILE
+    BENCHMARK --> CLI_YML
 
     CI_YML --> CALIBRATE
     CI_YML --> CALIBRATE_D
+    CI_YML --> CI_EVAL
+    AIDD_EVAL --> GEN_PROFILE
+    AIDD_EVAL --> CI_EVAL
     RELEASE --> VERSION
 
     USER --> SCHEMA

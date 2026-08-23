@@ -69,8 +69,8 @@ class TestApplyCalibrationFix:
     def test_apply_scenario_b(self, sample_diagnostic: Path) -> None:
         from scripts.apply_calibration_fix import apply_scenario_b
         diag = json.loads(sample_diagnostic.read_text(encoding='utf-8'))
-        result = apply_scenario_b(diag, dry_run=True)
-        assert result.applied is False
+        with pytest.raises(NotImplementedError, match="Scenario B"):
+            apply_scenario_b(diag, dry_run=True)
 
     def test_thresholds_option(self, sample_diagnostic: Path, tmp_path: Path) -> None:
         from scripts.apply_calibration_fix import apply_scenario_a

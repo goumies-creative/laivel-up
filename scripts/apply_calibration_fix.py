@@ -116,38 +116,28 @@ def apply_scenario_b(diagnostic: dict, dry_run: bool = True) -> FixResult:
     """Apply scenario B: rewrite mapping.
 
     Regenerates mapping from official profiles via calibrate.py.
+    NOT YET IMPLEMENTED — raises NotImplementedError.
     """
-    changes = []
-    errors = []
-
-    if dry_run:
-        changes.append('[DRY RUN] Would regenerate expected.json from official profiles')
-        changes.append('[DRY RUN] Would re-run calibrate.py')
-    else:
-        # TODO: implement actual rewriting
-        changes.append('Regenerated expected.json')
-        changes.append('Re-ran calibrate.py')
-
-    return FixResult(scenario='B', applied=not dry_run, changes=changes, errors=errors)
+    raise NotImplementedError(
+        "Scenario B (rewrite mapping) requires manual setup:\n"
+        "1. Run: python scripts/calibrate.py --profiles <official_profiles_dir>\n"
+        "2. Review generated expected.json\n"
+        "3. Run: python scripts/apply_calibration_fix.py --scenario A --thresholds expected.json --apply"
+    )
 
 
 def apply_scenario_c(diagnostic: dict, dry_run: bool = True) -> FixResult:
     """Apply scenario C: deliver as-is.
 
     Documents gaps in METHODE.md and README.md.
+    NOT YET IMPLEMENTED — raises NotImplementedError.
     """
-    changes = []
-    errors = []
-
-    if dry_run:
-        changes.append('[DRY RUN] Would add "Known Gaps" section to METHODE.md')
-        changes.append('[DRY RUN] Would add "Known Gaps" section to README.md')
-    else:
-        # TODO: implement actual documentation
-        changes.append('Added "Known Gaps" to METHODE.md')
-        changes.append('Added "Known Gaps" to README.md')
-
-    return FixResult(scenario='C', applied=not dry_run, changes=changes, errors=errors)
+    raise NotImplementedError(
+        "Scenario C (deliver as-is) requires manual documentation:\n"
+        "1. Add 'Known Gaps' section to METHODE.md\n"
+        "2. Add 'Known Gaps' section to README.md\n"
+        "3. Document specific axis limitations in reports"
+    )
 
 
 SCENARIO_HANDLERS = {

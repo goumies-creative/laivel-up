@@ -89,7 +89,13 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const verdict = fs.readFileSync('verdict.md', 'utf8');
+            const rawVerdict = fs.readFileSync('verdict.md', 'utf8');
+
+            // Escape backticks, backslashes, and ${} to prevent injection
+            const verdict = rawVerdict
+              .replace(/\\/g, '\\\\')
+              .replace(/`/g, '\\`')
+              .replace(/\$/g, '\\$');
 
             const body = `## 🎯 Évaluation AIDD · LAIVEL UP
 
