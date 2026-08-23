@@ -23,7 +23,7 @@
 
 ---
 
-## 2. Code Review Multi-Persona — Compound Engineering
+## [-] 2. Code Review Multi-Persona — Compound Engineering
 
 | # | Skill | Type | Emplacement Local | Personas Sélectionnées (auto) |
 |---|-------|------|-------------------|-------------------------------|
