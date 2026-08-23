@@ -182,6 +182,14 @@ def _detect_prompts(repo: Path) -> bool:
     return any((repo / f).exists() for f in prompts_files)
 
 
+def _sanitize_email(value: str) -> str:
+    """Nettoie un email en le remplaçant par un slug anonyme."""
+    if "@" in value:
+        local = value.split("@")[0]
+        return re.sub(r"[^a-z0-9]", "-", local.lower()).strip("-") or "user"
+    return value
+
+
 def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
     """Génère un profil AIDD complet depuis un repo local."""
     if verbose:
@@ -217,15 +225,16 @@ def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
         print(f"[GENERATE] Parallel: {parallel}, Completed: {completed}")
         print(f"[GENERATE] Autonomous: {autonomous}, Prompts: {prompts}")
 
+    clean_user = _sanitize_email(user)
     profile = {
-        "name": f"{repo_path.name}-{user}",
+        "name": f"{repo_path.name}-{clean_user}",
         "declared_level": None,
         "traces": traces,
         "answers": {},
         "meta": {
             "source": "local_repo",
-            "repo_path": str(repo_path),
-            "user": user,
+            "repo_path": repo_path.name,
+            "user": clean_user,
             "generated_by": "generate_profile.py",
         },
     }

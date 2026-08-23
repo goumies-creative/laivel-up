@@ -79,6 +79,9 @@ class TestRGDPOptOut:
 
     def test_opt_out_bloque_evaluation(self):
         """Un membre avec opt_out=True ne peut pas être évalué."""
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from laivelup.team import set_opt_out
 
         team = create_team("Test", ["Alice"])
@@ -90,6 +93,9 @@ class TestRGDPOptOut:
 
     def test_opt_out_export_exclut_membre(self, tmp_path):
         """L'export exclut les membres en opt-out."""
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from laivelup.team import set_opt_out
 
         team = create_team("Test", ["Alice", "Bob"])
@@ -122,6 +128,9 @@ class TestRGPDDroitOubli:
 
     def test_remove_member_purge_historique(self):
         """Suppression membre purge historique et snapshots."""
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from laivelup.team import remove_member
 
         team = create_team("Test", ["Alice", "Bob"])
@@ -141,6 +150,9 @@ class TestRGPDDroitOubli:
 
     def test_remove_member_conserve_equipe(self):
         """Suppression membre ne supprime pas l'équipe."""
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
         from laivelup.team import remove_member
 
         team = create_team("Test", ["Alice", "Bob"])
@@ -203,6 +215,29 @@ class TestRGPDExportSansPII:
 class TestRGPDSanitizeGenerateProfile:
     """Tests que generate_profile.py ne fuit pas d'emails."""
 
-    def test_generate_profile_strip_emails_auteurs(self):
+    def test_generate_profile_strip_emails_auteurs(self, tmp_path):
         """Les emails des auteurs git sont stripped du profil généré."""
-        pytest.skip("Test d'intégration generate_profile à écrire — TODO Phase 25/08")
+        import subprocess
+
+        from scripts.generate_profile import generate_profile
+
+        repo_dir = tmp_path / "test-repo"
+        repo_dir.mkdir()
+        subprocess.run(["git", "init"], cwd=repo_dir, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "alice@example.com"],
+            cwd=repo_dir, capture_output=True,
+        )
+        subprocess.run(["git", "config", "user.name", "Alice"], cwd=repo_dir, capture_output=True)
+
+        (repo_dir / "README.md").write_text("# Test")
+        subprocess.run(["git", "add", "."], cwd=repo_dir, capture_output=True)
+        subprocess.run(["git", "commit", "-m", "init"], cwd=repo_dir, capture_output=True)
+
+        profile = generate_profile(repo_dir, "alice@example.com")
+
+        assert "@" not in profile["name"]
+        assert "@" not in profile["meta"]["user"]
+        assert "@" not in profile["meta"]["repo_path"]
+        assert profile["meta"]["user"] == "alice"
+        assert profile["meta"]["repo_path"] == "test-repo"
