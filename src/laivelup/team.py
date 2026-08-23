@@ -21,6 +21,70 @@ from typing import TextIO
 from .model import Level, ProfileData, Verdict
 from .scoring import evaluate
 
+_DEFAULT_TEAM_DIR = Path(".laivelup") / "teams"
+
+
+def _team_path(name: str, path: Path | None = None) -> Path:
+    """Retourne le chemin du fichier JSON de l'équipe."""
+    if path is not None:
+        return path
+    return _DEFAULT_TEAM_DIR / f"{name}.json"
+
+
+def save_team(team: Team, path: Path | None = None) -> Path:
+    """Sauvegarde l'état de l'équipe en JSON."""
+    target = _team_path(team.name, path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "name": team.name,
+        "members": {
+            slug: {
+                "name": m.name,
+                "slug": m.slug,
+                "level": m.level.name if m.level else None,
+                "limiting_axis": m.limiting_axis,
+                "confidence": m.confidence,
+                "timestamp": m.timestamp,
+                "red_flags_count": m.red_flags_count,
+                "next_steps_count": m.next_steps_count,
+                "opt_out": m.opt_out,
+            }
+            for slug, m in team.members.items()
+        },
+        "history": team.history,
+    }
+    target.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    return target
+
+
+def load_team(name: str, path: Path | None = None) -> Team:
+    """Charge une équipe depuis un fichier JSON. Retourne une équipe vide si absent."""
+    source = _team_path(name, path)
+    if not source.exists():
+        return Team(name=name)
+    data = json.loads(source.read_text(encoding="utf-8"))
+    team = Team(name=data.get("name", name))
+    for slug, m in data.get("members", {}).items():
+        level = None
+        if m.get("level"):
+            try:
+                level = Level[m["level"]]
+            except KeyError:
+                pass
+        team.members[slug] = MemberSnapshot(
+            slug=slug,
+            name=m["name"],
+            level=level,
+            limiting_axis=m.get("limiting_axis"),
+            confidence=m.get("confidence", 0.0),
+            timestamp=m.get("timestamp", ""),
+            red_flags_count=m.get("red_flags_count", 0),
+            next_steps_count=m.get("next_steps_count", 0),
+            opt_out=m.get("opt_out", False),
+        )
+    team.history = data.get("history", [])
+    return team
+
 
 @dataclass
 class MemberSnapshot:

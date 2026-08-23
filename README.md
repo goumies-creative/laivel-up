@@ -48,6 +48,8 @@ laivelup team export "Alpha" --format html
 | `team create <nom> <membres>` | Crée une équipe avec pseudo-anonymisation RGPD |
 | `team evaluate <équipe> <slug> <profil>` | Évalue un membre de l'équipe |
 | `team export <équipe> --format <fmt>` | Exporte en MD, HTML, CSV ou JSON |
+| `team opt-out <équipe> <slug> [--enable/--disable]` | Active/désactive l'opt-out RGPD |
+| `team remove <équipe> <slug> [--purge]` | Supprime un membre (historique optionnel) |
 
 ## Options
 
@@ -123,8 +125,10 @@ laivelup interrogate exemples/profil-maison-1.json --max-turns 6
 
 ```bash
 laivelup team create Equipe-Alpha "Alice,Bob,Charlie"
-laivelup team evaluate Equipe-Alpha alice exemples/profil-maison-1.json
+laivelup team evaluate Equipe-Alpha alice-2bd806c9 exemples/profil-maison-1.json
 laivelup team export Equipe-Alpha --format md
+laivelup team opt-out Equipe-Alpha bob-81b637d8
+laivelup team remove Equipe-Alpha bob-81b637d8 --purge
 ```
 
 ### Critères d'évaluation

@@ -225,8 +225,38 @@ class TestTeamCommands:
             "name": "test",
             "traces": {"pr_sizes": ["S"], "parallel_projects": 1}
         }), encoding="utf-8")
-        r = runner.invoke(app, ["team", "evaluate", "Alpha", "alice", str(good), "--out", str(tmp_path / "out")])
+        r_create = runner.invoke(app, ["team", "create", "Alpha", "alice,bob"], catch_exceptions=False)
+        assert "alice-" in r_create.output
+        slug_line = [l for l in r_create.output.splitlines() if "alice" in l][0]
+        alice_slug = slug_line.split("→")[1].strip().strip("[dim]").rstrip("[/dim]").strip()
+        # Extract slug from rich markup: "alice → alice-2bd806c9"
+        import re
+        alice_slug = re.search(r"([a-z0-9]+-[a-f0-9]+)", slug_line).group(1)
+        r = runner.invoke(app, ["team", "evaluate", "Alpha", alice_slug, str(good), "--out", str(tmp_path / "out")])
         assert r.exit_code == 0
+
+    def test_team_persistence(self, tmp_path):
+        good = tmp_path / "good.json"
+        good.write_text(json.dumps({
+            "name": "test",
+            "traces": {"pr_sizes": ["S"], "parallel_projects": 1}
+        }), encoding="utf-8")
+        # Create team
+        r1 = runner.invoke(app, ["team", "create", "Persist", "alice,bob"], catch_exceptions=False)
+        assert r1.exit_code == 0
+        import re
+        slug_line = [l for l in r1.output.splitlines() if "alice" in l][0]
+        alice_slug = re.search(r"([a-z0-9]+-[a-f0-9]+)", slug_line).group(1)
+        # Evaluate alice
+        r2 = runner.invoke(app, ["team", "evaluate", "Persist", alice_slug, str(good), "--out", str(tmp_path / "out")])
+        assert r2.exit_code == 0
+        # Verify persistence: team JSON file exists and contains snapshot
+        from laivelup.team import load_team, _DEFAULT_TEAM_DIR
+        team = load_team("Persist")
+        assert alice_slug in team.members
+        assert team.members[alice_slug].confidence > 0
+        assert len(team.history) == 1
+        assert team.history[0]["slug"] == alice_slug
 
 
 # --- CLI help ----------------------------------------------------------

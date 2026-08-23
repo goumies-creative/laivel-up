@@ -22,7 +22,7 @@ vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)
 au bout ?
 Rapport Markdown : 
 <TMP>
-_verdict0\entretien-24e8cdb9.md
+s_verdict0\entretien-24e8cdb9.md
 Rapport HTML : 
 <TMP>
-_verdict0\entretien-24e8cdb9.html
+s_verdict0\entretien-24e8cdb9.html

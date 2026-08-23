@@ -31,7 +31,9 @@ from .team import (
     export_html,
     export_json,
     export_markdown,
+    load_team,
     remove_member,
+    save_team,
     set_opt_out,
 )
 
@@ -212,6 +214,7 @@ def team_create(
         console.print("[bold red]Aucun membre fourni.[/bold red]")
         raise typer.Exit(code=1)
     team = create_team(name, member_list)
+    save_team(team)
     console.print(f"[bold green]Équipe '{team.name}' créée[/bold green] avec {len(team.members)} membres :")
     for slug, m in team.members.items():
         console.print(f"  · {m.name} → [dim]{slug}[/dim]")
@@ -227,12 +230,16 @@ def team_evaluate(
 ) -> None:
     """Évalue un membre de l'équipe et enregistre le résultat."""
     profile = _load_profile(profil)
-    team = Team(name=team_name)
-    team.members[member_slug] = team.members.get(member_slug, None) or type(
-        "Member", (), {"slug": member_slug, "name": member_slug}
-    )()
+    team = load_team(team_name)
+    if member_slug not in team.members:
+        console.print(f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]")
+        console.print("Membres disponibles :")
+        for slug, m in team.members.items():
+            console.print(f"  · {m.name} → [dim]{slug}[/dim]")
+        raise typer.Exit(code=1)
 
-    verdict = evaluate(profile)
+    verdict = evaluate_member(team, member_slug, profile)
+    save_team(team)
 
     console.print(f"[bold]Verdict pour {member_slug} :[/bold]")
     if verdict.decided and verdict.level is not None:
@@ -263,7 +270,10 @@ def team_export(
         console.print("Formats disponibles : md, html, csv, json")
         raise typer.Exit(code=1)
 
-    team = Team(name=team_name)
+    team = load_team(team_name)
+    if not team.members:
+        console.print(f"[bold yellow]Équipe '{team_name}' introuvable ou vide.[/bold yellow]")
+        raise typer.Exit(code=1)
     out_file = export_fn(team, out / f"equipe-{team_name}.{format}")
     console.print(f"[bold green]Export : {out_file}[/bold green]")
 
@@ -278,14 +288,14 @@ def team_opt_out(
 
     Un membre en opt-out ne peut plus être évalué et est exclu des exports.
     """
-    team = Team(name=team_name)
-    try:
-        set_opt_out(team, member_slug, enable)
-        action = "activé" if enable else "désactivé"
-        console.print(f"[bold green]Opt-out {action}[/bold green] pour le membre {member_slug}")
-    except ValueError as e:
-        console.print(f"[bold red]{e}[/bold red]")
+    team = load_team(team_name)
+    if member_slug not in team.members:
+        console.print(f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]")
         raise typer.Exit(code=1)
+    set_opt_out(team, member_slug, enable)
+    save_team(team)
+    action = "activé" if enable else "désactivé"
+    console.print(f"[bold green]Opt-out {action}[/bold green] pour le membre {member_slug}")
 
 
 @team_app.command(name="remove")
@@ -299,14 +309,14 @@ def team_remove(
     Sans --purge, le membre est retiré mais son historique est conservé.
     Avec --purge, l'historique du membre est aussi supprimé (droit à l'oubli).
     """
-    team = Team(name=team_name)
-    try:
-        remove_member(team, member_slug, purge)
-        action = "et son historique supprimé" if purge else "supprimé"
-        console.print(f"[bold green]Membre {action}[/bold green] de l'équipe '{team_name}'")
-    except ValueError as e:
-        console.print(f"[bold red]{e}[/bold red]")
+    team = load_team(team_name)
+    if member_slug not in team.members:
+        console.print(f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]")
         raise typer.Exit(code=1)
+    remove_member(team, member_slug, purge)
+    save_team(team)
+    action = "et son historique supprimé" if purge else "supprimé"
+    console.print(f"[bold green]Membre {action}[/bold green] de l'équipe '{team_name}'")
 
 
 # --- Retry ratio parsing ---------------------------------------------------------

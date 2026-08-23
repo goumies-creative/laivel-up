@@ -20,3 +20,6 @@ verdict.md
 benchmark-results.json
 profil.json
 profil-*.json
+
+# Team persistence data
+.laivelup/
