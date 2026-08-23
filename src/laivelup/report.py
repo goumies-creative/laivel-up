@@ -134,6 +134,7 @@ def render_html(verdict: Verdict) -> str:
 </style>
 </head>
 <body>
+<main>
   <h1>Verdict AIDD · {escape(verdict.name)}</h1>
   <p><span class="badge {kelas}">{badge}</span></p>
   {limiting}
@@ -145,6 +146,7 @@ def render_html(verdict: Verdict) -> str:
   {flags_section}
   {next_section}
   {transparency}
+</main>
 </body>
 </html>
 """

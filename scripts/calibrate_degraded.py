@@ -84,6 +84,9 @@ def diagnose(
     expected = _load_json(expected_path)
     expected_levels = expected.get('levels', {})
 
+    # NOTE: These are the human-readable axis names used in the diagnostic output.
+    # The actual scoring axes in model.py are ('size', 'harness', 'intervention', 'parallel').
+    # This mapping is used for the diagnostic report only, not for scoring.
     axes = ['specification', 'planning', 'implementation', 'validation']
     results: list[ProfileResult] = []
 
@@ -101,6 +104,8 @@ def diagnose(
             profile_name = json_file.stem
             declared = profile_data.get('declared_level', 'UNKNOWN')
 
+            # Placeholder: in degraded mode, we use declared level as computed
+            # until official profiles are available for proper calibration
             computed = declared
             axis_deltas: dict[str, AxisDelta] = {}
             red_flags: list[str] = []

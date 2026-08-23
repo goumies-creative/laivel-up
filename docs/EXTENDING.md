@@ -27,6 +27,39 @@
 2. Ajouter test dans `tests/test_cli.py`
 3. Mettre à jour `README.md`
 
+## Benchmark
+
+```bash
+# Subprocess benchmark (p50/p95 par commande CLI)
+python scripts/benchmark.py -n 50
+
+# In-process micro-benchmark (overhead minimal, scoring seul)
+python scripts/benchmark.py --in-process -n 1000
+```
+
+Résultats : `benchmark-results.json`.
+
+## Calibration dégradée (Plan B)
+
+Quand `calibrate.py` échoue sur les profils officiels :
+
+```bash
+# 1. Diagnostic brut
+python scripts/calibrate_degraded.py \
+    --official-dir grille/profils-officiels/ \
+    --expected grille/profils-officiels/expected.json \
+    --output diagnostic.json
+
+# 2. Scénario A : patch seuils (si ≤2 écarts)
+python scripts/apply_calibration_fix.py \
+    --scenario A --diagnostic diagnostic.json --apply
+
+# 3. Scénarios B/C : manuels (NotImplementedError avec instructions)
+python scripts/apply_calibration_fix.py --scenario B --diagnostic diagnostic.json
+```
+
+**Note** : les axes dans `calibrate_degraded.py` (`specification`, `planning`, `implementation`, `validation`) sont des noms humains pour le diagnostic. Les axes réels du scoring sont `size`, `harness`, `intervention`, `parallel` (voir `model.py`).
+
 ## Hooks (optionnel)
 
 ```python
