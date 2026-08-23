@@ -1,0 +1,135 @@
+# Copyright 2026 Romy Alula — MIT License
+# Évaluation AIDD automatique pour les PRs GitHub.
+#
+# Ce workflow :
+# 1. Génère un profil AIDD depuis le repo pour l'auteur de la PR
+# 2. Évalue le niveau AIDD (4 axes, 7 niveaux)
+# 3. Poste le verdict comme commentaire sur la PR
+#
+# Usage :
+# - Déclenché automatiquement sur les PRs (opened, synchronize)
+# - Peut être lancé manuellement via workflow_dispatch
+# - Requiert les permissions : contents: read, pull-requests: write
+
+name: AIDD Evaluation
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+    inputs:
+      user:
+        description: "Handle git de l'utilisateur à évaluer"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  evaluate:
+    name: Evaluer AIDD
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Historique complet pour analyse
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+
+      - name: Detect author
+        id: author
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "user=${{ inputs.user }}" >> $GITHUB_OUTPUT
+          else
+            echo "user=${{ github.actor }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate profile
+        run: |
+          python scripts/generate_profile.py \
+            --user "${{ steps.author.outputs.user }}" \
+            --out profile.json \
+            --verbose
+
+      - name: Evaluate AIDD
+        id: eval
+        run: |
+          python scripts/ci_evaluate.py \
+            --user "${{ steps.author.outputs.user }}" \
+            --out verdict.md \
+            --repo .
+
+      - name: Read verdict
+        id: verdict
+        run: |
+          if [ -f verdict.md ]; then
+            echo "content<<EOF" >> $GITHUB_OUTPUT
+            cat verdict.md >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "content=Aucun verdict généré." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const verdict = fs.readFileSync('verdict.md', 'utf8');
+
+            const body = `## 🎯 Évaluation AIDD · LAIVEL UP
+
+            ${verdict}
+
+            ---
+            *Généré par [LAIVEL UP](https://github.com/goumies-creative/laivel-up) — Méthode La Décodeuse*
+            `;
+
+            // Supprimer les anciens commentaires LAIVEL UP
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            for (const comment of comments) {
+              if (comment.body.includes('LAIVEL UP') && comment.user.type === 'Bot') {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                });
+              }
+            }
+
+            // Poster le nouveau commentaire
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body,
+            });
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aidd-evaluation
+          path: |
+            profile.json
+            verdict.md
+          retention-days: 30
