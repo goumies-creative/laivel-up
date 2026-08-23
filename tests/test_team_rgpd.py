@@ -75,27 +75,79 @@ class TestRGPDSlug:
 
 
 class TestRGDPOptOut:
-    """Tests d'opt-out explicite (à implémenter dans team.py)."""
+    """Tests d'opt-out explicite."""
 
     def test_opt_out_bloque_evaluation(self):
         """Un membre avec opt_out=True ne peut pas être évalué."""
-        pytest.skip("Opt-out non encore implémenté — TODO Phase 25/08")
+        from laivelup.team import set_opt_out
 
-    def test_opt_out_export_exclut_membre(self):
+        team = create_team("Test", ["Alice"])
+        slug = next(iter(team.members.keys()))
+        set_opt_out(team, slug, True)
+        profile = make_profile(pr_sizes=["M"])
+        with pytest.raises(ValueError, match="opt-out"):
+            evaluate_member(team, slug, profile)
+
+    def test_opt_out_export_exclut_membre(self, tmp_path):
         """L'export exclut les membres en opt-out."""
-        pytest.skip("Opt-out non encore implémenté — TODO Phase 25/08")
+        from laivelup.team import set_opt_out
+
+        team = create_team("Test", ["Alice", "Bob"])
+        slug_alice = next(s for s, m in team.members.items() if m.name == "Alice")
+        slug_bob = next(s for s, m in team.members.items() if m.name == "Bob")
+        profile_alice = make_profile(
+            pr_sizes=["M", "M"],
+            context_versioned=True,
+            retries_after_fact=0.5,
+            parallel_projects=1,
+        )
+        profile_bob = make_profile(
+            pr_sizes=["S", "S"],
+            retries_after_fact=0.8,
+            parallel_projects=1,
+        )
+        evaluate_member(team, slug_alice, profile_alice)
+        evaluate_member(team, slug_bob, profile_bob)
+        set_opt_out(team, slug_alice, True)
+
+        out = tmp_path / "team.json"
+        export_json(team, out)
+        data = json.loads(out.read_text(encoding="utf-8"))
+        assert slug_alice not in data["members"]
+        assert slug_bob in data["members"]
 
 
 class TestRGPDDroitOubli:
-    """Tests droit à l'oubli / suppression (à implémenter)."""
+    """Tests droit à l'oubli / suppression."""
 
     def test_remove_member_purge_historique(self):
         """Suppression membre purge historique et snapshots."""
-        pytest.skip("Remove --purge non encore implémenté — TODO Phase 25/08")
+        from laivelup.team import remove_member
+
+        team = create_team("Test", ["Alice", "Bob"])
+        slug_alice = next(s for s, m in team.members.items() if m.name == "Alice")
+        profile = make_profile(
+            pr_sizes=["M", "M"],
+            context_versioned=True,
+            retries_after_fact=0.5,
+            parallel_projects=1,
+        )
+        evaluate_member(team, slug_alice, profile)
+        assert len(team.history) == 1
+
+        remove_member(team, slug_alice, purge=True)
+        assert slug_alice not in team.members
+        assert len(team.history) == 0
 
     def test_remove_member_conserve_equipe(self):
         """Suppression membre ne supprime pas l'équipe."""
-        pytest.skip("Remove --purge non encore implémenté — TODO Phase 25/08")
+        from laivelup.team import remove_member
+
+        team = create_team("Test", ["Alice", "Bob"])
+        slug_alice = next(s for s, m in team.members.items() if m.name == "Alice")
+        remove_member(team, slug_alice, purge=False)
+        assert slug_alice not in team.members
+        assert len(team.members) == 1
 
 
 class TestRGPDExportSansPII:

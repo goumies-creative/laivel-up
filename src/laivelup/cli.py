@@ -31,6 +31,8 @@ from .team import (
     export_html,
     export_json,
     export_markdown,
+    remove_member,
+    set_opt_out,
 )
 
 app = typer.Typer(
@@ -264,6 +266,47 @@ def team_export(
     team = Team(name=team_name)
     out_file = export_fn(team, out / f"equipe-{team_name}.{format}")
     console.print(f"[bold green]Export : {out_file}[/bold green]")
+
+
+@team_app.command(name="opt-out")
+def team_opt_out(
+    team_name: str = typer.Argument(..., help="Nom de l'équipe."),
+    member_slug: str = typer.Argument(..., help="Slug du membre."),
+    enable: bool = typer.Option(True, "--enable/--disable", help="Activer ou désactiver l'opt-out."),
+) -> None:
+    """Active ou désactive l'opt-out RGPD pour un membre.
+
+    Un membre en opt-out ne peut plus être évalué et est exclu des exports.
+    """
+    team = Team(name=team_name)
+    try:
+        set_opt_out(team, member_slug, enable)
+        action = "activé" if enable else "désactivé"
+        console.print(f"[bold green]Opt-out {action}[/bold green] pour le membre {member_slug}")
+    except ValueError as e:
+        console.print(f"[bold red]{e}[/bold red]")
+        raise typer.Exit(code=1)
+
+
+@team_app.command(name="remove")
+def team_remove(
+    team_name: str = typer.Argument(..., help="Nom de l'équipe."),
+    member_slug: str = typer.Argument(..., help="Slug du membre à supprimer."),
+    purge: bool = typer.Option(False, "--purge", help="Supprimer aussi l'historique du membre (RGPD)."),
+) -> None:
+    """Supprime un membre de l'équipe.
+
+    Sans --purge, le membre est retiré mais son historique est conservé.
+    Avec --purge, l'historique du membre est aussi supprimé (droit à l'oubli).
+    """
+    team = Team(name=team_name)
+    try:
+        remove_member(team, member_slug, purge)
+        action = "et son historique supprimé" if purge else "supprimé"
+        console.print(f"[bold green]Membre {action}[/bold green] de l'équipe '{team_name}'")
+    except ValueError as e:
+        console.print(f"[bold red]{e}[/bold red]")
+        raise typer.Exit(code=1)
 
 
 # --- Retry ratio parsing ---------------------------------------------------------
