@@ -42,3 +42,19 @@ class TestInstallClean:
             timeout=30,
         )
         assert result.returncode == 0, f'laivelup evaluate --help failed: {result.stderr}'
+
+    @pytest.mark.slow
+    def test_cli_evaluate_real(self) -> None:
+        """laivelup evaluate runs a real profile end-to-end after install."""
+        profil = REPO / "exemples" / "profil-maison-1.json"
+        if not profil.exists():
+            pytest.skip("profil-maison-1.json not found")
+        out_dir = REPO / "rapports"
+        result = subprocess.run(
+            ['laivelup', 'evaluate', str(profil), '--out', str(out_dir), '--no-html'],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert result.returncode == 0, f'laivelup evaluate failed: {result.stderr}'
+        assert 'Niveau' in result.output or 'Refus' in result.output or 'refus' in result.output

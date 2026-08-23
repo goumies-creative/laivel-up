@@ -214,10 +214,45 @@ class TestTeamCommands:
     def test_team_export_md(self, tmp_path):
         r = runner.invoke(app, ["team", "export", "Alpha", "--out", str(tmp_path)])
         assert r.exit_code == 0
+        export_file = tmp_path / "equipe-Alpha.md"
+        assert export_file.exists()
+        content = export_file.read_text(encoding="utf-8")
+        assert "Équipe" in content
+        assert "Membres" in content
 
     def test_team_export_format_inconnu(self):
         r = runner.invoke(app, ["team", "export", "Alpha", "--format", "xml"])
         assert r.exit_code == 1
+
+    def test_team_export_json_content(self, tmp_path):
+        r_create = runner.invoke(app, ["team", "create", "ExportJSON", "alice,bob"], catch_exceptions=False)
+        assert r_create.exit_code == 0
+        import re
+        slug_lines = [l for l in r_create.output.splitlines() if "→" in l]
+        slugs = [re.search(r"([a-z0-9]+-[a-f0-9]+)", l).group(1) for l in slug_lines]
+        r = runner.invoke(app, ["team", "export", "ExportJSON", "--format", "json", "--out", str(tmp_path)])
+        assert r.exit_code == 0
+        export_file = tmp_path / "equipe-ExportJSON.json"
+        assert export_file.exists()
+        data = json.loads(export_file.read_text(encoding="utf-8"))
+        assert data["team"] == "ExportJSON"
+        assert len(data["members"]) == 2
+        for slug in slugs:
+            assert slug in data["members"]
+            assert "name" in data["members"][slug]
+            assert "confidence" in data["members"][slug]
+
+    def test_team_export_csv_content(self, tmp_path):
+        r_create = runner.invoke(app, ["team", "create", "ExportCSV", "alice,bob"], catch_exceptions=False)
+        assert r_create.exit_code == 0
+        r = runner.invoke(app, ["team", "export", "ExportCSV", "--format", "csv", "--out", str(tmp_path)])
+        assert r.exit_code == 0
+        export_file = tmp_path / "equipe-ExportCSV.csv"
+        assert export_file.exists()
+        lines = export_file.read_text(encoding="utf-8").strip().split("\n")
+        assert len(lines) >= 3  # header + 2 members
+        assert "name" in lines[0]
+        assert "level" in lines[0]
 
     def test_team_evaluate(self, tmp_path):
         good = tmp_path / "good.json"
