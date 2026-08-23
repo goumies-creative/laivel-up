@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-_SCHEMA_PATH = Path(__file__).parent.parent.parent / "schemas" / "profile.schema.json"
+_SCHEMA_PATH = Path(__file__).parent / "schemas" / "profile.schema.json"
 _schema: dict | None = None
 
 
