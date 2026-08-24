@@ -13,9 +13,14 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `scripts/demo.py` : script de démo 2 min pour enregistrement asciinema
 - `scripts/version_bump.py` : bump SemVer automatique + tag + commit
 - `.github/workflows/release.yml` : tag v* → build → PyPI + GitHub Release
+- `.github/workflows/pr-quality-gate.yml` : quality gate obligatoire sur PR
+- `.pre-commit-config.yaml` : ruff, mypy, pytest-fast + security tests
 - `docs/VIDEO_PRODUCTION.md` : guide complet production vidéo (asciinema + Aegisub + FFmpeg)
+- `docs/TESTING_CONFORMANCE.md` : conformité testing session 3 (8 gaps, patterns, checklist)
 - `aidd_docs/.../video-demo-prompt.md` : prompt Claude Desktop pour génération script démo
 - `tests/test_demo.py` : tests structurels et d'exécution de demo.py
+- `tests/__init__.py` : fix import test_load (from tests.fixtures)
+- `tests/fixtures/__init__.py` : package init for load_generator
 - `tests/conftest.py` : isolation `.laivelup/` via autouse fixture (adversarial #3)
 - `tests/test_scoring.py::test_normalize_retries_inf_refuse` : float("inf") rejection (S6)
 - `tests/test_scoring.py::test_normalize_retries_float_refuse` : non-integer float rejection (S6)
@@ -53,9 +58,12 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `tests/test_install_clean.py` : result.output → result.stdout (adversarial #2)
 - `docs/architecture.mmd` : +utils.py, +questions.py, +release_hackathon.sh, +run_all_examples.sh
 - `docs/adr/0007-team-tracker-rgpd-slug-sha256.md` : périmètre RGPD documenté (team salé, report brut)
-- `QUALITY.md` : +HMAC-SHA-256, +test counts, +session 3 audit
-- `TESTING_STRATEGY.md` : +security tests, +test counts
-- `TRANSPARENCE.md` : +HMAC salt, +RGPD scope
+- `QUALITY.md` : +pre-commit, +PR quality gate, +coverage encoding.py exclusions
+- `TESTING_STRATEGY.md` : +pre-commit hooks, +security tests in pre-commit, +conformité testing
+- `README.md` : +pre-commit install, +test count (344+), +structure tests complète
+- `docs/EXTENDING.md` : +conformité testing (checklist, seuils, nommage)
+- `docs/CI_INTEGRATION.md` : +pr-quality-gate.yml, +workflows table
+- `docs/solutions/session-3-critique-audit-trail.md` : trail complet avec 5 learnings
 - `CONTRIBUTING.md` : ajout section "Release Process" complète
 
 ## [0.2.0] - 2026-08-22

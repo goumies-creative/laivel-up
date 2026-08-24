@@ -139,6 +139,10 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
+    "def _enable_virtual_terminal_windows",
+    "def _try_reconfigure_stdout",
+    "def ensure_utf8_env",
+    "def make_console",
 ]
 
 [[tool.coverage.overrides]]

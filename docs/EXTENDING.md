@@ -82,3 +82,47 @@ mon_plugin = "mon_plugin:Plugin"
 ```
 
 Voir `src/laivelup/plugins.py` (Phase 4).
+
+## Conformité testing
+
+### Checklist obligatoire
+
+Pour toute nouvelle fonctionnalité :
+
+1. **Test unitaire** : cas nominal + cas d'erreur
+2. **Test edge case** : limites, types invalides, données manquantes
+3. **Test snapshot** : si CLI (sortie visible)
+4. **Test de régression** : si bug corrigé
+
+### Seuils de couverture
+
+| Module | Couverture minimale |
+|--------|---------------------|
+| `scoring.py` | 100% (non-négociable) |
+| `model.py` | 95% |
+| `team.py` | 95% |
+| `report.py` | 85% |
+| `cli.py` | 80% |
+| `encoding.py` | 80% (hors Windows-only) |
+| `schema.py` | 80% |
+
+### Règles de nommage
+
+```python
+# Format : test_<ce_qu'on_teste>_<ce_qu'on_s_attend>
+def test_evaluate_insufficient_data_refuses():
+    """La Décodeuse refuse quand les données manquent."""
+    result = evaluate({})
+    assert not result.decided
+
+# Pas de multi-assertions sauf même comportement
+def test_slug_deterministic():
+    """Slug toujours identique pour même entrée."""
+    s1 = slug("alice", salt)
+    s2 = slug("alice", salt)
+    assert s1 == s2  # Deux assertions, même comportement
+```
+
+### Documentation
+
+Voir `docs/TESTING_CONFORMANCE.md` pour la checklist complète.

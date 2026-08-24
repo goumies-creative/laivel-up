@@ -129,6 +129,16 @@ def _normalize(text: str) -> str:
 | `test_team_rgpd.py` | 19 | HMAC salt, XSS escape, confidence, opt-out, team name validation |
 | `test_scoring.py` (+2) | 2 | float("inf") rejection, non-integer float rejection |
 
+### Pre-commit hooks (sécurité)
+
+Les tests security sont inclus dans le hook `pytest-fast` de pre-commit :
+```yaml
+- id: pytest-fast
+  entry: pytest -q -x --ignore=tests/fixtures/ --ignore=tests/test_calibrate.py
+```
+
+Cela garantit qu'aucune faille sécurité n'est introduite localement avant le commit.
+
 ### Baseline bandit
 
 ```bash
@@ -280,3 +290,50 @@ Les tests sont revues en même temps que le code :
 - **Couverture** : vérifier que les nouveaux chemins sont testés
 - **Clarté** : un test = une assertion
 - **Vitesse** : les tests lents doivent être marqués `@pytest.mark.slow`
+
+## 11. Pre-commit hooks
+
+### Configuration
+
+Le fichier `.pre-commit-config.yaml` définit 3 hooks :
+
+| Hook | Outil | Contenu |
+|------|-------|---------|
+| `ruff` | ruff-pre-commit | Lint + formatage Python |
+| `mypy` | mirrors-mypy | Vérification de types |
+| `pytest-fast` | local | Tests rapides + security |
+
+### Installation
+
+```bash
+# Installer pre-commit
+pip install pre-commit
+
+# Activer les hooks
+pre-commit install
+
+# Tester sur tous les fichiers
+pre-commit run --all-files
+```
+
+### Usage
+
+Les hooks s'exécutent automatiquement à chaque `git commit`. Pour ignorer temporairement :
+
+```bash
+# Passer le hook ruff
+git commit --no-verify -m "WIP: ..."
+
+# Exécuter manuellement
+pre-commit run ruff --all-files
+pre-commit run pytest-fast --all-files
+```
+
+### Obligation
+
+- **Jusqu'au 31/08** (hackathon) : pre-commit obligatoire
+- **Après le 31/08** : optionnel (recommandé)
+
+### Conformité
+
+Voir `docs/TESTING_CONFORMANCE.md` pour la checklist complète de conformité testing.

@@ -81,6 +81,17 @@ retries_after_fact
 | test | Matrix OS × Python |
 | security | bandit + pip-audit |
 | install | pip install + verify CLI |
+| quality-gate | PR quality gate (ruff + mypy + bandit + coverage) |
+
+### 4.1 Pre-commit hooks
+
+| Hook | Outil | Usage |
+|------|-------|-------|
+| `ruff` | ruff-pre-commit | Lint + formatage local |
+| `mypy` | mirrors-mypy | Vérification de types locale |
+| `pytest-fast` | local | Tests rapides + security |
+
+**Obligation** : pre-commit obligatoire jusqu'au 31/08 (hackathon), puis optionnel.
 
 ### 5. Documentation
 
@@ -130,20 +141,40 @@ retries_after_fact
 
 ## Vérification pré-merge
 
-```bash
-# 1. Tests
-pytest -q  # 100% vert
+### Automatisée (CI)
 
-# 2. Lint
+```bash
+# 1. Tests scoring (100%)
+pytest --cov=src/laivelup.scoring --cov-fail-under=100
+
+# 2. Tests globaux (80%)
+pytest --cov=src/laivelup --cov-fail-under=80
+
+# 3. Lint
 ruff check src/ tests/  # 0 errors
 
-# 3. Type check
+# 4. Type check
 mypy src/  # 0 errors
 
-# 4. Security
-bandit -r src/  # 0 issues
+# 5. Security
+bandit -r src/ -ll  # 0 issues
 pip-audit  # 0 high/critical
+```
 
-# 5. Install
-pip install . && laivelup --help
+### Manuelle (pre-commit)
+
+```bash
+# Exécuter tous les hooks
+pre-commit run --all-files
+
+# Exécuter un hook spécifique
+pre-commit run ruff --all-files
+pre-commit run pytest-fast --all-files
+```
+
+### Installation pre-commit
+
+```bash
+pip install pre-commit
+pre-commit install
 ```

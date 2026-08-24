@@ -19,6 +19,10 @@ pipx install laivelup
 
 # Via uv
 uv tool install laivelup
+
+# Dev (pre-commit obligatoire jusqu'au 31/08)
+pip install -e ".[dev]"
+pre-commit install
 ```
 
 ## Utilisation rapide
@@ -77,12 +81,18 @@ src/laivelup/
 
 tests/
     test_scoring.py     → tests unitaires du moteur
+    test_scoring_edge.py → tests edge cases du moteur (48 tests)
     test_cli.py         → tests du CLI
+    test_cli_extended.py → tests étendus du CLI (43 tests)
     test_interactive.py → tests du mode interrogate
     test_properties.py  → tests property-based (hypothesis)
     test_snapshots.py   → tests snapshot de sortie CLI
     test_team.py        → tests du Team Tracker
     test_team_rgpd.py   → tests RGPD (HMAC, XSS, opt-out)
+    test_report.py      → tests des rapports MD/HTML
+    test_encoding.py    → tests encodage cross-platform
+    test_schema_extended.py → tests validation JSON schema
+    security/           → tests sécurité (22 tests)
 
 exemples/           → profils de test JSON
 grille/             → grille officielle AIDD
@@ -141,7 +151,7 @@ laivelup team remove Equipe-Alpha bob-81b637d8 --purge
 |---------|-------|--------------|
 | Accuracy | 4/5 | `python scripts/calibrate.py --diff` |
 | Explainability | 4/5 | `--verbose` + rapports MD/HTML |
-| Robustness | 4/5 | 143+ tests, CI matrix 3OS × 3Python, session 3 audit (8.8/10) |
+| Robustness | 4/5 | 344+ tests, CI matrix 3OS × 3Python, session 3 audit (8.8/10) |
 | Reusability | 4/5 | MIT, `pip install`, hooks, EXTENDING.md |
 
 ### Vidéo démo

@@ -22,6 +22,7 @@ graph TD
 
     subgraph Config ["Config"]
         SCORING_DEF["scoring_defaults.py<br/>SCORING_DEFAULTS dict"]
+        PRE_COMMIT[".pre-commit-config.yaml<br/>ruff + mypy + pytest"]
     end
 
     subgraph Scripts ["Scripts"]
@@ -41,6 +42,7 @@ graph TD
         CI_YML[".github/workflows/ci.yml<br/>3OS × 3Py"]
         RELEASE[".github/workflows/release.yml<br/>Tag → PyPI"]
         AIDD_EVAL[".github/workflows/aidd-eval.yml<br/>PR eval"]
+        QUALITY_GATE[".github/workflows/pr-quality-gate.yml<br/>Quality gate PR"]
     end
 
     subgraph Profiles ["Profils"]
@@ -86,6 +88,7 @@ graph TD
     AIDD_EVAL --> GEN_PROFILE
     AIDD_EVAL --> CI_EVAL
     RELEASE --> VERSION
+    QUALITY_GATE --> PRE_COMMIT
 
     USER --> SCHEMA
     OFFICIAL --> CALIBRATE

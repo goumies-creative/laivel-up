@@ -87,8 +87,12 @@ Le slug original utilisait `sha256(name)[:8]` sans sel. Contre un espace de noms
 | `aidd_docs/.../audit/performance-deep-dive.md` | Deep dive performance — scalability assessment |
 | `aidd_docs/.../audit/architecture-deep-dive.md` | Deep dive architecture — 5 findings |
 | `aidd_docs/.../audit/maintainability-deep-dive.md` | Deep dive maintenabilité — 4 micro-findings |
+| `aidd_docs/.../audit/testing-deep-dive.md` | Deep dive tests — 8 gaps, score 8.5/10 |
 | `aidd_docs/.../2026_08_24_critique_complete_synthese.md` | Synthèse complète — score 8.8/10 |
 | `docs/reviews/core-modules-correctness-security-review.md` | CE review — 10 findings |
+| `docs/TESTING_CONFORMANCE.md` | Conformité testing — 8 gaps traités, patterns, checklist |
+| `.pre-commit-config.yaml` | Pre-commit hooks — ruff, mypy, pytest-fast + security |
+| `.github/workflows/pr-quality-gate.yml` | PR quality gate — ruff + mypy + bandit + coverage |
 | `docs/solutions/session-3-critique-audit-trail.md` | Ce document |
 
 ## Impact sur la soumission
@@ -99,8 +103,11 @@ La session 3 a transformé LAIVEL UP d'un "hackathon MVP" en "production-ready C
 - Architecture : schema validation en amont, verdict canonique, ADR scope
 - Tests : +22 tests sécurité/RGPD, isolation fixtures
 - Documentation : 6 deep dives + synthèse, trail complet
+- Automatisation : pre-commit hooks, PR quality gate, coverage exclusions
 
 **Score final** : 8.8/10 — prêt pour soumission.
+
+**Pre-commit** : obligatoire jusqu'au 31/08 (hackathon), puis optionnel.
 
 ---
 

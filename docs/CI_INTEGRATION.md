@@ -30,6 +30,15 @@ pip install laivelup
 | `pull_request` (opened, synchronize) | Évalue l'auteur de la PR |
 | `workflow_dispatch` | Évalue un utilisateur spécifique (input) |
 
+### Workflows
+
+| Workflow | Déclenchement | Contenu |
+|----------|---------------|---------|
+| `aidd-eval.yml` | PR (opened, synchronize) | Évaluation AIDD automatique |
+| `pr-quality-gate.yml` | PR (vers main) | Quality gate : ruff + mypy + bandit + coverage |
+| `ci.yml` | Push + PR | CI matrix 3OS × 3Python |
+| `release.yml` | Tag v* | Build + PyPI + GitHub Release |
+
 ### Permissions requises
 
 ```yaml
