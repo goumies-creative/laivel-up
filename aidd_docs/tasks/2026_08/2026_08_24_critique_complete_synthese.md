@@ -96,7 +96,7 @@
 | Date | Matin | Après-midi |
 |------|-------|------------|
 | **28/08** | Télécharger profils officiels (12h) | Calibration scoring + CI green |
-| **29/08** | Release workflow test + token | Benchmark CI upload |
+| **29/08** | Release workflow test + token | Benchmark CI upload **(descope si déborde — 344 tests + CI suffisent au critère robustness)** |
 | **30/08** | **J-1 FREEZE** — plus de features | Vidéo 2 min + README final |
 | **31/08 matin** | Tag v0.2.0-hackathon + push | Soumission |
 

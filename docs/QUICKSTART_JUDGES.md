@@ -87,5 +87,5 @@ laivel-up/
 |---------|---------------|--------------|
 | Accuracy | 4/5 | `calibrate.py --diff` |
 | Explainability | 4/5 | `--verbose` + rapports MD |
-| Robustness | 4/5 | 85+ tests, CI matrix 3OS x 3Py |
+| Robustness | 4/5 | 344 tests, CI matrix 3OS x 3Py, benchmarks p50/p95 (si disponibles) |
 | Reusability | 4/5 | MIT, `pip install`, hooks |

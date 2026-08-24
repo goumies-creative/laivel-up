@@ -39,6 +39,8 @@ Usage:
     agg demo.cast demo.gif --theme monokai --speed 2
     agg demo.cast demo.mp4 --theme monokai --speed 1.5
     ffmpeg -i demo.mp4 -vf "subtitles=demo.srt" demo-final.mp4
+
+Étapes: help → evaluate → interrogate (La Décodeuse) → team create → team export
 """
 ```
 
@@ -49,10 +51,10 @@ Usage:
 - 5 étapes séquentielles avec pauses (`time.sleep`) :
   1. `laivelup --help` (3s)
   2. `laivelup evaluate exemples/profil-maison-1.json --no-html` (10s)
-  3. `laivelup evaluate exemples/profil-maison-2.json --no-html` (10s)
+  3. `laivelup interrogate --max-turns 3` (15s) — **différenciateur La Décodeuse** : questions ciblées, refus de deviner
   4. `laivelup team create Demo "Alice,Bob"` (5s)
   5. `laivelup team export Demo --format md --out rapports` (5s)
-- Durée totale : ~35s de commandes + pauses = ~50s au total (marge pour narration)
+- Durée totale : ~50s de commandes + pauses = ~75s au total (marge pour narration sous-titres)
 - `subprocess.run(cmd, check=True)` + gestion erreurs propre
 - Compatible Windows (`sys.executable` ou `python` direct)
 - Commentaires每行 en français (docstrings)
