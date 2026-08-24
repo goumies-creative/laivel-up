@@ -25,6 +25,19 @@ from .scoring import evaluate
 from .utils import generate_team_salt, slug
 
 _DEFAULT_TEAM_DIR = Path(".laivelup") / "teams"
+_MAX_TEAM_NAME_LEN = 64
+_MAX_MEMBERS = 50
+_MAX_HISTORY = 100
+
+
+def _validate_team_name(name: str) -> None:
+    """Valide qu'un nom d'équipe est sûr pour un chemin de fichier."""
+    import re
+    if not name or not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", name):
+        raise ValueError(
+            f"Nom d'équipe invalide : '{name}'. "
+            "Seuls les caractères alphanumériques, tirets et underscores sont autorisés (1-64 chars)."
+        )
 
 
 def _team_path(name: str, path: Path | None = None) -> Path:
@@ -121,6 +134,9 @@ def _slug(name: str, salt: str | None = None) -> str:
 
 def create_team(name: str, member_names: list[str]) -> Team:
     """Crée une équipe avec des membres pseudo-anonymisés."""
+    _validate_team_name(name)
+    if len(member_names) > _MAX_MEMBERS:
+        raise ValueError(f"Trop de membres ({len(member_names)} > {_MAX_MEMBERS}).")
     team = Team(name=name)
     for member_name in member_names:
         team_slug = _slug(member_name, team.salt)
@@ -176,6 +192,9 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
         "confidence": snapshot.confidence,
         "opt_out": False,
     })
+    # S3: trim automatique pour éviter la croissance indéfinie
+    if len(team.history) > _MAX_HISTORY:
+        team.history = team.history[-_MAX_HISTORY:]
 
     return verdict
 
@@ -333,12 +352,13 @@ def export_html(team: Team, path: Path) -> Path:
             f'<td>{html_escape(level)}</td><td>{html_escape(entry["limiting_axis"] or "—")}</td></tr>'
         )
 
+    safe_name = html_escape(team.name)
     html = f"""<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Équipe · {team.name}</title>
+<title>Équipe · {safe_name}</title>
 <style>
   body {{ font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }}
   .badge {{ display: inline-block; padding: .2rem .5rem; border-radius: 999px; font-weight: 700; font-size: .85em; }}
@@ -351,7 +371,7 @@ def export_html(team: Team, path: Path) -> Path:
 </style>
 </head>
 <body>
-<h1>Équipe · {team.name}</h1>
+<h1>Équipe · {safe_name}</h1>
 <p><em>Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}</em></p>
 
 <h2>Membres</h2>

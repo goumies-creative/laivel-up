@@ -199,6 +199,20 @@ def test_normalize_projects_completed_negatif_refuse():
     assert verdict.data_errors
 
 
+def test_normalize_retries_inf_refuse():
+    """float('inf') doit être rejeté par la validation."""
+    verdict = evaluate(p(traces={"retries_after_fact": float("inf")}))
+    assert not verdict.decided
+    assert any("retries_after_fact" in e for e in verdict.data_errors)
+
+
+def test_normalize_parallel_projects_float_non_entier_refuse():
+    """3.7 doit être rejeté (B2 float rejection)."""
+    verdict = evaluate(p(traces={"parallel_projects": 3.7}))
+    assert not verdict.decided
+    assert any("parallel_projects" in e for e in verdict.data_errors)
+
+
 def test_confiance_basse_refuse():
     # Ratio non triangulé => confiance du global < 0.5 => refus.
     profile = p(

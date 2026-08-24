@@ -20,8 +20,12 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ### Changed
 - `team.py` : HMAC-SHA256 avec sel par équipe (slug résistant dictionnaire)
 - `team.py` : export_html échappe les caractères XSS (html.escape)
+- `team.py` : export_html échappe team.name dans le template HTML (S1)
 - `team.py` : confidence = limiting_axis (pas max)
 - `team.py` : opt_out persiste dans l'historique (B1)
+- `team.py` : trim automatique history (100 max, S3)
+- `team.py` : validation noms d'équipe alphanum + tirets (S2)
+- `team.py` : limite 50 membres par équipe (S5)
 - `scoring.py` : normalize_profile rejette les floats non-entiers (B2 breaking)
 - `scoring.py` : _questions_for utilise QUESTION_IDS
 - `cli.py` : _merge_answer match par chaîne exacte (plus fragile substring)
