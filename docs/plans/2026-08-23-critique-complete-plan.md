@@ -1,12 +1,15 @@
 # Plan Critique Complète — Goumies Creative LAIVEL UP
 
 > **Date** : 2026-08-23
-> **Mode** : Plan (read-only) — à exécuter via Claude Desktop (comptes gratuits)
+> **Mode** : Plan (read-only) — exécuté via Claude Desktop + OpenCode
 > **Projet** : `C:\Users\Romy\Desktop\GoumiesLand\GoumiesCreative-Agency\hackathons\goumies-creative-laivel-up`
+> **Dernière mise à jour** : 2026-08-24 — état réel (toutes sessions complétées)
 
 ---
 
 ## [x] 1. Audit Global — 7 Piliers AIDD
+
+> **Fait** — Session 1 (Claude Desktop). Sortie : `aidd_docs/tasks/2026_08/2026_08_22_audit/`
 
 | # | Skill | Type | Emplacement Local | Sortie |
 |---|-------|------|-------------------|--------|
@@ -23,7 +26,9 @@
 
 ---
 
-## [-] 2. Code Review Multi-Persona — Compound Engineering
+## [x] 2. Code Review Multi-Persona — Compound Engineering
+
+> **Fait** — Session 2 (Claude Desktop). Sortie : `docs/reviews/core-modules-correctness-security-review.md`
 
 | # | Skill | Type | Emplacement Local | Personas Sélectionnées (auto) |
 |---|-------|------|-------------------|-------------------------------|
@@ -45,7 +50,10 @@
 
 ---
 
-## 3. Deep Dives Spécialisés — Agents CE (sessions séparées)
+## [x] 3. Deep Dives Spécialisés — Agents CE (sessions séparées)
+
+> **Fait** — Sessions 3-5 (OpenCode). 6 deep dives livrés, score global 8.8/10.
+> Sortie : `aidd_docs/tasks/2026_08/2026_08_24_audit/` (security, adversarial, performance, architecture, maintainability, testing) + `aidd_docs/tasks/2026_08/2026_08_24_critique_complete_synthese.md`
 
 | # | Agent | Type | Emplacement Local | Focus |
 |---|-------|------|-------------------|-------|
@@ -65,7 +73,9 @@
 
 ---
 
-## 4. Documentation & Architecture Review
+## [x] 4. Documentation & Architecture Review
+
+> **Fait** — `ce-doc-review` appliqué aux 5 plans actifs. Sortie : `docs/reviews/2026-08-24-ce-doc-review-plans-actifs.md`
 
 | # | Skill/Agent | Type | Emplacement Local | Focus |
 |---|-------------|------|-------------------|-------|
@@ -83,7 +93,9 @@
 
 ---
 
-## 5. Synthèse & Plan d'Action
+## [x] 5. Synthèse & Plan d'Action
+
+> **Fait** — Consolidation live dans OpenCode. Sortie : `docs/solutions/session-3-critique-audit-trail.md` + `aidd_docs/tasks/2026_08/2026_08_24_critique_complete_synthese.md`
 
 | # | Activité | Type | Emplacement | Livrable |
 |---|----------|------|-------------|----------|
@@ -147,6 +159,22 @@ aidd_docs/tasks/2026_08/
 | **3** | 3×15 min | 3 agents parallèles : security-sentinel, adversarial-reviewer, performance-oracle |
 | **4** | 20 min | `ce-doc-review` + architecture-strategist sur `architecture.mmd` |
 | **5** | 30 min | Synthèse + `CRITIQUE_CONSOLIDEE_2026_08_23.md` |
+
+---
+
+## Résultat réel
+
+| Session | Statut | Sortie |
+|---------|--------|--------|
+| 1. Audit 7 piliers | ✅ Done | `aidd_docs/tasks/2026_08/2026_08_22_audit/` |
+| 2. CE Code Review | ✅ Done | `docs/reviews/core-modules-correctness-security-review.md` |
+| 3-5. Deep Dives | ✅ Done | 6 deep dives (security 9/10, architecture 9/10, maintainability 9/10, testing 8.5/10, adversarial, performance) |
+| 4. Doc Review | ✅ Done | `docs/reviews/2026-08-24-ce-doc-review-plans-actifs.md` |
+| 5. Synthèse | ✅ Done | Score global **8.8/10** |
+
+**Durée réelle** : ~4 sessions (2h30) au lieu de 5 prévues — gain via OpenCode multi-agents.
+
+**Fichiers produits** : 14 fichiers, commits `456fb09` → `b5b1232`.
 
 ---
 

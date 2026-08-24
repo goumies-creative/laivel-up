@@ -1,17 +1,21 @@
 """Applique un patch scoring basé sur le diagnostic dégradé.
 
 Usage:
-    python scripts/apply_calibration_fix.py \
-        --scenario A \
-        --diagnostic diagnostic.json \
-        --thresholds expected.json \
+    python scripts/apply_calibration_fix.py \\
+        --scenario A \\
+        --diagnostic diagnostic.json \\
+        --thresholds expected.json \\
         --dry-run
+
+Safety: --apply creates a .bak backup and validates syntax before declaring success.
 """
 
 from __future__ import annotations
 
+import ast
 import json
 import re
+import shutil
 import sys
 import typing
 from dataclasses import dataclass
@@ -109,8 +113,35 @@ def apply_scenario_a(
                 changes.append(f'RETRIES_PER_LEVEL.{sub_key}: {old_val} -> {new_val}')
 
     if not dry_run and changes:
+        # Backup before patching
+        backup_path = scoring_defaults_path.with_suffix('.py.bak')
+        shutil.copy2(scoring_defaults_path, backup_path)
+        changes.insert(0, f'Backup created: {backup_path}')
+
         scoring_defaults_path.write_text(current_source, encoding='utf-8')
-        changes.insert(0, f'Patched {scoring_defaults_path}')
+        changes.insert(1, f'Patched {scoring_defaults_path}')
+
+        # Validate syntax post-patch
+        try:
+            ast.parse(current_source)
+            changes.insert(2, 'Syntax validation: OK')
+        except SyntaxError as e:
+            # Restore backup on syntax error
+            shutil.copy2(backup_path, scoring_defaults_path)
+            errors.append(f'Syntax error after patch — backup restored: {e}')
+            return FixResult(scenario='A', applied=False, changes=changes, errors=errors)
+
+        # Validate import works
+        try:
+            import importlib
+
+            import laivelup.scoring_defaults
+
+            importlib.reload(laivelup.scoring_defaults)
+            changes.insert(3, 'Import validation: OK')
+        except Exception as e:
+            errors.append(f'Import validation failed (syntax OK, but import broken): {e}')
+            # Don't restore — syntax is valid, likely a runtime issue
 
     if not changes:
         changes.append('No changes needed — SCORING_DEFAULTS already matches expected')

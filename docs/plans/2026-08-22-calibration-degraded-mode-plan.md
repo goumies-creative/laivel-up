@@ -1,11 +1,19 @@
 ---
 type: plan
 date: 2026-08-22
-status: in-progress
+status: superseded
+superseded_by: 2026-08-22-plan-b-calibration-implementation-plan.md
 spec_path: aidd_docs/tasks/2026_08/2026_08_22_calibration-degraded-mode/spec.md
 ---
 
-# Plan — Mode dégradé calibration (Plan B)
+# Plan — Mode dégradé calibration (Plan B) ⚠️ OBSOLÈTE
+
+> **Status : superseded** — Ce plan a été remplacé par la paire unifiée :
+> - `2026-08-22-plan-b-calibration-brainstorm-plan.md` (requirements)
+> - `2026-08-22-plan-b-calibration-implementation-plan.md` (IU1-IU6)
+>
+> Les étapes S1-S5 ci-dessous ne reflètent pas l'ordre réel d'exécution.
+> **Référence faisante : IU1-IU6.**
 
 ## Phase S1 — Scripts squelettes (2h)
 

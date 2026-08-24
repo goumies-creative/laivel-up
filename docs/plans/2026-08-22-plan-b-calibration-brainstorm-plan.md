@@ -40,8 +40,8 @@ Extraire les seuils hardcoded de `scoring.py` (RETRIES_PER_LEVEL, _SIZE_LEVEL, C
 
 **Apply calibration fix**
 
-- **R6** — `apply_calibration_fix.py` lit `diagnostic.json` et patche `SCORING_DEFAULTS` dans `scoring.py` pour les scénarios A (patch seuils) et B (réécrire mapping).
-- **R7** — `--dry-run` par défaut : affiche les changements sans les appliquer. `--apply` : applique réellement.
+- **R6** — `apply_calibration_fix.py` lit `diagnostic.json` et patche `SCORING_DEFAULTS` dans `scoring.py` pour les scénarios A (patch seuils) et B (réécrire mapping). **Safety** : backup `.bak` automatique avant patch, validation syntaxe (`ast.parse`) + import post-patch. En cas d'erreur syntaxe → restauration backup automatique.
+- **R7** — `--dry-run` par défaut : affiche les changements sans les appliquer. `--apply` : applique réellement (avec backup + validation).
 - **R8** — Source des seuils : auto-depuis-diagnostic par défaut, `--thresholds expected.json` en option pour fournir des seuils manuellement.
 
 **Release automation**
