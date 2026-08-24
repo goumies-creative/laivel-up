@@ -14,10 +14,10 @@ from laivelup.report import render_html, render_markdown, write_reports
 
 def _make_verdict(**kwargs) -> Verdict:
     defaults = dict(
-        name="test-profile",
+        name='test-profile',
         level=Level.BLUE,
         axis_scores=[],
-        limiting_axis="size",
+        limiting_axis='size',
     )
     defaults.update(kwargs)
     return Verdict(**defaults)
@@ -30,82 +30,83 @@ class TestRenderMarkdown:
     def test_decided_level(self):
         v = _make_verdict(level=Level.GOLD)
         md = render_markdown(v)
-        assert "Gold" in md
-        assert "Niveau" in md
+        assert 'Gold' in md
+        assert 'Niveau' in md
 
     def test_undecided(self):
         v = _make_verdict(level=None, limiting_axis=None)
         md = render_markdown(v)
-        assert "non déterminable" in md
+        assert 'non déterminable' in md
 
     def test_data_errors(self):
-        v = _make_verdict(level=None, data_errors=["traces must be a dict"])
+        v = _make_verdict(level=None, data_errors=['traces must be a dict'])
         md = render_markdown(v)
-        assert "Données invalides" in md
-        assert "traces must be a dict" in md
+        assert 'Données invalides' in md
+        assert 'traces must be a dict' in md
 
     def test_axis_scores(self):
         v = _make_verdict(
             axis_scores=[
-                AxisScore(axe="size", level=Level.BLUE, confidence=0.8, evidence=["3 PR S"]),
+                AxisScore(axe='size', level=Level.BLUE, confidence=0.8, evidence=['3 PR S']),
             ]
         )
         md = render_markdown(v)
-        assert "Taille" in md
-        assert "80%" in md
+        assert 'Taille' in md
+        assert '80%' in md
 
     def test_axis_with_variance(self):
         v = _make_verdict(
             axis_scores=[
-                AxisScore(axe="size", level=Level.BLUE, confidence=0.8,
-                          evidence=["3 PR S"], variance="pic XL isolé"),
+                AxisScore(
+                    axe='size',
+                    level=Level.BLUE,
+                    confidence=0.8,
+                    evidence=['3 PR S'],
+                    variance='pic XL isolé',
+                ),
             ]
         )
         md = render_markdown(v)
-        assert "variance" in md
-        assert "pic XL" in md
+        assert 'variance' in md
+        assert 'pic XL' in md
 
     def test_red_flags_with_question(self):
         v = _make_verdict(
             red_flags=[
                 RedFlag(
                     severite=2,
-                    titre="Test flag",
-                    constat="constat test",
-                    source="source test",
-                    question="Question test ?",
+                    titre='Test flag',
+                    constat='constat test',
+                    source='source test',
+                    question='Question test ?',
                 )
             ]
         )
         md = render_markdown(v)
-        assert "Test flag" in md
-        assert "Question test" in md
+        assert 'Test flag' in md
+        assert 'Question test' in md
 
     def test_red_flags_without_question(self):
-        v = _make_verdict(
-            red_flags=[
-                RedFlag(severite=1, titre="Flag", constat="x", source="y")
-            ]
-        )
+        v = _make_verdict(red_flags=[RedFlag(severite=1, titre='Flag', constat='x', source='y')])
         md = render_markdown(v)
-        assert "Flag" in md
+        assert 'Flag' in md
 
     def test_next_steps(self):
-        v = _make_verdict(next_steps=["Passer à L", "Maintenir le niveau"])
+        v = _make_verdict(next_steps=['Passer à L', 'Maintenir le niveau'])
         md = render_markdown(v)
-        assert "Passer à L" in md
-        assert "Maintenir le niveau" in md
+        assert 'Passer à L' in md
+        assert 'Maintenir le niveau' in md
 
     def test_transparency_section(self):
         v = _make_verdict()
         md = render_markdown(v)
-        assert "Transparence" in md
-        assert "neurotype" in md
+        assert 'Transparence' in md
+        assert 'neurotype' in md
 
     def test_limiting_axis(self):
-        v = _make_verdict(limiting_axis="harness")
+        v = _make_verdict(limiting_axis='harness')
         md = render_markdown(v)
-        assert "harness" in md
+        assert 'harness' in md
 
 
 # --- render_html -------------------------------------------------------
@@ -115,73 +116,75 @@ class TestRenderHtml:
     def test_decided_ok(self):
         v = _make_verdict(level=Level.GREEN)
         html = render_html(v)
-        assert "ok" in html
-        assert "Green" in html
+        assert 'ok' in html
+        assert 'Green' in html
 
     def test_undecided_ko(self):
         v = _make_verdict(level=None, limiting_axis=None)
         html = render_html(v)
-        assert "ko" in html
-        assert "insuffisantes" in html
+        assert 'ko' in html
+        assert 'insuffisantes' in html
 
     def test_data_errors_ko(self):
-        v = _make_verdict(level=None, data_errors=["erreur test"])
+        v = _make_verdict(level=None, data_errors=['erreur test'])
         html = render_html(v)
-        assert "ko" in html
-        assert "Données invalides" in html
+        assert 'ko' in html
+        assert 'Données invalides' in html
 
     def test_axis_table(self):
         v = _make_verdict(
             axis_scores=[
-                AxisScore(axe="size", level=Level.RED, confidence=0.4, evidence=["1 PR S"]),
+                AxisScore(axe='size', level=Level.RED, confidence=0.4, evidence=['1 PR S']),
             ]
         )
         html = render_html(v)
-        assert "Taille" in html
-        assert "40%" in html
+        assert 'Taille' in html
+        assert '40%' in html
 
     def test_axis_with_variance(self):
         v = _make_verdict(
             axis_scores=[
-                AxisScore(axe="size", level=Level.BLUE, confidence=0.8,
-                          evidence=["3 PR S"], variance="pic XL"),
+                AxisScore(
+                    axe='size',
+                    level=Level.BLUE,
+                    confidence=0.8,
+                    evidence=['3 PR S'],
+                    variance='pic XL',
+                ),
             ]
         )
         html = render_html(v)
-        assert "variance" in html
+        assert 'variance' in html
 
     def test_red_flags_html(self):
         v = _make_verdict(
             red_flags=[
-                RedFlag(severite=2, titre="Flag", constat="x", source="y",
-                        question="Question ?")
+                RedFlag(severite=2, titre='Flag', constat='x', source='y', question='Question ?')
             ]
         )
         html = render_html(v)
-        assert "Flag" in html
-        assert "Question" in html
+        assert 'Flag' in html
+        assert 'Question' in html
 
     def test_red_flags_no_question(self):
-        v = _make_verdict(
-            red_flags=[RedFlag(severite=1, titre="F", constat="x", source="y")]
-        )
+        v = _make_verdict(red_flags=[RedFlag(severite=1, titre='F', constat='x', source='y')])
         html = render_html(v)
-        assert "F" in html
+        assert 'F' in html
 
     def test_next_steps_html(self):
-        v = _make_verdict(next_steps=["Étape 1"])
+        v = _make_verdict(next_steps=['Étape 1'])
         html = render_html(v)
-        assert "Étape 1" in html
+        assert 'Étape 1' in html
 
     def test_transparency_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert "Transparence" in html
+        assert 'Transparence' in html
 
     def test_no_limiting_axis(self):
         v = _make_verdict(limiting_axis=None)
         html = render_html(v)
-        assert "Axe plancher" not in html
+        assert 'Axe plancher' not in html
 
 
 # --- write_reports -----------------------------------------------------
@@ -194,7 +197,7 @@ class TestWriteReports:
         assert md.exists()
         assert html is not None
         assert html.exists()
-        assert "Verdict" in md.read_text(encoding="utf-8")
+        assert 'Verdict' in md.read_text(encoding='utf-8')
 
     def test_write_md_only(self, tmp_path):
         v = _make_verdict()
@@ -203,6 +206,6 @@ class TestWriteReports:
         assert html is None
 
     def test_slug_in_filename(self, tmp_path):
-        v = _make_verdict(name="Mon Profil")
+        v = _make_verdict(name='Mon Profil')
         md, _ = write_reports(v, tmp_path)
-        assert "mon-profil" in md.name.lower()
+        assert 'mon-profil' in md.name.lower()

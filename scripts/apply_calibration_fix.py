@@ -7,6 +7,7 @@ Usage:
         --thresholds expected.json \
         --dry-run
 """
+
 from __future__ import annotations
 
 import json
@@ -16,7 +17,7 @@ import typing
 from dataclasses import dataclass
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'src'))
 from laivelup.scoring_defaults import SCORING_DEFAULTS
 
 
@@ -73,8 +74,13 @@ def apply_scenario_a(
     )
     current_source = scoring_defaults_path.read_text(encoding='utf-8')
 
-    for key in ('CONFIDENCE_THRESHOLD', 'CONFIDENCE_PEAK', 'CONFIDENCE_MEDIUM',
-                'CONFIDENCE_LOW', 'CONFIDENCE_HARNESS_ONLY'):
+    for key in (
+        'CONFIDENCE_THRESHOLD',
+        'CONFIDENCE_PEAK',
+        'CONFIDENCE_MEDIUM',
+        'CONFIDENCE_LOW',
+        'CONFIDENCE_HARNESS_ONLY',
+    ):
         old_val = SCORING_DEFAULTS.get(key)
         new_val = expected.get(key)
         if new_val is not None and old_val != new_val:
@@ -119,10 +125,10 @@ def apply_scenario_b(diagnostic: dict, dry_run: bool = True) -> FixResult:
     NOT YET IMPLEMENTED — raises NotImplementedError.
     """
     raise NotImplementedError(
-        "Scenario B (rewrite mapping) requires manual setup:\n"
-        "1. Run: python scripts/calibrate.py --profiles <official_profiles_dir>\n"
-        "2. Review generated expected.json\n"
-        "3. Run: python scripts/apply_calibration_fix.py --scenario A --thresholds expected.json --apply"
+        'Scenario B (rewrite mapping) requires manual setup:\n'
+        '1. Run: python scripts/calibrate.py --profiles <official_profiles_dir>\n'
+        '2. Review generated expected.json\n'
+        '3. Run: python scripts/apply_calibration_fix.py --scenario A --thresholds expected.json --apply'
     )
 
 
@@ -133,10 +139,10 @@ def apply_scenario_c(diagnostic: dict, dry_run: bool = True) -> FixResult:
     NOT YET IMPLEMENTED — raises NotImplementedError.
     """
     raise NotImplementedError(
-        "Scenario C (deliver as-is) requires manual documentation:\n"
+        'Scenario C (deliver as-is) requires manual documentation:\n'
         "1. Add 'Known Gaps' section to METHODE.md\n"
         "2. Add 'Known Gaps' section to README.md\n"
-        "3. Document specific axis limitations in reports"
+        '3. Document specific axis limitations in reports'
     )
 
 
@@ -154,16 +160,24 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description='Applique un patch scoring basé sur le diagnostic dégradé',
     )
-    parser.add_argument('--scenario', choices=['A', 'B', 'C'], required=True,
-                        help='Scénario à appliquer')
-    parser.add_argument('--diagnostic', type=Path, required=True,
-                        help='Chemin vers diagnostic.json')
-    parser.add_argument('--dry-run', action='store_true', default=True,
-                        help='Mode dry-run (par défaut)')
-    parser.add_argument('--apply', action='store_true',
-                        help='Appliquer réellement (désactive dry-run)')
-    parser.add_argument('--thresholds', type=Path, default=None,
-                        help='Chemin vers expected.json avec seuils attendus')
+    parser.add_argument(
+        '--scenario', choices=['A', 'B', 'C'], required=True, help='Scénario à appliquer'
+    )
+    parser.add_argument(
+        '--diagnostic', type=Path, required=True, help='Chemin vers diagnostic.json'
+    )
+    parser.add_argument(
+        '--dry-run', action='store_true', default=True, help='Mode dry-run (par défaut)'
+    )
+    parser.add_argument(
+        '--apply', action='store_true', help='Appliquer réellement (désactive dry-run)'
+    )
+    parser.add_argument(
+        '--thresholds',
+        type=Path,
+        default=None,
+        help='Chemin vers expected.json avec seuils attendus',
+    )
 
     args = parser.parse_args()
 

@@ -11,6 +11,7 @@ Usage:
         --format json|table|markdown \
         --strict
 """
+
 from __future__ import annotations
 
 import json
@@ -20,7 +21,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'src'))
 from laivelup.scoring_defaults import SCORING_DEFAULTS
 
 
@@ -118,13 +119,15 @@ def diagnose(
                 if abs(delta.delta) > 1:
                     red_flags.append(f'{axis}_mismatch')
 
-            results.append(ProfileResult(
-                profile=profile_name,
-                declared=declared,
-                computed=computed,
-                axis_deltas=axis_deltas,
-                red_flags=red_flags,
-            ))
+            results.append(
+                ProfileResult(
+                    profile=profile_name,
+                    declared=declared,
+                    computed=computed,
+                    axis_deltas=axis_deltas,
+                    red_flags=red_flags,
+                )
+            )
         except Exception as exc:
             if strict:
                 raise
@@ -201,16 +204,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description='Mode dégradé calibration — diagnostic brut',
     )
-    parser.add_argument('--official-dir', type=Path, required=True,
-                        help='Directory containing official profiles')
-    parser.add_argument('--expected', type=Path, required=True,
-                        help='Path to expected.json')
-    parser.add_argument('--output', type=Path, default=None,
-                        help='Output file (default: stdout)')
-    parser.add_argument('--format', choices=['json', 'table', 'markdown'],
-                        default='json', help='Output format')
-    parser.add_argument('--strict', action='store_true',
-                        help='Fail fast on first invalid profile (default: graceful)')
+    parser.add_argument(
+        '--official-dir', type=Path, required=True, help='Directory containing official profiles'
+    )
+    parser.add_argument('--expected', type=Path, required=True, help='Path to expected.json')
+    parser.add_argument('--output', type=Path, default=None, help='Output file (default: stdout)')
+    parser.add_argument(
+        '--format', choices=['json', 'table', 'markdown'], default='json', help='Output format'
+    )
+    parser.add_argument(
+        '--strict',
+        action='store_true',
+        help='Fail fast on first invalid profile (default: graceful)',
+    )
 
     args = parser.parse_args()
 

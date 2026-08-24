@@ -25,29 +25,29 @@ class Level(IntEnum):
 
 
 LEVEL_LABELS = {
-    Level.WHITE: "❖ White",
-    Level.RED: "🔺 Red",
-    Level.BLUE: "🔹 Blue",
-    Level.GREEN: "🟢 Green",
-    Level.COPPER: "🥉 Copper",
-    Level.SILVER: "🥈 Silver",
-    Level.GOLD: "🥇 Gold",
+    Level.WHITE: '❖ White',
+    Level.RED: '🔺 Red',
+    Level.BLUE: '🔹 Blue',
+    Level.GREEN: '🟢 Green',
+    Level.COPPER: '🥉 Copper',
+    Level.SILVER: '🥈 Silver',
+    Level.GOLD: '🥇 Gold',
 }
 
-AXES = ("size", "harness", "intervention", "parallel")
+AXES = ('size', 'harness', 'intervention', 'parallel')
 
 # Display labels for axes (technical key unchanged: "parallel").
 AXIS_LABELS = {
-    "size": "Taille",
-    "harness": "Harness",
-    "intervention": "Intervention",
-    "parallel": "En parallèle",
+    'size': 'Taille',
+    'harness': 'Harness',
+    'intervention': 'Intervention',
+    'parallel': 'En parallèle',
 }
 
 
 def level_label(level: Level | None) -> str:
     """Libellé d'un niveau, « — » si aucun niveau (cellule vide, comme la grille)."""
-    return LEVEL_LABELS[level] if level is not None else "—"
+    return LEVEL_LABELS[level] if level is not None else '—'
 
 
 def axis_label(axe: str) -> str:

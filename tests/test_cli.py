@@ -21,18 +21,20 @@ runner = CliRunner()
 
 
 def test_cli_doc_alias_evaluate_exit_0():
-    r = runner.invoke(app, ["evaluate", str(REPO / "exemples" / "profil-maison-1.json"), "--no-html"])
+    r = runner.invoke(
+        app, ['evaluate', str(REPO / 'exemples' / 'profil-maison-1.json'), '--no-html']
+    )
     assert r.exit_code == 0
 
 
 def test_cli_no_such_file_message_aimable():
-    r = runner.invoke(app, ["evaluate", "exemples/introuvable.json", "--no-html"])
+    r = runner.invoke(app, ['evaluate', 'exemples/introuvable.json', '--no-html'])
     assert r.exit_code != 0
-    assert "introuvable" in r.output.lower() or "trouv" in r.output.lower()
+    assert 'introuvable' in r.output.lower() or 'trouv' in r.output.lower()
 
 
 def test_progress_for_axis_retourne_liste_de_str():
-    for axe in ("size", "harness", "intervention", "parallel"):
+    for axe in ('size', 'harness', 'intervention', 'parallel'):
         out = progress_for_axis(axe, Level.RED)
         assert isinstance(out, list) and out
         assert all(isinstance(x, str) for x in out)
@@ -44,8 +46,8 @@ def test_pic_iso_dominant_refuse_pas_de_niveau_arbitraire():
     from laivelup.model import ProfileData
     from laivelup.scoring import evaluate
 
-    profile = ProfileData(name="pic", traces={"pr_sizes": ["XL", "S", "L"]})
+    profile = ProfileData(name='pic', traces={'pr_sizes': ['XL', 'S', 'L']})
     verdict = evaluate(profile)
     assert not verdict.decided
-    taille = next(a for a in verdict.axis_scores if a.axe == "size")
+    taille = next(a for a in verdict.axis_scores if a.axe == 'size')
     assert taille.confidence < 0.5

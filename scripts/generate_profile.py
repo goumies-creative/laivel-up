@@ -23,60 +23,74 @@ from pathlib import Path
 def _git(repo: Path, args: list[str]) -> str:
     """Exécute une commande git dans le repo et retourne la sortie."""
     result = subprocess.run(
-        ["git", "-C", str(repo), *args],
+        ['git', '-C', str(repo), *args],
         capture_output=True,
         text=True,
         timeout=30,
     )
     if result.returncode != 0:
-        return ""
+        return ''
     return result.stdout.strip()
 
 
 def _detect_pr_sizes(repo: Path, user: str) -> list[str]:
     """Classe les PRs de l'utilisateur par taille (S/M/L/XL) via un seul appel git."""
-    log = _git(repo, [
-        "log", "--author=" + user, "--merges", "--since=1 year ago",
-        "-m", "--first-parent", "--format=@@%H", "--shortstat",
-    ])
+    log = _git(
+        repo,
+        [
+            'log',
+            '--author=' + user,
+            '--merges',
+            '--since=1 year ago',
+            '-m',
+            '--first-parent',
+            '--format=@@%H',
+            '--shortstat',
+        ],
+    )
     if not log:
         return []
 
     sizes: list[str] = []
     current_files = 0
     for line in log.splitlines():
-        if line.startswith("@@"):
+        if line.startswith('@@'):
             if current_files:
                 sizes.append(_bucket_size(current_files))
             current_files = 0
         else:
-            match = re.search(r"(\d+) files? changed", line)
+            match = re.search(r'(\d+) files? changed', line)
             if match:
                 current_files = int(match.group(1))
     if current_files:
         sizes.append(_bucket_size(current_files))
 
-    return sizes[:50] if sizes else ["M"]
+    return sizes[:50] if sizes else ['M']
 
 
 def _bucket_size(total: int) -> str:
     """Convertit un nombre de fichiers modifiés en taille de PR (S/M/L/XL)."""
     if total <= 3:
-        return "S"
+        return 'S'
     if total <= 10:
-        return "M"
+        return 'M'
     if total <= 30:
-        return "L"
-    return "XL"
+        return 'L'
+    return 'XL'
 
 
 def _detect_context_versioned(repo: Path) -> bool:
     """Vérifie la présence de fichiers de contexte projet."""
     context_files = [
-        "CLAUDE.md", "AGENTS.md", ".cursorrules",
-        ".github/instructions/", "docs/CONCEPTS.md",
-        "docs/ARCHITECTURE.md", ".copilot/",
-        "CLAUDE.local.md", "CONVENTIONS.md",
+        'CLAUDE.md',
+        'AGENTS.md',
+        '.cursorrules',
+        '.github/instructions/',
+        'docs/CONCEPTS.md',
+        'docs/ARCHITECTURE.md',
+        '.copilot/',
+        'CLAUDE.local.md',
+        'CONVENTIONS.md',
     ]
     return any((repo / f).exists() for f in context_files)
 
@@ -84,9 +98,14 @@ def _detect_context_versioned(repo: Path) -> bool:
 def _detect_agent_rules_versioned(repo: Path) -> bool:
     """Vérifie la présence de règles/agents versionnés."""
     rules_paths = [
-        ".github/workflows/", ".gitlab-ci.yml",
-        ".agents/", ".claude/", ".opencode/",
-        "skills/", "prompts/", ".aidd/",
+        '.github/workflows/',
+        '.gitlab-ci.yml',
+        '.agents/',
+        '.claude/',
+        '.opencode/',
+        'skills/',
+        'prompts/',
+        '.aidd/',
     ]
     for p in rules_paths:
         path = repo / p
@@ -98,38 +117,51 @@ def _detect_agent_rules_versioned(repo: Path) -> bool:
 def _detect_retry_loops(repo: Path) -> bool:
     """Détecte les boucles de relance (CI re-runs, retry patterns)."""
     ci_files = [
-        ".github/workflows/", ".gitlab-ci.yml",
-        "Makefile", "justfile", "Taskfile.yml",
+        '.github/workflows/',
+        '.gitlab-ci.yml',
+        'Makefile',
+        'justfile',
+        'Taskfile.yml',
     ]
     for f in ci_files:
         path = repo / f
         if path.is_dir():
-            for workflow in path.glob("*.yml"):
-                content = workflow.read_text(encoding="utf-8", errors="ignore")
-                if re.search(r"retry|rerun|re-run|continue-on-error|timeout-minutes", content, re.I):
+            for workflow in path.glob('*.yml'):
+                content = workflow.read_text(encoding='utf-8', errors='ignore')
+                if re.search(
+                    r'retry|rerun|re-run|continue-on-error|timeout-minutes', content, re.I
+                ):
                     return True
         elif path.is_file():
-            content = path.read_text(encoding="utf-8", errors="ignore")
-            if re.search(r"retry|rerun|re-run", content, re.I):
+            content = path.read_text(encoding='utf-8', errors='ignore')
+            if re.search(r'retry|rerun|re-run', content, re.I):
                 return True
     return False
 
 
 def _detect_retries_after_fact(repo: Path, user: str) -> tuple[float | None, bool]:
     """Estime le ratio de reprise post-merge via commits de fix après merge."""
-    log = _git(repo, [
-        "log", "--author=" + user, "--format=%H %s",
-        "--since=1 year ago", "--all", "-n", "100",
-    ])
+    log = _git(
+        repo,
+        [
+            'log',
+            '--author=' + user,
+            '--format=%H %s',
+            '--since=1 year ago',
+            '--all',
+            '-n',
+            '100',
+        ],
+    )
     if not log:
         return None, False
 
     lines = log.splitlines()
-    fix_patterns = re.compile(r"\b(fix|correct|amend|revert|patch|oops)\b", re.I)
+    fix_patterns = re.compile(r'\b(fix|correct|amend|revert|patch|oops)\b', re.I)
     total = 0
     fixes = 0
     for line in lines:
-        parts = line.split(" ", 1)
+        parts = line.split(' ', 1)
         if len(parts) < 2:
             continue
         msg = parts[1]
@@ -146,18 +178,29 @@ def _detect_retries_after_fact(repo: Path, user: str) -> tuple[float | None, boo
 
 def _detect_parallel_projects(repo: Path, user: str) -> tuple[int, int]:
     """Compte les projets parallèles et complétés via branches."""
-    branches = _git(repo, [
-        "branch", "--format=%(refname:short)", "--merged",
-    ])
-    all_branches = _git(repo, [
-        "branch", "--format=%(refname:short)",
-    ])
+    branches = _git(
+        repo,
+        [
+            'branch',
+            '--format=%(refname:short)',
+            '--merged',
+        ],
+    )
+    all_branches = _git(
+        repo,
+        [
+            'branch',
+            '--format=%(refname:short)',
+        ],
+    )
 
-    active = [b for b in (all_branches or "").splitlines()
-              if b and not b.startswith("main") and not b.startswith("master")
-              and "HEAD" not in b]
+    active = [
+        b
+        for b in (all_branches or '').splitlines()
+        if b and not b.startswith('main') and not b.startswith('master') and 'HEAD' not in b
+    ]
 
-    merged = set((branches or "").splitlines())
+    merged = set((branches or '').splitlines())
 
     parallel = max(len(active), 1)
     completed = len([b for b in active if b in merged])
@@ -167,13 +210,13 @@ def _detect_parallel_projects(repo: Path, user: str) -> tuple[int, int]:
 
 def _detect_agents_autonomous(repo: Path) -> bool:
     """Détecte les workflows autonomes (schedule, dispatch)."""
-    workflows_dir = repo / ".github" / "workflows"
+    workflows_dir = repo / '.github' / 'workflows'
     if not workflows_dir.is_dir():
         return False
 
-    for workflow in workflows_dir.glob("*.yml"):
-        content = workflow.read_text(encoding="utf-8", errors="ignore")
-        if re.search(r"schedule|workflow_dispatch|repository_dispatch", content):
+    for workflow in workflows_dir.glob('*.yml'):
+        content = workflow.read_text(encoding='utf-8', errors='ignore')
+        if re.search(r'schedule|workflow_dispatch|repository_dispatch', content):
             return True
     return False
 
@@ -181,18 +224,21 @@ def _detect_agents_autonomous(repo: Path) -> bool:
 def _detect_prompts(repo: Path) -> bool:
     """Détecte l'utilisation de prompts structurés (fallback)."""
     prompts_files = [
-        "prompts/", ".prompts/", "prompt.md",
-        ".github/copilot-instructions.md",
-        ".cursorrules", ".aiderignore",
+        'prompts/',
+        '.prompts/',
+        'prompt.md',
+        '.github/copilot-instructions.md',
+        '.cursorrules',
+        '.aiderignore',
     ]
     return any((repo / f).exists() for f in prompts_files)
 
 
 def _sanitize_email(value: str) -> str:
     """Nettoie un email en le remplaçant par un slug anonyme."""
-    if "@" in value:
-        local = value.split("@")[0]
-        return re.sub(r"[^a-z0-9]", "-", local.lower()).strip("-") or "user"
+    if '@' in value:
+        local = value.split('@')[0]
+        return re.sub(r'[^a-z0-9]', '-', local.lower()).strip('-') or 'user'
     return value
 
 
@@ -212,36 +258,36 @@ def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
 
     traces = {}
     if pr_sizes:
-        traces["pr_sizes"] = pr_sizes
-    traces["context_versioned"] = context
-    traces["agent_rules_versioned"] = rules
-    traces["retry_loops"] = loops
+        traces['pr_sizes'] = pr_sizes
+    traces['context_versioned'] = context
+    traces['agent_rules_versioned'] = rules
+    traces['retry_loops'] = loops
     if retries is not None:
-        traces["retries_after_fact"] = retries
-    traces["retries_triangulated"] = triangulated
-    traces["parallel_projects"] = parallel
-    traces["projects_completed"] = completed
-    traces["agents_autonomous"] = autonomous
-    traces["prompts"] = prompts
+        traces['retries_after_fact'] = retries
+    traces['retries_triangulated'] = triangulated
+    traces['parallel_projects'] = parallel
+    traces['projects_completed'] = completed
+    traces['agents_autonomous'] = autonomous
+    traces['prompts'] = prompts
 
     if verbose:
-        print(f"[GENERATE] PR sizes: {pr_sizes}")
-        print(f"[GENERATE] Context: {context}, Rules: {rules}, Loops: {loops}")
-        print(f"[GENERATE] Retries: {retries} (triangulated: {triangulated})")
-        print(f"[GENERATE] Parallel: {parallel}, Completed: {completed}")
-        print(f"[GENERATE] Autonomous: {autonomous}, Prompts: {prompts}")
+        print(f'[GENERATE] PR sizes: {pr_sizes}')
+        print(f'[GENERATE] Context: {context}, Rules: {rules}, Loops: {loops}')
+        print(f'[GENERATE] Retries: {retries} (triangulated: {triangulated})')
+        print(f'[GENERATE] Parallel: {parallel}, Completed: {completed}')
+        print(f'[GENERATE] Autonomous: {autonomous}, Prompts: {prompts}')
 
     clean_user = _sanitize_email(user)
     profile = {
-        "name": f"{repo_path.name}-{clean_user}",
-        "declared_level": None,
-        "traces": traces,
-        "answers": {},
-        "meta": {
-            "source": "local_repo",
-            "repo_path": repo_path.name,
-            "user": clean_user,
-            "generated_by": "generate_profile.py",
+        'name': f'{repo_path.name}-{clean_user}',
+        'declared_level': None,
+        'traces': traces,
+        'answers': {},
+        'meta': {
+            'source': 'local_repo',
+            'repo_path': repo_path.name,
+            'user': clean_user,
+            'generated_by': 'generate_profile.py',
         },
     }
 
@@ -250,22 +296,24 @@ def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
 
 def main():
     # Encoding fix for Windows console
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(
-        description="Génère un profil AIDD depuis un clone local (zéro réseau)."
+        description='Génère un profil AIDD depuis un clone local (zéro réseau).'
     )
-    parser.add_argument("repo", type=Path, help="Chemin vers le dépôt git cloné.")
-    parser.add_argument("--user", "-u", required=True, help="Handle git de l'utilisateur.")
-    parser.add_argument("--out", "-o", type=Path, default=Path("profil.json"), help="Fichier de sortie.")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Sortie détaillée.")
+    parser.add_argument('repo', type=Path, help='Chemin vers le dépôt git cloné.')
+    parser.add_argument('--user', '-u', required=True, help="Handle git de l'utilisateur.")
+    parser.add_argument(
+        '--out', '-o', type=Path, default=Path('profil.json'), help='Fichier de sortie.'
+    )
+    parser.add_argument('--verbose', '-v', action='store_true', help='Sortie détaillée.')
     args = parser.parse_args()
 
     if not args.repo.is_dir():
         print(f"Erreur : {args.repo} n'est pas un dossier.", file=sys.stderr)
         sys.exit(1)
 
-    if not (args.repo / ".git").is_dir():
+    if not (args.repo / '.git').is_dir():
         print(f"Erreur : {args.repo} n'est pas un dépôt git.", file=sys.stderr)
         sys.exit(1)
 
@@ -273,13 +321,13 @@ def main():
 
     args.out.write_text(
         json.dumps(profile, indent=2, ensure_ascii=False),
-        encoding="utf-8",
+        encoding='utf-8',
     )
-    print(f"[OK] Profil genere : {args.out}")
+    print(f'[OK] Profil genere : {args.out}')
 
     if args.verbose:
         print(json.dumps(profile, indent=2, ensure_ascii=False))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

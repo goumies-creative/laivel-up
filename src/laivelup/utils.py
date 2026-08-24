@@ -1,5 +1,6 @@
 # Copyright 2026 Romy Alula — MIT License
 """Fonctions utilitaires partagées (slug RGPD, etc.)."""
+
 from __future__ import annotations
 
 import hashlib
@@ -20,11 +21,11 @@ def slug(name: str, salt: str | None = None) -> str:
     """
     if salt is not None:
         digest = hmac.new(
-            salt.encode("utf-8"),
-            name.encode("utf-8"),
+            salt.encode('utf-8'),
+            name.encode('utf-8'),
             hashlib.sha256,
         ).hexdigest()[:8]
     else:
-        digest = hashlib.sha256(name.encode("utf-8")).hexdigest()[:8]
-    cleaned = "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-") or "membre"
-    return f"{cleaned[:32]}-{digest}"
+        digest = hashlib.sha256(name.encode('utf-8')).hexdigest()[:8]
+    cleaned = ''.join(c if c.isalnum() else '-' for c in name.lower()).strip('-') or 'membre'
+    return f'{cleaned[:32]}-{digest}'

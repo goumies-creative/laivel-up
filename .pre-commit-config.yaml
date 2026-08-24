@@ -6,18 +6,19 @@ repos:
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+  - repo: local
     hooks:
       - id: mypy
-        args: [--strict, src/]
-        additional_dependencies: [types-requests]
+        name: mypy
+        entry: python -m mypy src/
+        language: system
+        pass_filenames: false
 
   - repo: local
     hooks:
       - id: pytest-fast
         name: pytest (fast subset + security)
-        entry: pytest -q -x --ignore=tests/fixtures/ --ignore=tests/test_calibrate.py
+        entry: pytest -q -x --no-cov --ignore=tests/fixtures/ --ignore=tests/test_calibrate.py
         language: system
         pass_filenames: false
         stages: [pre-commit]

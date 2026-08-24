@@ -15,7 +15,7 @@ from tests.fixtures.load_generator import generate_profiles, generate_team_profi
 
 
 # Seuil configurable via env var (CI lent)
-MAX_SECONDS = float(os.environ.get("LOAD_TEST_MAX_SECONDS", "5.0"))
+MAX_SECONDS = float(os.environ.get('LOAD_TEST_MAX_SECONDS', '5.0'))
 
 
 @pytest.mark.slow
@@ -29,9 +29,9 @@ def test_load_1k_profiles():
 
     assert len(results) == 1000
     assert all(r.decided or r.level is None for r in results)
-    assert elapsed < MAX_SECONDS, f"1k profils: {elapsed:.2f}s > {MAX_SECONDS}s"
+    assert elapsed < MAX_SECONDS, f'1k profils: {elapsed:.2f}s > {MAX_SECONDS}s'
 
-    print(f"\n[LOAD] 1000 profils évalués en {elapsed:.2f}s ({1000/elapsed:.0f} profils/s)")
+    print(f'\n[LOAD] 1000 profils évalués en {elapsed:.2f}s ({1000 / elapsed:.0f} profils/s)')
 
 
 @pytest.mark.slow
@@ -42,7 +42,7 @@ def test_load_team_50():
     profiles_map = {p.name: p for p in profiles}
 
     start = time.perf_counter()
-    team = create_team("load-test-team", member_names)
+    team = create_team('load-test-team', member_names)
     team_created = time.perf_counter() - start
 
     start = time.perf_counter()
@@ -58,6 +58,8 @@ def test_load_team_50():
     assert len(team.members) == 50
     assert len(results) == 50
     assert all(r is not None for r in results)
-    assert total_elapsed < MAX_SECONDS, f"Team 50: {total_elapsed:.2f}s > {MAX_SECONDS}s"
+    assert total_elapsed < MAX_SECONDS, f'Team 50: {total_elapsed:.2f}s > {MAX_SECONDS}s'
 
-    print(f"\n[LOAD] Team 50 créée en {team_created:.3f}s, évaluée en {team_evaluated:.3f}s, total {total_elapsed:.2f}s")
+    print(
+        f'\n[LOAD] Team 50 créée en {team_created:.3f}s, évaluée en {team_evaluated:.3f}s, total {total_elapsed:.2f}s'
+    )

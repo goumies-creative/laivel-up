@@ -16,101 +16,105 @@ from .utils import slug
 
 
 def render_markdown(verdict: Verdict) -> str:
-    lines = [f"# Verdict AIDD · {verdict.name}"]
+    lines = [f'# Verdict AIDD · {verdict.name}']
     if verdict.data_errors:
         lines.append("\n**Données invalides :** l'évaluation refuse de trancher.")
         for e in verdict.data_errors:
-            lines.append(f"\n- {e}")
+            lines.append(f'\n- {e}')
     elif verdict.decided:
-        lines.append(f"\n**Niveau :** {level_label(verdict.level)}")
+        lines.append(f'\n**Niveau :** {level_label(verdict.level)}')
     else:
-        lines.append("\n**Niveau :** non déterminable · données insuffisantes ou contradictoires")
+        lines.append('\n**Niveau :** non déterminable · données insuffisantes ou contradictoires')
     if verdict.limiting_axis:
-        lines.append(f"\n**Axe plancher / faible :** `{verdict.limiting_axis}`")
+        lines.append(f'\n**Axe plancher / faible :** `{verdict.limiting_axis}`')
     if verdict.axis_scores:
-        lines.append("\n## Axes")
-        lines.append("\n| Axe | Niveau | Confiance | Éléments observés |")
-        lines.append("|---|---|---|---|")
+        lines.append('\n## Axes')
+        lines.append('\n| Axe | Niveau | Confiance | Éléments observés |')
+        lines.append('|---|---|---|---|')
         for a in verdict.axis_scores:
             label = level_label(a.level)
-            conf = f"{a.confidence:.0%}" if a.level is not None else "—"
-            ev = ", ".join(a.evidence)
+            conf = f'{a.confidence:.0%}' if a.level is not None else '—'
+            ev = ', '.join(a.evidence)
             if a.variance:
-                ev = f"{ev} · variance : {a.variance}"
-            lines.append(f"| {axis_label(a.axe)} | {label} | {conf} | {ev} |")
+                ev = f'{ev} · variance : {a.variance}'
+            lines.append(f'| {axis_label(a.axe)} | {label} | {conf} | {ev} |')
     if verdict.red_flags:
-        lines.append("\n## Red flags (hypothèses à vérifier)")
+        lines.append('\n## Red flags (hypothèses à vérifier)')
         for f in verdict.red_flags:
-            lines.append(f"\n- **{f.titre}** ({'⚠' * f.severite}) · {f.constat} _({f.source})_")
+            lines.append(f'\n- **{f.titre}** ({"⚠" * f.severite}) · {f.constat} _({f.source})_')
             if f.question:
-                lines.append(f"  → Question : {f.question}")
+                lines.append(f'  → Question : {f.question}')
     if verdict.next_steps:
         lines.append("\n## Comment monter d'un cran / point de levée d'incertitude")
         for n in verdict.next_steps:
-            lines.append(f"\n- {n}")
+            lines.append(f'\n- {n}')
     lines.append(
-        "\n## Transparence\n"
-        "\n- **Données utilisées :** traces techniques déclarées seulement (commits, PR, "
-        "contexte). Aucune donnée personnelle, aucun neurotype demandé ni inféré.\n"
-        "- **Méthode :** score discret par axe puis règle officielle « tous les axes le "
-        "sont » (`min()`), avec une confiance par axe. Une confiance faible ou des "
+        '\n## Transparence\n'
+        '\n- **Données utilisées :** traces techniques déclarées seulement (commits, PR, '
+        'contexte). Aucune donnée personnelle, aucun neurotype demandé ni inféré.\n'
+        '- **Méthode :** score discret par axe puis règle officielle « tous les axes le '
+        'sont » (`min()`), avec une confiance par axe. Une confiance faible ou des '
         "données contradictoires conduisent au refus de trancher plutôt qu'à un verdict "
-        "arbitraire.\n"
-        "- **Limites :** la séniorité, la qualité de code et le neurotype ne sont pas "
-        "mesurés. Un niveau reflète une adoption observée, pas une valeur humaine.\n"
-        "- **Sources :** référentiel AIDD officiel "
-        "(https://github.com/ai-driven-dev/laivel-up)."
+        'arbitraire.\n'
+        '- **Limites :** la séniorité, la qualité de code et le neurotype ne sont pas '
+        'mesurés. Un niveau reflète une adoption observée, pas une valeur humaine.\n'
+        '- **Sources :** référentiel AIDD officiel '
+        '(https://github.com/ai-driven-dev/laivel-up).'
     )
-    return "\n".join(lines) + "\n"
+    return '\n'.join(lines) + '\n'
 
 
 def render_html(verdict: Verdict) -> str:
     if verdict.data_errors:
-        badge = "Données invalides : refus de trancher"
-        kelas = "ko"
+        badge = 'Données invalides : refus de trancher'
+        kelas = 'ko'
     elif verdict.decided:
         badge = level_label(verdict.level)
-        kelas = "ok"
+        kelas = 'ok'
     else:
-        badge = "Données insuffisantes : refus de trancher"
-        kelas = "ko"
+        badge = 'Données insuffisantes : refus de trancher'
+        kelas = 'ko'
     limiting = (
-        f"<p>Axe plancher / faible : <strong>{escape(verdict.limiting_axis)}</strong></p>"
+        f'<p>Axe plancher / faible : <strong>{escape(verdict.limiting_axis)}</strong></p>'
         if verdict.limiting_axis
-        else ""
+        else ''
     )
-    errors_html = "".join(f'<div class="flag">{escape(e)}</div>' for e in verdict.data_errors)
-    errors_section = f"<h2>Données invalides</h2>{errors_html}" if verdict.data_errors else ""
+    errors_html = ''.join(f'<div class="flag">{escape(e)}</div>' for e in verdict.data_errors)
+    errors_section = f'<h2>Données invalides</h2>{errors_html}' if verdict.data_errors else ''
     rows = []
     for a in verdict.axis_scores:
         label = level_label(a.level)
-        conf = f"{a.confidence:.0%}" if a.level is not None else "—"
-        ev = escape(", ".join(a.evidence))
+        conf = f'{a.confidence:.0%}' if a.level is not None else '—'
+        ev = escape(', '.join(a.evidence))
         if a.variance:
-            ev = f"{ev} · variance : {escape(a.variance)}"
+            ev = f'{ev} · variance : {escape(a.variance)}'
         rows.append(
-            f"<tr><td>{escape(axis_label(a.axe))}</td><td>{label}</td>"
-            f"<td>{conf}</td><td>{ev}</td></tr>"
+            f'<tr><td>{escape(axis_label(a.axe))}</td><td>{label}</td>'
+            f'<td>{conf}</td><td>{ev}</td></tr>'
         )
-    flags_html = "".join(
+    flags_html = ''.join(
         f'<div class="flag"><strong>{escape(f.titre)}</strong> · {escape(f.constat)} '
-        f"<em>({escape(f.source)})</em>"
-        + (f"<div><em>Question : {escape(f.question)}</em></div>" if f.question else "")
-        + "</div>"
+        f'<em>({escape(f.source)})</em>'
+        + (f'<div><em>Question : {escape(f.question)}</em></div>' if f.question else '')
+        + '</div>'
         for f in verdict.red_flags
     )
-    flags_section = f"<h2>Red flags (hypothèses à vérifier)</h2>{flags_html}" if verdict.red_flags else ""
-    next_html = "".join(f'<div class="next">{escape(n)}</div>' for n in verdict.next_steps)
-    next_section = f"<h2>Monter d'un cran / levée d'incertitude</h2>{next_html}" if verdict.next_steps else ""
+    flags_section = (
+        f'<h2>Red flags (hypothèses à vérifier)</h2>{flags_html}' if verdict.red_flags else ''
+    )
+    next_html = ''.join(f'<div class="next">{escape(n)}</div>' for n in verdict.next_steps)
+    next_section = (
+        f"<h2>Monter d'un cran / levée d'incertitude</h2>{next_html}" if verdict.next_steps else ''
+    )
     transparency = (
-        "<h2>Transparence</h2>"
-        "<p><strong>Données utilisées :</strong> traces techniques déclarées (commits, PR, "
-        "contexte). Aucune donnée personnelle, aucun neurotype demandé ni inféré.</p>"
-        "<p><strong>Méthode :</strong> score discret par axe puis règle « tous les axes le sont » "
-        "(<code>min()</code>) avec une confiance par axe. Données faibles ou contradictoires "
-        "&rarr; refus de trancher.</p>"
-        "<p><strong>Limites :</strong> séniorité, qualité de code et neurotype non mesurés. "
-        "Un niveau reflète une adoption, jamais une valeur humaine.</p>"
+        '<h2>Transparence</h2>'
+        '<p><strong>Données utilisées :</strong> traces techniques déclarées (commits, PR, '
+        'contexte). Aucune donnée personnelle, aucun neurotype demandé ni inféré.</p>'
+        '<p><strong>Méthode :</strong> score discret par axe puis règle « tous les axes le sont » '
+        '(<code>min()</code>) avec une confiance par axe. Données faibles ou contradictoires '
+        '&rarr; refus de trancher.</p>'
+        '<p><strong>Limites :</strong> séniorité, qualité de code et neurotype non mesurés. '
+        'Un niveau reflète une adoption, jamais une valeur humaine.</p>'
     )
 
     return f"""<!doctype html>
@@ -152,15 +156,17 @@ def render_html(verdict: Verdict) -> str:
 """
 
 
-def write_reports(verdict: Verdict, out_dir: Path, with_html: bool = True) -> tuple[Path, Path | None]:
+def write_reports(
+    verdict: Verdict, out_dir: Path, with_html: bool = True
+) -> tuple[Path, Path | None]:
     out_dir.mkdir(parents=True, exist_ok=True)
     safe = _slug(verdict.name)
-    md = out_dir / f"{safe}.md"
-    md.write_text(render_markdown(verdict), encoding="utf-8")
+    md = out_dir / f'{safe}.md'
+    md.write_text(render_markdown(verdict), encoding='utf-8')
     html = None
     if with_html:
-        html = out_dir / f"{safe}.html"
-        html.write_text(render_html(verdict), encoding="utf-8")
+        html = out_dir / f'{safe}.html'
+        html.write_text(render_html(verdict), encoding='utf-8')
     return md, html
 
 
@@ -176,29 +182,29 @@ def verdict_to_dict(verdict: Verdict) -> dict:
     pour garantir la cohérence des exports (AxeScore.evidence + variance inclus).
     """
     return {
-        "name": verdict.name,
-        "level": verdict.level.name if verdict.level else None,
-        "limiting_axis": verdict.limiting_axis,
-        "axes": [
+        'name': verdict.name,
+        'level': verdict.level.name if verdict.level else None,
+        'limiting_axis': verdict.limiting_axis,
+        'axes': [
             {
-                "axe": a.axe,
-                "level": a.level.name if a.level else None,
-                "confidence": a.confidence,
-                "evidence": a.evidence,
-                "variance": a.variance,
+                'axe': a.axe,
+                'level': a.level.name if a.level else None,
+                'confidence': a.confidence,
+                'evidence': a.evidence,
+                'variance': a.variance,
             }
             for a in verdict.axis_scores
         ],
-        "red_flags": [
+        'red_flags': [
             {
-                "titre": f.titre,
-                "constat": f.constat,
-                "source": f.source,
-                "question": f.question,
-                "severite": f.severite,
+                'titre': f.titre,
+                'constat': f.constat,
+                'source': f.source,
+                'question': f.question,
+                'severite': f.severite,
             }
             for f in verdict.red_flags
         ],
-        "next_steps": verdict.next_steps,
-        "data_errors": verdict.data_errors,
+        'next_steps': verdict.next_steps,
+        'data_errors': verdict.data_errors,
     }

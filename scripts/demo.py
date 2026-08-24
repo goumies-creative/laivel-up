@@ -8,6 +8,7 @@ Usage:
     agg demo.cast demo.mp4 --theme monokai --speed 1.5
     ffmpeg -i demo.mp4 -vf "subtitles=demo.srt" demo-final.mp4
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -17,8 +18,8 @@ from pathlib import Path
 
 DEMO_DIR = Path(__file__).resolve().parent.parent
 PROFILS = [
-    ("profil-maison-1.json", "Profil 1 : contexte + rules"),
-    ("profil-maison-2.json", "Profil 2 : boucles de relance"),
+    ('profil-maison-1.json', 'Profil 1 : contexte + rules'),
+    ('profil-maison-2.json', 'Profil 2 : boucles de relance'),
 ]
 
 PAUSE_SHORT = 2
@@ -28,9 +29,9 @@ PAUSE_LONG = 6
 
 def _run(cmd: str, label: str, pause: int = PAUSE_MEDIUM) -> None:
     """Exécute une commande CLI et affiche un séparateur."""
-    print(f"\n{'='*60}")
-    print(f"  {label}")
-    print(f"{'='*60}\n")
+    print(f'\n{"=" * 60}')
+    print(f'  {label}')
+    print(f'{"=" * 60}\n')
     result = subprocess.run(
         cmd.split(),
         capture_output=False,
@@ -38,61 +39,61 @@ def _run(cmd: str, label: str, pause: int = PAUSE_MEDIUM) -> None:
         cwd=str(DEMO_DIR),
     )
     if result.returncode != 0:
-        print(f"\n[ERREUR] Commande échouée : {cmd}", file=sys.stderr)
+        print(f'\n[ERREUR] Commande échouée : {cmd}', file=sys.stderr)
     time.sleep(pause)
 
 
 def main() -> None:
     """Scénario démo complet 5 étapes (~50s + pauses)."""
     print("LAIVEL UP — Démo CLI d'évaluation AIDD\n")
-    print("Méthode La Décodeuse : refus de deviner, questions au lieu de verdicts.")
+    print('Méthode La Décodeuse : refus de deviner, questions au lieu de verdicts.')
     time.sleep(PAUSE_SHORT)
 
     # Étape 1 : Aide
-    _run("laivelup --help", "Étape 1 : Aide CLI", PAUSE_SHORT)
+    _run('laivelup --help', 'Étape 1 : Aide CLI', PAUSE_SHORT)
 
     # Étape 2 : Évaluation profil 1
     for profil, description in PROFILS:
-        profil_path = DEMO_DIR / "exemples" / profil
+        profil_path = DEMO_DIR / 'exemples' / profil
         if profil_path.exists():
             _run(
-                f"laivelup evaluate {profil_path} --no-html",
-                f"Étape 2 : {description}",
+                f'laivelup evaluate {profil_path} --no-html',
+                f'Étape 2 : {description}',
                 PAUSE_LONG,
             )
         else:
-            print(f"  [SKIP] Profil absent : {profil}")
+            print(f'  [SKIP] Profil absent : {profil}')
 
     # Étape 3 : Création équipe
     _run(
-        "laivelup team create DemoEquipe Alice,Bob,Charlie",
-        "Étape 3 : Création équipe (RGPD)",
+        'laivelup team create DemoEquipe Alice,Bob,Charlie',
+        'Étape 3 : Création équipe (RGPD)',
         PAUSE_MEDIUM,
     )
 
     # Étape 4 : Évaluation membre
-    profil_path = DEMO_DIR / "exemples" / PROFILS[0][0]
+    profil_path = DEMO_DIR / 'exemples' / PROFILS[0][0]
     if profil_path.exists():
         _run(
-            f"laivelup team evaluate DemoEquipe alice {profil_path}",
-            "Étape 4 : Évaluation membre",
+            f'laivelup team evaluate DemoEquipe alice {profil_path}',
+            'Étape 4 : Évaluation membre',
             PAUSE_MEDIUM,
         )
 
     # Étape 5 : Export
-    rapport_dir = DEMO_DIR / "rapports"
+    rapport_dir = DEMO_DIR / 'rapports'
     rapport_dir.mkdir(exist_ok=True)
     _run(
-        f"laivelup team export DemoEquipe --format md --out {rapport_dir}",
-        "Étape 5 : Export résultats",
+        f'laivelup team export DemoEquipe --format md --out {rapport_dir}',
+        'Étape 5 : Export résultats',
         PAUSE_SHORT,
     )
 
-    print(f"\n{'='*60}")
-    print("  FIN DE LA DÉMO")
-    print(f"{'='*60}")
-    print(f"\nRapports générés dans : {rapport_dir}")
+    print(f'\n{"=" * 60}')
+    print('  FIN DE LA DÉMO')
+    print(f'{"=" * 60}')
+    print(f'\nRapports générés dans : {rapport_dir}')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -24,38 +24,38 @@ runner = CliRunner()
 
 class TestParseRetryRatio:
     def test_percent_explicit(self):
-        assert _parse_retry_ratio("60 %") == pytest.approx(0.6)
+        assert _parse_retry_ratio('60 %') == pytest.approx(0.6)
 
     def test_percent_decimal(self):
-        assert _parse_retry_ratio("33,3 %") == pytest.approx(0.333)
+        assert _parse_retry_ratio('33,3 %') == pytest.approx(0.333)
 
     def test_pourcent_french(self):
-        assert _parse_retry_ratio("20 pourcent") == pytest.approx(0.2)
+        assert _parse_retry_ratio('20 pourcent') == pytest.approx(0.2)
 
     def test_ratio_sur(self):
-        assert _parse_retry_ratio("1 fois sur 2") == pytest.approx(0.5)
+        assert _parse_retry_ratio('1 fois sur 2') == pytest.approx(0.5)
 
     def test_ratio_sans_fois(self):
-        assert _parse_retry_ratio("3 sur 10") == pytest.approx(0.3)
+        assert _parse_retry_ratio('3 sur 10') == pytest.approx(0.3)
 
     def test_number_below_one(self):
-        assert _parse_retry_ratio("0.5") == pytest.approx(0.5)
+        assert _parse_retry_ratio('0.5') == pytest.approx(0.5)
 
     def test_number_above_one_percentage(self):
-        assert _parse_retry_ratio("75") == pytest.approx(0.75)
+        assert _parse_retry_ratio('75') == pytest.approx(0.75)
 
     def test_no_number(self):
-        assert _parse_retry_ratio("aucune idée") is None
+        assert _parse_retry_ratio('aucune idée') is None
 
     def test_virgule_francaise(self):
-        assert _parse_retry_ratio("0,8") == pytest.approx(0.8)
+        assert _parse_retry_ratio('0,8') == pytest.approx(0.8)
 
     def test_negative_percent_treated_as_positive(self):
         # Le regex capture le chiffre sans le signe, 5% → 0.05
-        assert _parse_retry_ratio("-5 %") == pytest.approx(0.05)
+        assert _parse_retry_ratio('-5 %') == pytest.approx(0.05)
 
     def test_clamped_to_one(self):
-        assert _parse_retry_ratio("150 %") == pytest.approx(1.0)
+        assert _parse_retry_ratio('150 %') == pytest.approx(1.0)
 
 
 # --- _merge_answer -----------------------------------------------------
@@ -64,64 +64,73 @@ class TestParseRetryRatio:
 class TestMergeAnswer:
     def test_merge_pr_sizes(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["PR_SIZES"], "souvent des M et L")
-        assert "M" in p.traces["pr_sizes"]
-        assert "L" in p.traces["pr_sizes"]
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['PR_SIZES'], 'souvent des M et L')
+        assert 'M' in p.traces['pr_sizes']
+        assert 'L' in p.traces['pr_sizes']
 
     def test_merge_retries_triangulated(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["RETRIES_TRIANGULATED"], "voici 3 PR")
-        assert p.traces["retries_triangulated"] is True
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['RETRIES_TRIANGULATED'], 'voici 3 PR')
+        assert p.traces['retries_triangulated'] is True
 
     def test_merge_retries_ratio(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["RETRIES_RATIO"], "40 %")
-        assert p.traces["retries_after_fact"] == pytest.approx(0.4)
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['RETRIES_RATIO'], '40 %')
+        assert p.traces['retries_after_fact'] == pytest.approx(0.4)
 
     def test_merge_context_oui(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["ADOPTION_SIGNALS"], "oui j'ai un contexte")
-        assert p.traces["context_versioned"] is True
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['ADOPTION_SIGNALS'], "oui j'ai un contexte")
+        assert p.traces['context_versioned'] is True
 
     def test_merge_context_non(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["ADOPTION_SIGNALS"], "non")
-        assert "context_versioned" not in p.traces
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['ADOPTION_SIGNALS'], 'non')
+        assert 'context_versioned' not in p.traces
 
     def test_merge_parallel_projects(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["PARALLEL_PROJECTS"], "3 chantiers en parallèle")
-        assert p.traces["parallel_projects"] == 3
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['PARALLEL_PROJECTS'], '3 chantiers en parallèle')
+        assert p.traces['parallel_projects'] == 3
 
     def test_merge_projects_completed(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["PROJECTS_COMPLETED"], "4 chantiers menés au bout")
-        assert p.traces["projects_completed"] == 4
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['PROJECTS_COMPLETED'], '4 chantiers menés au bout')
+        assert p.traces['projects_completed'] == 4
 
     def test_merge_level_blue(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["DECLARED_LEVEL"], "mon niveau est bleu")
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['DECLARED_LEVEL'], 'mon niveau est bleu')
         assert p.declared_level == Level.BLUE
 
     def test_merge_level_gold(self):
         from laivelup.questions import QUESTION_IDS
-        p = ProfileData(name="x")
-        _merge_answer(p, QUESTION_IDS["DECLARED_LEVEL"], "gold")
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['DECLARED_LEVEL'], 'gold')
         assert p.declared_level == Level.GOLD
 
     def test_merge_answers_stored(self):
-        p = ProfileData(name="x")
-        _merge_answer(p, "question test", "réponse test")
-        assert p.answers["last_question"] == "question test"
-        assert p.answers["last_answer"] == "réponse test"
+        p = ProfileData(name='x')
+        _merge_answer(p, 'question test', 'réponse test')
+        assert p.answers['last_question'] == 'question test'
+        assert p.answers['last_answer'] == 'réponse test'
 
 
 # --- CLI evaluate errors -----------------------------------------------
@@ -129,59 +138,68 @@ class TestMergeAnswer:
 
 class TestEvaluateErrors:
     def test_fichier_introuvable(self):
-        r = runner.invoke(app, ["evaluate", "inexistant.json"])
+        r = runner.invoke(app, ['evaluate', 'inexistant.json'])
         assert r.exit_code != 0
 
     def test_json_invalide(self, tmp_path):
-        bad = tmp_path / "bad.json"
-        bad.write_text("{invalid}", encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(bad)])
+        bad = tmp_path / 'bad.json'
+        bad.write_text('{invalid}', encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(bad)])
         assert r.exit_code == 2
 
     def test_non_dict_json(self, tmp_path):
-        bad = tmp_path / "list.json"
-        bad.write_text("[1, 2, 3]", encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(bad)])
+        bad = tmp_path / 'list.json'
+        bad.write_text('[1, 2, 3]', encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(bad)])
         assert r.exit_code == 2
 
     def test_declared_level_inconnu(self, tmp_path):
-        bad = tmp_path / "bad_level.json"
-        bad.write_text(json.dumps({"name": "x", "declared_level": "PLATINUM"}), encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(bad)])
+        bad = tmp_path / 'bad_level.json'
+        bad.write_text(json.dumps({'name': 'x', 'declared_level': 'PLATINUM'}), encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(bad)])
         assert r.exit_code == 2
 
     def test_fichier_trop_volumineux(self, tmp_path):
-        big = tmp_path / "big.json"
-        big.write_text(json.dumps({"name": "x", "traces": {"pr_sizes": ["S"] * 3_000_000}}), encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(big)])
+        big = tmp_path / 'big.json'
+        big.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['S'] * 3_000_000}}), encoding='utf-8'
+        )
+        r = runner.invoke(app, ['evaluate', str(big)])
         assert r.exit_code != 0
 
     def test_profil_valide(self, tmp_path):
-        good = tmp_path / "good.json"
-        good.write_text(json.dumps({
-            "name": "test",
-            "traces": {"pr_sizes": ["S", "M"], "parallel_projects": 1}
-        }), encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(good), "--no-html"])
+        good = tmp_path / 'good.json'
+        good.write_text(
+            json.dumps(
+                {'name': 'test', 'traces': {'pr_sizes': ['S', 'M'], 'parallel_projects': 1}}
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(good), '--no-html'])
         assert r.exit_code == 0
 
     def test_profil_with_declared_string(self, tmp_path):
-        good = tmp_path / "good.json"
-        good.write_text(json.dumps({
-            "name": "test",
-            "declared_level": "BLUE",
-            "traces": {"pr_sizes": ["S"], "parallel_projects": 1}
-        }), encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(good), "--no-html"])
+        good = tmp_path / 'good.json'
+        good.write_text(
+            json.dumps(
+                {
+                    'name': 'test',
+                    'declared_level': 'BLUE',
+                    'traces': {'pr_sizes': ['S'], 'parallel_projects': 1},
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(good), '--no-html'])
         assert r.exit_code == 0
 
     def test_verbose_mode(self, tmp_path):
-        good = tmp_path / "good.json"
-        good.write_text(json.dumps({
-            "name": "test",
-            "traces": {"pr_sizes": ["S"], "parallel_projects": 1}
-        }), encoding="utf-8")
-        r = runner.invoke(app, ["evaluate", str(good), "--no-html", "--verbose"])
+        good = tmp_path / 'good.json'
+        good.write_text(
+            json.dumps({'name': 'test', 'traces': {'pr_sizes': ['S'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(good), '--no-html', '--verbose'])
         assert r.exit_code == 0
 
 
@@ -191,18 +209,24 @@ class TestEvaluateErrors:
 class TestInterrogate:
     def test_interrogate_sans_profil(self, monkeypatch, tmp_path):
         from laivelup import cli
-        answers = iter(["souvent des M", "bleu", "40%", "oui", "1 chantier"])
-        monkeypatch.setattr(cli.Prompt, "ask", lambda prompt, **kw: next(answers))
-        r = runner.invoke(cli.app, ["interrogate", "--max-turns", "5", "--out", str(tmp_path)])
+
+        answers = iter(['souvent des M', 'bleu', '40%', 'oui', '1 chantier'])
+        monkeypatch.setattr(cli.Prompt, 'ask', lambda prompt, **kw: next(answers))
+        r = runner.invoke(cli.app, ['interrogate', '--max-turns', '5', '--out', str(tmp_path)])
         assert r.exit_code == 0
 
     def test_interrogate_avec_profil(self, monkeypatch, tmp_path):
         from laivelup import cli
-        profil = tmp_path / "p.json"
-        profil.write_text(json.dumps({"name": "x", "traces": {"parallel_projects": 1}}), encoding="utf-8")
-        answers = iter(["souvent des M", "bleu", "40%", "oui"])
-        monkeypatch.setattr(cli.Prompt, "ask", lambda prompt, **kw: next(answers))
-        r = runner.invoke(cli.app, ["interrogate", str(profil), "--max-turns", "4", "--out", str(tmp_path)])
+
+        profil = tmp_path / 'p.json'
+        profil.write_text(
+            json.dumps({'name': 'x', 'traces': {'parallel_projects': 1}}), encoding='utf-8'
+        )
+        answers = iter(['souvent des M', 'bleu', '40%', 'oui'])
+        monkeypatch.setattr(cli.Prompt, 'ask', lambda prompt, **kw: next(answers))
+        r = runner.invoke(
+            cli.app, ['interrogate', str(profil), '--max-turns', '4', '--out', str(tmp_path)]
+        )
         assert r.exit_code == 0
 
 
@@ -211,97 +235,117 @@ class TestInterrogate:
 
 class TestTeamCommands:
     def test_team_create(self):
-        r = runner.invoke(app, ["team", "create", "Alpha", "alice,bob,charlie"])
+        r = runner.invoke(app, ['team', 'create', 'Alpha', 'alice,bob,charlie'])
         assert r.exit_code == 0
-        assert "Alpha" in r.output
+        assert 'Alpha' in r.output
 
     def test_team_create_vide(self):
-        r = runner.invoke(app, ["team", "create", "Alpha", " "])
+        r = runner.invoke(app, ['team', 'create', 'Alpha', ' '])
         assert r.exit_code == 1
 
     def test_team_export_md(self, tmp_path):
-        runner.invoke(app, ["team", "create", "Alpha", "alice,bob"], catch_exceptions=False)
-        r = runner.invoke(app, ["team", "export", "Alpha", "--out", str(tmp_path)])
+        runner.invoke(app, ['team', 'create', 'Alpha', 'alice,bob'], catch_exceptions=False)
+        r = runner.invoke(app, ['team', 'export', 'Alpha', '--out', str(tmp_path)])
         assert r.exit_code == 0
-        export_file = tmp_path / "equipe-Alpha.md"
+        export_file = tmp_path / 'equipe-Alpha.md'
         assert export_file.exists()
-        content = export_file.read_text(encoding="utf-8")
-        assert "Équipe" in content
-        assert "Membres" in content
+        content = export_file.read_text(encoding='utf-8')
+        assert 'Équipe' in content
+        assert 'Membres' in content
 
     def test_team_export_format_inconnu(self):
-        runner.invoke(app, ["team", "create", "Alpha", "alice,bob"], catch_exceptions=False)
-        r = runner.invoke(app, ["team", "export", "Alpha", "--format", "xml"])
+        runner.invoke(app, ['team', 'create', 'Alpha', 'alice,bob'], catch_exceptions=False)
+        r = runner.invoke(app, ['team', 'export', 'Alpha', '--format', 'xml'])
         assert r.exit_code == 1
 
     def test_team_export_json_content(self, tmp_path):
-        r_create = runner.invoke(app, ["team", "create", "ExportJSON", "alice,bob"], catch_exceptions=False)
+        r_create = runner.invoke(
+            app, ['team', 'create', 'ExportJSON', 'alice,bob'], catch_exceptions=False
+        )
         assert r_create.exit_code == 0
         import re
-        slug_lines = [line for line in r_create.output.splitlines() if "→" in line]
-        slugs = [re.search(r"([a-z0-9]+-[a-f0-9]+)", line).group(1) for line in slug_lines]
-        r = runner.invoke(app, ["team", "export", "ExportJSON", "--format", "json", "--out", str(tmp_path)])
+
+        slug_lines = [line for line in r_create.output.splitlines() if '→' in line]
+        slugs = [re.search(r'([a-z0-9]+-[a-f0-9]+)', line).group(1) for line in slug_lines]
+        r = runner.invoke(
+            app, ['team', 'export', 'ExportJSON', '--format', 'json', '--out', str(tmp_path)]
+        )
         assert r.exit_code == 0
-        export_file = tmp_path / "equipe-ExportJSON.json"
+        export_file = tmp_path / 'equipe-ExportJSON.json'
         assert export_file.exists()
-        data = json.loads(export_file.read_text(encoding="utf-8"))
-        assert data["team"] == "ExportJSON"
-        assert len(data["members"]) == 2
+        data = json.loads(export_file.read_text(encoding='utf-8'))
+        assert data['team'] == 'ExportJSON'
+        assert len(data['members']) == 2
         for slug in slugs:
-            assert slug in data["members"]
-            assert "name" in data["members"][slug]
-            assert "confidence" in data["members"][slug]
+            assert slug in data['members']
+            assert 'name' in data['members'][slug]
+            assert 'confidence' in data['members'][slug]
 
     def test_team_export_csv_content(self, tmp_path):
-        r_create = runner.invoke(app, ["team", "create", "ExportCSV", "alice,bob"], catch_exceptions=False)
+        r_create = runner.invoke(
+            app, ['team', 'create', 'ExportCSV', 'alice,bob'], catch_exceptions=False
+        )
         assert r_create.exit_code == 0
-        r = runner.invoke(app, ["team", "export", "ExportCSV", "--format", "csv", "--out", str(tmp_path)])
+        r = runner.invoke(
+            app, ['team', 'export', 'ExportCSV', '--format', 'csv', '--out', str(tmp_path)]
+        )
         assert r.exit_code == 0
-        export_file = tmp_path / "equipe-ExportCSV.csv"
+        export_file = tmp_path / 'equipe-ExportCSV.csv'
         assert export_file.exists()
-        lines = export_file.read_text(encoding="utf-8").strip().split("\n")
+        lines = export_file.read_text(encoding='utf-8').strip().split('\n')
         assert len(lines) >= 3  # header + 2 members
-        assert "name" in lines[0]
-        assert "level" in lines[0]
+        assert 'name' in lines[0]
+        assert 'level' in lines[0]
 
     def test_team_evaluate(self, tmp_path):
-        good = tmp_path / "good.json"
-        good.write_text(json.dumps({
-            "name": "test",
-            "traces": {"pr_sizes": ["S"], "parallel_projects": 1}
-        }), encoding="utf-8")
-        r_create = runner.invoke(app, ["team", "create", "Alpha", "alice,bob"], catch_exceptions=False)
-        assert "alice-" in r_create.output
-        slug_line = next(line for line in r_create.output.splitlines() if "alice" in line)
-        alice_slug = slug_line.split("→")[1].strip().strip("[dim]").rstrip("[/dim]").strip()
+        good = tmp_path / 'good.json'
+        good.write_text(
+            json.dumps({'name': 'test', 'traces': {'pr_sizes': ['S'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        r_create = runner.invoke(
+            app, ['team', 'create', 'Alpha', 'alice,bob'], catch_exceptions=False
+        )
+        assert 'alice-' in r_create.output
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = slug_line.split('→')[1].strip().strip('[dim]').rstrip('[/dim]').strip()
         # Extract slug from rich markup: "alice → alice-2bd806c9"
         import re
-        alice_slug = re.search(r"([a-z0-9]+-[a-f0-9]+)", slug_line).group(1)
-        r = runner.invoke(app, ["team", "evaluate", "Alpha", alice_slug, str(good), "--out", str(tmp_path / "out")])
+
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]+)', slug_line).group(1)
+        r = runner.invoke(
+            app,
+            ['team', 'evaluate', 'Alpha', alice_slug, str(good), '--out', str(tmp_path / 'out')],
+        )
         assert r.exit_code == 0
 
     def test_team_persistence(self, tmp_path):
-        good = tmp_path / "good.json"
-        good.write_text(json.dumps({
-            "name": "test",
-            "traces": {"pr_sizes": ["S"], "parallel_projects": 1}
-        }), encoding="utf-8")
+        good = tmp_path / 'good.json'
+        good.write_text(
+            json.dumps({'name': 'test', 'traces': {'pr_sizes': ['S'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
         # Create team
-        r1 = runner.invoke(app, ["team", "create", "Persist", "alice,bob"], catch_exceptions=False)
+        r1 = runner.invoke(app, ['team', 'create', 'Persist', 'alice,bob'], catch_exceptions=False)
         assert r1.exit_code == 0
         import re
-        slug_line = next(line for line in r1.output.splitlines() if "alice" in line)
-        alice_slug = re.search(r"([a-z0-9]+-[a-f0-9]+)", slug_line).group(1)
+
+        slug_line = next(line for line in r1.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]+)', slug_line).group(1)
         # Evaluate alice
-        r2 = runner.invoke(app, ["team", "evaluate", "Persist", alice_slug, str(good), "--out", str(tmp_path / "out")])
+        r2 = runner.invoke(
+            app,
+            ['team', 'evaluate', 'Persist', alice_slug, str(good), '--out', str(tmp_path / 'out')],
+        )
         assert r2.exit_code == 0
         # Verify persistence: team JSON file exists and contains snapshot
         from laivelup.team import load_team
-        team = load_team("Persist")
+
+        team = load_team('Persist')
         assert alice_slug in team.members
         assert team.members[alice_slug].confidence >= 0
         assert len(team.history) == 1
-        assert team.history[0]["slug"] == alice_slug
+        assert team.history[0]['slug'] == alice_slug
 
 
 # --- CLI help ----------------------------------------------------------
@@ -309,18 +353,18 @@ class TestTeamCommands:
 
 class TestCLIHelp:
     def test_main_help(self):
-        r = runner.invoke(app, ["--help"])
+        r = runner.invoke(app, ['--help'])
         assert r.exit_code == 0
-        assert "LAIVEL UP" in r.output or "évaluation" in r.output.lower()
+        assert 'LAIVEL UP' in r.output or 'évaluation' in r.output.lower()
 
     def test_evaluate_help(self):
-        r = runner.invoke(app, ["evaluate", "--help"])
+        r = runner.invoke(app, ['evaluate', '--help'])
         assert r.exit_code == 0
 
     def test_interrogate_help(self):
-        r = runner.invoke(app, ["interrogate", "--help"])
+        r = runner.invoke(app, ['interrogate', '--help'])
         assert r.exit_code == 0
 
     def test_team_help(self):
-        r = runner.invoke(app, ["team", "--help"])
+        r = runner.invoke(app, ['team', '--help'])
         assert r.exit_code == 0

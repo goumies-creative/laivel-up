@@ -24,7 +24,7 @@ from .model import Level, ProfileData, Verdict
 from .scoring import evaluate
 from .utils import generate_team_salt, slug
 
-_DEFAULT_TEAM_DIR = Path(".laivelup") / "teams"
+_DEFAULT_TEAM_DIR = Path('.laivelup') / 'teams'
 _MAX_TEAM_NAME_LEN = 64
 _MAX_MEMBERS = 50
 _MAX_HISTORY = 100
@@ -33,10 +33,11 @@ _MAX_HISTORY = 100
 def _validate_team_name(name: str) -> None:
     """Valide qu'un nom d'équipe est sûr pour un chemin de fichier."""
     import re
-    if not name or not re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", name):
+
+    if not name or not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}', name):
         raise ValueError(
             f"Nom d'équipe invalide : '{name}'. "
-            "Seuls les caractères alphanumériques, tirets et underscores sont autorisés (1-64 chars)."
+            'Seuls les caractères alphanumériques, tirets et underscores sont autorisés (1-64 chars).'
         )
 
 
@@ -44,7 +45,7 @@ def _team_path(name: str, path: Path | None = None) -> Path:
     """Retourne le chemin du fichier JSON de l'équipe."""
     if path is not None:
         return path
-    return _DEFAULT_TEAM_DIR / f"{name}.json"
+    return _DEFAULT_TEAM_DIR / f'{name}.json'
 
 
 def save_team(team: Team, path: Path | None = None) -> Path:
@@ -52,25 +53,25 @@ def save_team(team: Team, path: Path | None = None) -> Path:
     target = _team_path(team.name, path)
     target.parent.mkdir(parents=True, exist_ok=True)
     data = {
-        "name": team.name,
-        "salt": team.salt,
-        "members": {
+        'name': team.name,
+        'salt': team.salt,
+        'members': {
             team_slug: {
-                "name": m.name,
-                "slug": m.slug,
-                "level": m.level.name if m.level else None,
-                "limiting_axis": m.limiting_axis,
-                "confidence": m.confidence,
-                "timestamp": m.timestamp,
-                "red_flags_count": m.red_flags_count,
-                "next_steps_count": m.next_steps_count,
-                "opt_out": m.opt_out,
+                'name': m.name,
+                'slug': m.slug,
+                'level': m.level.name if m.level else None,
+                'limiting_axis': m.limiting_axis,
+                'confidence': m.confidence,
+                'timestamp': m.timestamp,
+                'red_flags_count': m.red_flags_count,
+                'next_steps_count': m.next_steps_count,
+                'opt_out': m.opt_out,
             }
             for team_slug, m in team.members.items()
         },
-        "history": team.history,
+        'history': team.history,
     }
-    target.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    target.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
     return target
 
 
@@ -79,26 +80,26 @@ def load_team(name: str, path: Path | None = None) -> Team:
     source = _team_path(name, path)
     if not source.exists():
         return Team(name=name)
-    data = json.loads(source.read_text(encoding="utf-8"))
-    team_salt = data.get("salt", generate_team_salt())
-    team = Team(name=data.get("name", name), salt=team_salt)
-    for team_slug, m in data.get("members", {}).items():
+    data = json.loads(source.read_text(encoding='utf-8'))
+    team_salt = data.get('salt', generate_team_salt())
+    team = Team(name=data.get('name', name), salt=team_salt)
+    for team_slug, m in data.get('members', {}).items():
         level = None
-        if m.get("level"):
+        if m.get('level'):
             with contextlib.suppress(KeyError):
-                level = Level[m["level"]]
+                level = Level[m['level']]
         team.members[team_slug] = MemberSnapshot(
             slug=team_slug,
-            name=m["name"],
+            name=m['name'],
             level=level,
-            limiting_axis=m.get("limiting_axis"),
-            confidence=m.get("confidence", 0.0),
-            timestamp=m.get("timestamp", ""),
-            red_flags_count=m.get("red_flags_count", 0),
-            next_steps_count=m.get("next_steps_count", 0),
-            opt_out=m.get("opt_out", False),
+            limiting_axis=m.get('limiting_axis'),
+            confidence=m.get('confidence', 0.0),
+            timestamp=m.get('timestamp', ''),
+            red_flags_count=m.get('red_flags_count', 0),
+            next_steps_count=m.get('next_steps_count', 0),
+            opt_out=m.get('opt_out', False),
         )
-    team.history = data.get("history", [])
+    team.history = data.get('history', [])
     return team
 
 
@@ -136,7 +137,7 @@ def create_team(name: str, member_names: list[str]) -> Team:
     """Crée une équipe avec des membres pseudo-anonymisés."""
     _validate_team_name(name)
     if len(member_names) > _MAX_MEMBERS:
-        raise ValueError(f"Trop de membres ({len(member_names)} > {_MAX_MEMBERS}).")
+        raise ValueError(f'Trop de membres ({len(member_names)} > {_MAX_MEMBERS}).')
     team = Team(name=name)
     for member_name in member_names:
         team_slug = _slug(member_name, team.salt)
@@ -157,9 +158,7 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
 
     member = team.members[slug]
     if member.opt_out:
-        raise ValueError(
-            f"Membre '{member.name}' a activé l'opt-out RGPD — évaluation refusée."
-        )
+        raise ValueError(f"Membre '{member.name}' a activé l'opt-out RGPD — évaluation refusée.")
 
     verdict = evaluate(profile)
     member = team.members[slug]
@@ -167,9 +166,7 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
     # Fix #5: confiance de l'axe plancher (pas le max)
     axis_confidences = {a.axe: a.confidence for a in verdict.axis_scores}
     limiting_confidence = (
-        axis_confidences.get(verdict.limiting_axis, 0.0)
-        if verdict.limiting_axis
-        else 0.0
+        axis_confidences.get(verdict.limiting_axis, 0.0) if verdict.limiting_axis else 0.0
     )
 
     snapshot = MemberSnapshot(
@@ -184,14 +181,16 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
     team.members[slug] = snapshot
 
     # Journaliser dans l'historique (B1: opt_out persisté dans l'historique)
-    team.history.append({
-        "timestamp": snapshot.timestamp,
-        "slug": slug,
-        "level": verdict.level.name if verdict.level else None,
-        "limiting_axis": verdict.limiting_axis,
-        "confidence": snapshot.confidence,
-        "opt_out": False,
-    })
+    team.history.append(
+        {
+            'timestamp': snapshot.timestamp,
+            'slug': slug,
+            'level': verdict.level.name if verdict.level else None,
+            'limiting_axis': verdict.limiting_axis,
+            'confidence': snapshot.confidence,
+            'opt_out': False,
+        }
+    )
     # S3: trim automatique pour éviter la croissance indéfinie
     if len(team.history) > _MAX_HISTORY:
         team.history = team.history[-_MAX_HISTORY:]
@@ -211,12 +210,11 @@ def remove_member(team: Team, slug: str, purge: bool = False) -> None:
         raise ValueError(f"Membre '{slug}' non trouvé dans l'équipe '{team.name}'")
 
     if purge:
-        team.history = [h for h in team.history if h.get("slug") != slug]
+        team.history = [h for h in team.history if h.get('slug') != slug]
     else:
         # B1: Marquer les entrées d'historique avec opt_out=True
         team.history = [
-            {**h, "opt_out": True} if h.get("slug") == slug else h
-            for h in team.history
+            {**h, 'opt_out': True} if h.get('slug') == slug else h for h in team.history
         ]
 
     del team.members[slug]
@@ -233,92 +231,92 @@ def export_json(team: Team, path: Path) -> Path:
     """Exporte l'état de l'équipe en JSON (exclut les membres en opt-out)."""
     opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     data = {
-        "team": team.name,
-        "exported_at": datetime.now().isoformat(),
-        "members": {
+        'team': team.name,
+        'exported_at': datetime.now().isoformat(),
+        'members': {
             team_slug: {
-                "name": m.name,
-                "slug": m.slug,
-                "level": m.level.name if m.level else None,
-                "limiting_axis": m.limiting_axis,
-                "confidence": m.confidence,
-                "timestamp": m.timestamp,
+                'name': m.name,
+                'slug': m.slug,
+                'level': m.level.name if m.level else None,
+                'limiting_axis': m.limiting_axis,
+                'confidence': m.confidence,
+                'timestamp': m.timestamp,
             }
             for team_slug, m in team.members.items()
             if not m.opt_out
         },
         # B1: filtre par opt_out du membre OU opt_out persisté dans l'historique
-        "history": [
-            h for h in team.history
-            if h.get("slug") not in opt_out_slugs and not h.get("opt_out")
+        'history': [
+            h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')
         ],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
     return path
 
 
 def export_markdown(team: Team, path: Path) -> Path:
     """Exporte un rapport Markdown de l'équipe (exclut les membres en opt-out)."""
-    lines = [f"# Équipe · {team.name}"]
-    lines.append(f"\n*Exporté le {datetime.now().strftime('%Y-%m-%d %H:%M')}*\n")
+    lines = [f'# Équipe · {team.name}']
+    lines.append(f'\n*Exporté le {datetime.now().strftime("%Y-%m-%d %H:%M")}*\n')
 
-    lines.append("\n## Membres\n")
-    lines.append("| Membre | Slug | Niveau | Axe plancher | Confiance |")
-    lines.append("|--------|------|--------|--------------|-----------|")
+    lines.append('\n## Membres\n')
+    lines.append('| Membre | Slug | Niveau | Axe plancher | Confiance |')
+    lines.append('|--------|------|--------|--------------|-----------|')
     for m_slug, m in team.members.items():
         if m.opt_out:
             continue
-        level = m.level.name if m.level else "—"
-        axis = m.limiting_axis or "—"
-        conf = f"{m.confidence:.0%}"
-        lines.append(f"| {m.name} | `{m_slug}` | {level} | {axis} | {conf} |")
+        level = m.level.name if m.level else '—'
+        axis = m.limiting_axis or '—'
+        conf = f'{m.confidence:.0%}'
+        lines.append(f'| {m.name} | `{m_slug}` | {level} | {axis} | {conf} |')
 
     opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     history_filtered = [
-        h for h in team.history
-        if h.get("slug") not in opt_out_slugs and not h.get("opt_out")
+        h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')
     ]
 
     if history_filtered:
-        lines.append("\n## Historique\n")
-        lines.append("| Date | Membre | Niveau | Axe | Confiance |")
-        lines.append("|------|--------|--------|-----|-----------|")
+        lines.append('\n## Historique\n')
+        lines.append('| Date | Membre | Niveau | Axe | Confiance |')
+        lines.append('|------|--------|--------|-----|-----------|')
         for entry in history_filtered[-20:]:
-            ts = entry["timestamp"][:10]
-            level = entry["level"] or "—"
-            axis = entry["limiting_axis"] or "—"
-            conf = f"{entry['confidence']:.0%}"
-            slug_short = entry["slug"][:16] + "..."
-            lines.append(f"| {ts} | {slug_short} | {level} | {axis} | {conf} |")
+            ts = entry['timestamp'][:10]
+            level = entry['level'] or '—'
+            axis = entry['limiting_axis'] or '—'
+            conf = f'{entry["confidence"]:.0%}'
+            slug_short = entry['slug'][:16] + '...'
+            lines.append(f'| {ts} | {slug_short} | {level} | {axis} | {conf} |')
 
     lines.append(
-        "\n---\n\n*Données techniques déclarées uniquement. "
-        "Aucune donnée personnelle, aucun neurotype demandé ni inféré.*"
+        '\n---\n\n*Données techniques déclarées uniquement. '
+        'Aucune donnée personnelle, aucun neurotype demandé ni inféré.*'
     )
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
     return path
 
 
 def export_csv(team: Team, path: Path) -> Path:
     """Exporte les données de l'équipe en CSV (exclut les membres en opt-out)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", newline="", encoding="utf-8") as f:
+    with open(path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerow(["name", "slug", "level", "limiting_axis", "confidence", "timestamp"])
+        writer.writerow(['name', 'slug', 'level', 'limiting_axis', 'confidence', 'timestamp'])
         for slug, m in team.members.items():
             if m.opt_out:
                 continue
-            writer.writerow([
-                m.name,
-                m.slug,
-                m.level.name if m.level else "",
-                m.limiting_axis or "",
-                f"{m.confidence:.2f}",
-                m.timestamp,
-            ])
+            writer.writerow(
+                [
+                    m.name,
+                    m.slug,
+                    m.level.name if m.level else '',
+                    m.limiting_axis or '',
+                    f'{m.confidence:.2f}',
+                    m.timestamp,
+                ]
+            )
     return path
 
 
@@ -328,9 +326,9 @@ def export_html(team: Team, path: Path) -> Path:
     for team_slug, m in team.members.items():
         if m.opt_out:
             continue
-        level = m.level.name if m.level else "—"
-        conf = f"{m.confidence:.0%}"
-        kelas = "ok" if m.level and m.level >= Level.BLUE else "ko"
+        level = m.level.name if m.level else '—'
+        conf = f'{m.confidence:.0%}'
+        kelas = 'ok' if m.level and m.level >= Level.BLUE else 'ko'
         rows.append(
             f'<tr><td>{html_escape(m.name)}</td><td><code>{html_escape(team_slug)}</code></td>'
             f'<td><span class="badge {kelas}">{html_escape(level)}</span></td>'
@@ -339,14 +337,13 @@ def export_html(team: Team, path: Path) -> Path:
 
     opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     history_filtered = [
-        h for h in team.history
-        if h.get("slug") not in opt_out_slugs and not h.get("opt_out")
+        h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')
     ]
 
     history_rows = []
     for entry in history_filtered[-20:]:
-        ts = entry["timestamp"][:10]
-        level = entry["level"] or "—"
+        ts = entry['timestamp'][:10]
+        level = entry['level'] or '—'
         history_rows.append(
             f'<tr><td>{html_escape(ts)}</td><td>{html_escape(entry["slug"][:16])}...</td>'
             f'<td>{html_escape(level)}</td><td>{html_escape(entry["limiting_axis"] or "—")}</td></tr>'
@@ -393,5 +390,5 @@ def export_html(team: Team, path: Path) -> Path:
 </html>"""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(html, encoding="utf-8")
+    path.write_text(html, encoding='utf-8')
     return path

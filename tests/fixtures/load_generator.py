@@ -12,7 +12,7 @@ import random
 from laivelup.model import ProfileData
 
 
-_SIZES = ["S", "M", "L", "XL"]
+_SIZES = ['S', 'M', 'L', 'XL']
 
 
 def make_valid_profile(index: int = 0) -> ProfileData:
@@ -21,23 +21,23 @@ def make_valid_profile(index: int = 0) -> ProfileData:
     n_prs = rng.randint(1, 5)
     pr_sizes = rng.choices(_SIZES, k=n_prs)
     traces: dict = {
-        "pr_sizes": pr_sizes,
-        "context_versioned": rng.choice([True, False]),
-        "agent_rules_versioned": rng.choice([True, False]),
-        "retry_loops": rng.choice([True, False]),
-        "retries_after_fact": round(rng.random(), 2),
-        "retries_triangulated": rng.choice([True, False]),
-        "parallel_projects": rng.randint(0, 5),
-        "projects_completed": rng.randint(0, 5),
-        "agents_autonomous": rng.choice([True, False]),
-        "prompts": rng.choice([True, False]),
+        'pr_sizes': pr_sizes,
+        'context_versioned': rng.choice([True, False]),
+        'agent_rules_versioned': rng.choice([True, False]),
+        'retry_loops': rng.choice([True, False]),
+        'retries_after_fact': round(rng.random(), 2),
+        'retries_triangulated': rng.choice([True, False]),
+        'parallel_projects': rng.randint(0, 5),
+        'projects_completed': rng.randint(0, 5),
+        'agents_autonomous': rng.choice([True, False]),
+        'prompts': rng.choice([True, False]),
     }
     return ProfileData(
-        name=f"load-profile-{index:04d}",
+        name=f'load-profile-{index:04d}',
         declared_level=None,
         traces=traces,
         answers={},
-        meta={"generated": True, "seed": index},
+        meta={'generated': True, 'seed': index},
     )
 
 

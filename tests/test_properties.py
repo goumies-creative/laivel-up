@@ -43,25 +43,25 @@ def make_profile(
     """Helper pour construire un profil de test."""
     traces = {}
     if pr_sizes is not None:
-        traces["pr_sizes"] = pr_sizes
+        traces['pr_sizes'] = pr_sizes
     if context_versioned:
-        traces["context_versioned"] = True
+        traces['context_versioned'] = True
     if agent_rules_versioned:
-        traces["agent_rules_versioned"] = True
+        traces['agent_rules_versioned'] = True
     if retry_loops:
-        traces["retry_loops"] = True
+        traces['retry_loops'] = True
     if retries_after_fact is not None:
-        traces["retries_after_fact"] = retries_after_fact
+        traces['retries_after_fact'] = retries_after_fact
     if retries_triangulated:
-        traces["retries_triangulated"] = True
+        traces['retries_triangulated'] = True
     if parallel_projects is not None:
-        traces["parallel_projects"] = parallel_projects
+        traces['parallel_projects'] = parallel_projects
     if projects_completed is not None:
-        traces["projects_completed"] = projects_completed
+        traces['projects_completed'] = projects_completed
     if agents_autonomous:
-        traces["agents_autonomous"] = True
+        traces['agents_autonomous'] = True
     return ProfileData(
-        name="test",
+        name='test',
         declared_level=declared_level,
         traces=traces,
     )
@@ -161,12 +161,12 @@ class TestEquite:
         """Un ratio non triangulé ne donne jamais de verdict (équité)."""
         assume(ratio is not None)
         profile = make_profile(
-            pr_sizes=["M", "M"],
+            pr_sizes=['M', 'M'],
             retries_after_fact=ratio,
             retries_triangulated=False,
         )
         verdict = evaluate(profile)
-        itv = next((a for a in verdict.axis_scores if a.axe == "intervention"), None)
+        itv = next((a for a in verdict.axis_scores if a.axe == 'intervention'), None)
         if itv and itv.level is not None:
             assert itv.confidence < 0.5
 
@@ -190,7 +190,7 @@ class TestEquite:
             pr_sizes=[s1, s1, s2, s2],
         )
         verdict = evaluate(profile)
-        taille = next((a for a in verdict.axis_scores if a.axe == "size"), None)
+        taille = next((a for a in verdict.axis_scores if a.axe == 'size'), None)
         if taille:
             assert taille.confidence < 0.5
 
@@ -210,10 +210,10 @@ class TestNormalize:
         """Un booléen à la place d'un ratio est invalide."""
         profile = make_profile(retries_after_fact=False)
         errors = normalize_profile(profile)
-        assert any("retries_after_fact" in e for e in errors)
+        assert any('retries_after_fact' in e for e in errors)
 
     def test_string_est_invalide(self):
         """Une chaîne à la place d'un entier est invalide."""
-        profile = make_profile(parallel_projects="trois")
+        profile = make_profile(parallel_projects='trois')
         errors = normalize_profile(profile)
-        assert any("parallel_projects" in e for e in errors)
+        assert any('parallel_projects' in e for e in errors)

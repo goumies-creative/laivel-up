@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 def _enable_virtual_terminal_windows() -> None:  # pragma: no cover
     """Active Virtual Terminal Processing sur Windows 10+."""
-    if sys.platform != "win32":
+    if sys.platform != 'win32':
         return
     try:
         import ctypes
@@ -38,14 +38,14 @@ def _try_reconfigure_stdout() -> bool:  # pragma: no cover
 
     Retourne True si la reconfiguration a réussi.
     """
-    if sys.platform != "win32":
+    if sys.platform != 'win32':
         return True
-    for stream_name in ("stdout", "stderr"):
+    for stream_name in ('stdout', 'stderr'):
         stream = getattr(sys, stream_name, None)
-        if stream is None or not hasattr(stream, "reconfigure"):
+        if stream is None or not hasattr(stream, 'reconfigure'):
             continue
         try:
-            stream.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+            stream.reconfigure(encoding='utf-8')  # type: ignore[union-attr]
         except (OSError, ValueError):
             return False
     return True
@@ -53,12 +53,12 @@ def _try_reconfigure_stdout() -> bool:  # pragma: no cover
 
 def supports_utf8() -> bool:
     """Détecte si stdout supporte l'encodage UTF-8."""
-    if os.environ.get("PYTHONIOENCODING", "").lower().replace("-", "") == "utf8":
+    if os.environ.get('PYTHONIOENCODING', '').lower().replace('-', '') == 'utf8':
         return True
-    if sys.platform != "win32":
+    if sys.platform != 'win32':
         return True
-    enc = getattr(sys.stdout, "encoding", "") or ""
-    return "utf" in enc.lower()
+    enc = getattr(sys.stdout, 'encoding', '') or ''
+    return 'utf' in enc.lower()
 
 
 def ascii_fallback(text: str) -> str:
@@ -66,27 +66,27 @@ def ascii_fallback(text: str) -> str:
     if supports_utf8():
         return text
     replacements = {
-        "\U0001f534": "[R]",   # 🔴
-        "\U0001f53a": "[R]",   # 🔺
-        "\U0001f539": "[B]",   # 🔹
-        "\U0001f7e2": "[G]",   # 🟢
-        "\U0001f949": "[C]",   # 🥉
-        "\U0001f948": "[S]",   # 🥈
-        "\U0001f947": "[G*]",  # 🥇
-        "\u2757": "!",         # ❗
-        "\u26a0": "!",         # ⚠
-        "\u2728": "*",         # ✨
-        "\U0001f680": ">>",    # 🚀
-        "\u2705": "[OK]",      # ✅
-        "\u274c": "[X]",       # ❌
-        "\u25cf": "[*]",       # ●
-        "\u25cb": "[ ]",       # ○
-        "\u2022": "*",         # •
-        "\u2014": "-",         # —
-        "\u2026": "...",       # …
-        "\u00b7": ".",         # ·
-        "\u2605": "*",         # ★
-        "\u266b": "~",         # ♫
+        '\U0001f534': '[R]',  # 🔴
+        '\U0001f53a': '[R]',  # 🔺
+        '\U0001f539': '[B]',  # 🔹
+        '\U0001f7e2': '[G]',  # 🟢
+        '\U0001f949': '[C]',  # 🥉
+        '\U0001f948': '[S]',  # 🥈
+        '\U0001f947': '[G*]',  # 🥇
+        '\u2757': '!',  # ❗
+        '\u26a0': '!',  # ⚠
+        '\u2728': '*',  # ✨
+        '\U0001f680': '>>',  # 🚀
+        '\u2705': '[OK]',  # ✅
+        '\u274c': '[X]',  # ❌
+        '\u25cf': '[*]',  # ●
+        '\u25cb': '[ ]',  # ○
+        '\u2022': '*',  # •
+        '\u2014': '-',  # —
+        '\u2026': '...',  # …
+        '\u00b7': '.',  # ·
+        '\u2605': '*',  # ★
+        '\u266b': '~',  # ♫
     }
     result = text
     for char, repl in replacements.items():
@@ -104,8 +104,8 @@ def ensure_utf8_env() -> None:  # pragma: no cover
     4. Si tout échoue, supports_utf8() retournera False et les appelants
        utiliseront ascii_fallback()
     """
-    if "PYTHONIOENCODING" not in os.environ:
-        os.environ["PYTHONIOENCODING"] = "utf-8"
+    if 'PYTHONIOENCODING' not in os.environ:
+        os.environ['PYTHONIOENCODING'] = 'utf-8'
     _enable_virtual_terminal_windows()
     _try_reconfigure_stdout()
 
