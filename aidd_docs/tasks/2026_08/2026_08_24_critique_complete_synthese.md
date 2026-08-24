@@ -1,8 +1,8 @@
 # Critique Complète — Synthèse LAIVEL UP
 
 **Date** : 2026-08-24
-**Objectif** : Bilan consolidé des 4 deep dives + review CE, pour décider du reste à faire avant la soumission hackathon (31/08 12h).
-**Méthode** : 5 sessions Claude Desktop (Sonnet 5) — 7-pillar AIDD audit → CE multi-persona review → 4 deep dives (security, adversarial, performance, architecture) → maintainability.
+**Objectif** : Bilan consolidé des 5 deep dives + review CE, pour décider du reste à faire avant la soumission hackathon (31/08 12h).
+**Méthode** : 5 sessions Claude Desktop (Sonnet 5) — 7-pillar AIDD audit → CE multi-persona review → 5 deep dives (security, adversarial, performance, architecture, maintainability, testing).
 
 ---
 
@@ -14,6 +14,7 @@
 | Performance | 8.5/10 | Moteur O(1). Génération de profil 51→1 process git (corrigé). Reste: `fetch-depth: 0` clone complet à surveiller. |
 | Architecture | 9/10 | Couches propres (model→scoring→report→cli), ADR-0007 documenté, verdict_to_dict canonique. |
 | Maintainability | 9/10 | 1903 lignes, 0 TODO/FIXME, type hints, docstrings FR. 4 micro-findings DRY (15 min de refactoring). |
+| Testing | 8.5/10 | 344 tests, ratio 2.2:1. Scoring 100%, security 22 tests, RGPD 19 tests. 8 gaps mineurs (encoding, edge cases, snapshots). |
 | **Global** | **8.8/10** | Prêt pour soumission hackathon. |
 
 ---
@@ -102,7 +103,7 @@
 
 ## 6. Verdict final
 
-**LAIVEL UP est prêt pour la soumission.** Le codebase est propre (9/10 maintainability), sécurisé (9/10), performant (8.5/10), et bien architecturé (9/10). Les 19 fixes de la session 3 critique ont couvert tous les findings critiques et majeurs. Il reste 3 tâches bloquantes (token, release, vidéo) et 4 nice-to-have DRY.
+**LAIVEL UP est prêt pour la soumission.** Le codebase est propre (9/10 maintainability), sécurisé (9/10), performant (8.5/10), bien architecturé (9/10), et testé (8.5/10 — 344 tests, scoring 100%). Les 19 fixes de la session 3 critique ont couvert tous les findings critiques et majeurs. Il reste 3 tâches bloquantes (token, release, vidéo) et 4 nice-to-have DRY.
 
 **Prochaine action** : configurer le token PyPI, tester le release workflow, puis passer à la vidéo.
 

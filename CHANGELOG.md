@@ -25,6 +25,7 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `aidd_docs/.../audit/performance-deep-dive.md` : deep dive performance (score 8.5/10)
 - `aidd_docs/.../audit/architecture-deep-dive.md` : deep dive architecture (score 9/10)
 - `aidd_docs/.../audit/maintainability-deep-dive.md` : deep dive maintenabilité (score 9/10)
+- `aidd_docs/.../audit/testing-deep-dive.md` : deep dive tests (score 8.5/10)
 - `aidd_docs/.../2026_08_24_critique_complete_synthese.md` : synthèse session 3 (8.8/10)
 - `docs/solutions/session-3-critique-audit-trail.md` : learnings session 3
 
