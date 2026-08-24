@@ -43,9 +43,10 @@ def test_score_abstains_on_insufficient_data():
     result = evaluate(giant_profile)
     assert result["level"] is None
 
-def test_slug_uses_sha256_not_md5():
-    """RGPD : SHA-256 obligatoire, jamais MD5."""
-    assert "sha256" in inspect.getsource(_slug)
+def test_slug_uses_hmac_sha256_not_md5():
+    """RGPD : HMAC-SHA-256 obligatoire, jamais MD5."""
+    assert "hmac" in inspect.getsource(slug)
+    assert "sha256" in inspect.getsource(slug)
 
 def test_parallel_max_cannot_be_zero():
     """Divide-by-zero : parallel_max doit être > 0."""
@@ -68,9 +69,9 @@ def test_evaluate_never_crashes(profile):
 @given(st.text(min_size=1))
 def test_slug_is_always_valid(name):
     """Le slug doit toujours être un identifiant valide."""
-    slug = _slug(name)
-    assert len(slug) <= 40
-    assert "-" in slug
+    s = slug(name, generate_team_salt())
+    assert len(s) <= 40
+    assert "-" in s
 ```
 
 ### Stratégies custom
@@ -118,7 +119,7 @@ def _normalize(text: str) -> str:
 | `test_json_injection.py` | 6 | Injection via JSON malveillant |
 | `test_path_traversal.py` | 3 | Manipulation de chemins |
 | `test_dos_profil_giant.py` | 4 | Profils géants (>1MB) |
-| `test_sha256_anonymization.py` | 5 | RGPD SHA-256 |
+| `test_sha256_anonymization.py` | 6 | RGPD HMAC-SHA-256 |
 | `test_bandit_regression.py` | 3 | Pas de nouvelles failles |
 
 ### Baseline bandit
@@ -202,7 +203,8 @@ def test_evaluate_insufficient_data():
 
 # 2. Test avec donnees fixees
 def test_deterministic():
-    assert _slug("alice") == _slug("alice")  # Toujours pareil
+    salt = generate_team_salt()
+    assert slug("alice", salt) == slug("alice", salt)  # Toujours pareil
 
 # 3. Test du comportement, pas de l'implementation
 def test_cli_exits_cleanly(capsys):

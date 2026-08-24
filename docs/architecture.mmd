@@ -14,8 +14,10 @@ graph TD
         MODEL["model.py<br/>Level, Axes, Verdict"]
         SCORING["scoring.py<br/>evaluate()"]
         REPORT["report.py<br/>MD/HTML"]
-        TEAM_MOD["team.py<br/>RGPD slug/sha256"]
+        TEAM_MOD["team.py<br/>RGPD slug/hmac"]
         ENCODING["encoding.py<br/>UTF-8 cross-platform"]
+        UTILS["utils.py<br/>slug HMAC + salt"]
+        QUESTIONS["questions.py<br/>QUESTION_IDS"]
     end
 
     subgraph Config ["Config"]
@@ -55,13 +57,17 @@ graph TD
     EVAL --> REPORT
     INTER --> SCORING
     INTER --> MODEL
+    INTER --> QUESTIONS
     TEAM --> TEAM_MOD
 
     SCHEMA --> MODEL
     SCORING --> MODEL
     SCORING --> SCORING_DEF
+    SCORING --> QUESTIONS
     REPORT --> MODEL
     TEAM_MOD --> MODEL
+    TEAM_MOD --> UTILS
+    UTILS --> MODEL
 
     CALIBRATE --> SCORING
     CALIBRATE_D --> SCORING

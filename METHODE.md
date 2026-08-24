@@ -113,7 +113,7 @@ libres dans les traces avant de re-scorer.
 - **Hyperfocus** : pic signalé en preuve, niveau reste sur l'habituel
 - **White** : décidé par la grille (cellule « parallel = 0 »), jamais deviné
 - **Neurotype** : jamais demandé, jamais inféré
-- **Pseudo-anonyme** : slug RGPD pour les rapports partagés
+- **Pseudo-anonyme** : slug HMAC-SHA-256 avec sel par équipe pour les rapports partagés
 
 ## Traçabilité grille ↔ code
 
@@ -128,6 +128,8 @@ libres dans les traces avant de re-scorer.
 | Seuils taille (S/M/L/XL) | `scoring_defaults.py` | `SIZE_LEVEL` | dict |
 | Retries par palier | `scoring_defaults.py` | `RETRIES_PER_LEVEL` | dict |
 | Validation profil | `schema.py` | `validate_profile()` | globale |
+| Questions partagées | `questions.py` | `QUESTION_IDS` | dict |
+| Slug RGPD | `utils.py` | `slug()` | HMAC-SHA-256 |
 | Rapport MD | `report.py` | `write_reports()` | globale |
 | CLI | `cli.py` | `app` (Typer) | globale |
 

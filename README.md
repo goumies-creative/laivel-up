@@ -71,6 +71,9 @@ src/laivelup/
     scoring.py      → moteur d'évaluation (grille AIDD 4 axes × 7 niveaux)
     report.py       → génération de rapports Markdown + HTML
     team.py         → Team Tracker (équipes, historique, export)
+    utils.py        → slug HMAC-SHA256 + generate_team_salt
+    questions.py    → QUESTION_IDS dict partagé scoring/CLI
+    encoding.py     → UTF-8 cross-platform
 
 tests/
     test_scoring.py     → tests unitaires du moteur
@@ -79,6 +82,7 @@ tests/
     test_properties.py  → tests property-based (hypothesis)
     test_snapshots.py   → tests snapshot de sortie CLI
     test_team.py        → tests du Team Tracker
+    test_team_rgpd.py   → tests RGPD (HMAC, XSS, opt-out)
 
 exemples/           → profils de test JSON
 grille/             → grille officielle AIDD

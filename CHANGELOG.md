@@ -8,6 +8,8 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 ## [Unreleased]
 
 ### Added
+- `utils.py` : slug HMAC-SHA256 + generate_team_salt (shared)
+- `questions.py` : QUESTION_IDS dict partagé scoring/CLI
 - `scripts/demo.py` : script de démo 2 min pour enregistrement asciinema
 - `scripts/version_bump.py` : bump SemVer automatique + tag + commit
 - `.github/workflows/release.yml` : tag v* → build → PyPI + GitHub Release
@@ -16,7 +18,15 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `tests/test_demo.py` : tests structurels et d'exécution de demo.py
 
 ### Changed
+- `team.py` : HMAC-SHA256 avec sel par équipe (slug résistant dictionnaire)
+- `team.py` : export_html échappe les caractères XSS (html.escape)
+- `team.py` : confidence = limiting_axis (pas max)
+- `team.py` : opt_out persiste dans l'historique (B1)
+- `scoring.py` : normalize_profile rejette les floats non-entiers (B2 breaking)
+- `scoring.py` : _questions_for utilise QUESTION_IDS
+- `cli.py` : _merge_answer match par chaîne exacte (plus fragile substring)
 - `CONTRIBUTING.md` : ajout section "Release Process" complète
+- `docs/adr/0007-team-tracker-rgpd-slug-sha256.md` : menaces dictionnaire documentées
 
 ## [0.2.0] - 2026-08-22
 
