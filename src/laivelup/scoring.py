@@ -105,7 +105,18 @@ def normalize_profile(profile: ProfileData) -> list[str]:
                 errors.append(f"traces.{key} must be a non-negative integer.")
             else:
                 try:
-                    if int(value) < 0:
+                    # B2: Rejeter les floats non-entiers (3.7 → erreur, 3.0 → OK)
+                    if isinstance(value, float):
+                        if not value.is_integer():
+                            errors.append(
+                                f"traces.{key} must be an integer, not {value}. "
+                                f"Use int({value}) = {int(value)} if truncation is intended."
+                            )
+                        else:
+                            value = int(value)
+                    else:
+                        value = int(value)
+                    if value < 0:
                         errors.append(f"traces.{key} must be a non-negative integer.")
                 except (TypeError, ValueError):
                     errors.append(f"traces.{key} must be an integer.")
@@ -319,39 +330,27 @@ def progress_for_axis(axe: str, level: Level | None) -> list[str]:
 
 
 def _questions_for(profile: ProfileData) -> list[str]:
+    from .questions import QUESTION_IDS
+
     questions: list[str] = []
     t = profile.traces
     if t.get("pr_sizes") is None:
-        questions.append(
-            "Quelle est la taille habituelle de tes features livrées avec l'IA (S, M, L, XL) ?"
-        )
+        questions.append(QUESTION_IDS["PR_SIZES"])
     if profile.declared_level is None:
-        questions.append(
-            "Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?"
-        )
+        questions.append(QUESTION_IDS["DECLARED_LEVEL"])
     if t.get("retries_after_fact") is None:
-        questions.append(
-            "Quelle part de tes PR est reprise ou corrigée par toi après coup ?"
-            " (Et vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)"
-        )
+        questions.append(QUESTION_IDS["RETRIES_RATIO"])
     elif not t.get("retries_triangulated"):
-        questions.append(
-            "Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir "
-            "quelques PR typiques pour le corroborer ?"
-        )
+        questions.append(QUESTION_IDS["RETRIES_TRIANGULATED"])
     if not any(bool(t.get(k)) for k in ADOPTION_SIGNALS):
-        questions.append("As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?")
+        questions.append(QUESTION_IDS["ADOPTION_SIGNALS"])
     n_par = t.get("parallel_projects")
     if n_par is None:
-        questions.append(
-            "Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont au bout ?"
-        )
+        questions.append(QUESTION_IDS["PARALLEL_PROJECTS"])
     elif t.get("projects_completed") is None and (_as_int(n_par) or 0) >= 3:
-        questions.append("Parmi ces chantiers, combien sont menés jusqu'au bout ?")
+        questions.append(QUESTION_IDS["PROJECTS_COMPLETED"])
     if not questions:
-        questions.append(
-            "Les données fournies semblent complètes : quelle dimension veux-tu vérifier d'abord ?"
-        )
+        questions.append(QUESTION_IDS["DEFAULT"])
     return questions
 
 

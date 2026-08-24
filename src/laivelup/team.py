@@ -10,16 +10,19 @@ Le pseudo-anonyme (slug RGPD) protège l'identité dans les rapports partagés.
 
 from __future__ import annotations
 
+import contextlib
 import csv
 import hashlib
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
+from html import escape as html_escape
 from pathlib import Path
 from typing import TextIO
 
 from .model import Level, ProfileData, Verdict
 from .scoring import evaluate
+from .utils import generate_team_salt, slug
 
 _DEFAULT_TEAM_DIR = Path(".laivelup") / "teams"
 
@@ -37,8 +40,9 @@ def save_team(team: Team, path: Path | None = None) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "name": team.name,
+        "salt": team.salt,
         "members": {
-            slug: {
+            team_slug: {
                 "name": m.name,
                 "slug": m.slug,
                 "level": m.level.name if m.level else None,
@@ -49,7 +53,7 @@ def save_team(team: Team, path: Path | None = None) -> Path:
                 "next_steps_count": m.next_steps_count,
                 "opt_out": m.opt_out,
             }
-            for slug, m in team.members.items()
+            for team_slug, m in team.members.items()
         },
         "history": team.history,
     }
@@ -63,16 +67,15 @@ def load_team(name: str, path: Path | None = None) -> Team:
     if not source.exists():
         return Team(name=name)
     data = json.loads(source.read_text(encoding="utf-8"))
-    team = Team(name=data.get("name", name))
-    for slug, m in data.get("members", {}).items():
+    team_salt = data.get("salt", generate_team_salt())
+    team = Team(name=data.get("name", name), salt=team_salt)
+    for team_slug, m in data.get("members", {}).items():
         level = None
         if m.get("level"):
-            try:
+            with contextlib.suppress(KeyError):
                 level = Level[m["level"]]
-            except KeyError:
-                pass
-        team.members[slug] = MemberSnapshot(
-            slug=slug,
+        team.members[team_slug] = MemberSnapshot(
+            slug=team_slug,
             name=m["name"],
             level=level,
             limiting_axis=m.get("limiting_axis"),
@@ -108,22 +111,21 @@ class Team:
     name: str
     members: dict[str, MemberSnapshot] = field(default_factory=dict)
     history: list[dict] = field(default_factory=list)
+    salt: str = field(default_factory=generate_team_salt)
 
 
-def _slug(name: str) -> str:
-    """Pseudo-anonyme RGPD pour le partage de rapports."""
-    digest = hashlib.sha256(name.encode("utf-8")).hexdigest()[:8]
-    cleaned = "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-") or "membre"
-    return f"{cleaned[:32]}-{digest}"
+def _slug(name: str, salt: str | None = None) -> str:
+    """Pseudo-anonyme RGPD — wrapper pour compatibilité interne."""
+    return slug(name, salt)
 
 
 def create_team(name: str, member_names: list[str]) -> Team:
     """Crée une équipe avec des membres pseudo-anonymisés."""
     team = Team(name=name)
     for member_name in member_names:
-        slug = _slug(member_name)
-        team.members[slug] = MemberSnapshot(
-            slug=slug,
+        team_slug = _slug(member_name, team.salt)
+        team.members[team_slug] = MemberSnapshot(
+            slug=team_slug,
             name=member_name,
             level=None,
             limiting_axis=None,
@@ -146,28 +148,33 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
     verdict = evaluate(profile)
     member = team.members[slug]
 
+    # Fix #5: confiance de l'axe plancher (pas le max)
+    axis_confidences = {a.axe: a.confidence for a in verdict.axis_scores}
+    limiting_confidence = (
+        axis_confidences.get(verdict.limiting_axis, 0.0)
+        if verdict.limiting_axis
+        else 0.0
+    )
+
     snapshot = MemberSnapshot(
         slug=slug,
         name=member.name,
         level=verdict.level,
         limiting_axis=verdict.limiting_axis,
-        confidence=(
-            max(a.confidence for a in verdict.axis_scores)
-            if verdict.axis_scores
-            else 0.0
-        ),
+        confidence=limiting_confidence,
         red_flags_count=len(verdict.red_flags),
         next_steps_count=len(verdict.next_steps),
     )
     team.members[slug] = snapshot
 
-    # Journaliser dans l'historique
+    # Journaliser dans l'historique (B1: opt_out persisté dans l'historique)
     team.history.append({
         "timestamp": snapshot.timestamp,
         "slug": slug,
         "level": verdict.level.name if verdict.level else None,
         "limiting_axis": verdict.limiting_axis,
         "confidence": snapshot.confidence,
+        "opt_out": False,
     })
 
     return verdict
@@ -186,6 +193,12 @@ def remove_member(team: Team, slug: str, purge: bool = False) -> None:
 
     if purge:
         team.history = [h for h in team.history if h.get("slug") != slug]
+    else:
+        # B1: Marquer les entrées d'historique avec opt_out=True
+        team.history = [
+            {**h, "opt_out": True} if h.get("slug") == slug else h
+            for h in team.history
+        ]
 
     del team.members[slug]
 
@@ -199,11 +212,12 @@ def set_opt_out(team: Team, slug: str, opt_out: bool = True) -> None:
 
 def export_json(team: Team, path: Path) -> Path:
     """Exporte l'état de l'équipe en JSON (exclut les membres en opt-out)."""
+    opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     data = {
         "team": team.name,
         "exported_at": datetime.now().isoformat(),
         "members": {
-            slug: {
+            team_slug: {
                 "name": m.name,
                 "slug": m.slug,
                 "level": m.level.name if m.level else None,
@@ -211,12 +225,14 @@ def export_json(team: Team, path: Path) -> Path:
                 "confidence": m.confidence,
                 "timestamp": m.timestamp,
             }
-            for slug, m in team.members.items()
+            for team_slug, m in team.members.items()
             if not m.opt_out
         },
-        "history": [h for h in team.history if not any(
-            team.members[s].opt_out for s in team.members if s == h.get("slug")
-        )],
+        # B1: filtre par opt_out du membre OU opt_out persisté dans l'historique
+        "history": [
+            h for h in team.history
+            if h.get("slug") not in opt_out_slugs and not h.get("opt_out")
+        ],
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -231,17 +247,18 @@ def export_markdown(team: Team, path: Path) -> Path:
     lines.append("\n## Membres\n")
     lines.append("| Membre | Slug | Niveau | Axe plancher | Confiance |")
     lines.append("|--------|------|--------|--------------|-----------|")
-    for slug, m in team.members.items():
+    for m_slug, m in team.members.items():
         if m.opt_out:
             continue
         level = m.level.name if m.level else "—"
         axis = m.limiting_axis or "—"
         conf = f"{m.confidence:.0%}"
-        lines.append(f"| {m.name} | `{slug}` | {level} | {axis} | {conf} |")
+        lines.append(f"| {m.name} | `{m_slug}` | {level} | {axis} | {conf} |")
 
     opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     history_filtered = [
-        h for h in team.history if h.get("slug") not in opt_out_slugs
+        h for h in team.history
+        if h.get("slug") not in opt_out_slugs and not h.get("opt_out")
     ]
 
     if history_filtered:
@@ -289,21 +306,22 @@ def export_csv(team: Team, path: Path) -> Path:
 def export_html(team: Team, path: Path) -> Path:
     """Exporte un rapport HTML de l'équipe (exclut les membres en opt-out)."""
     rows = []
-    for slug, m in team.members.items():
+    for team_slug, m in team.members.items():
         if m.opt_out:
             continue
         level = m.level.name if m.level else "—"
         conf = f"{m.confidence:.0%}"
         kelas = "ok" if m.level and m.level >= Level.BLUE else "ko"
         rows.append(
-            f'<tr><td>{m.name}</td><td><code>{slug}</code></td>'
-            f'<td><span class="badge {kelas}">{level}</span></td>'
-            f'<td>{m.limiting_axis or "—"}</td><td>{conf}</td></tr>'
+            f'<tr><td>{html_escape(m.name)}</td><td><code>{html_escape(team_slug)}</code></td>'
+            f'<td><span class="badge {kelas}">{html_escape(level)}</span></td>'
+            f'<td>{html_escape(m.limiting_axis or "—")}</td><td>{conf}</td></tr>'
         )
 
     opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     history_filtered = [
-        h for h in team.history if h.get("slug") not in opt_out_slugs
+        h for h in team.history
+        if h.get("slug") not in opt_out_slugs and not h.get("opt_out")
     ]
 
     history_rows = []
@@ -311,8 +329,8 @@ def export_html(team: Team, path: Path) -> Path:
         ts = entry["timestamp"][:10]
         level = entry["level"] or "—"
         history_rows.append(
-            f'<tr><td>{ts}</td><td>{entry["slug"][:16]}...</td>'
-            f'<td>{level}</td><td>{entry["limiting_axis"] or "—"}</td></tr>'
+            f'<tr><td>{html_escape(ts)}</td><td>{html_escape(entry["slug"][:16])}...</td>'
+            f'<td>{html_escape(level)}</td><td>{html_escape(entry["limiting_axis"] or "—")}</td></tr>'
         )
 
     html = f"""<!doctype html>

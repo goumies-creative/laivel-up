@@ -355,9 +355,12 @@ _LEVELS_BY_KEYWORD = (
 def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileData:
     """Fusionne la réponse dans les traces pour le rescore. Heuristiques simples,
     documentées dans METHODE.md, jamais de jugement basé sur la personne."""
+    from .questions import QUESTION_IDS
+
     low = answer.strip().lower()
 
-    if "taille" in question:
+    # B3: Matching par ID de question (stable) plutôt que par sous-chaîne texte libre
+    if question == QUESTION_IDS["PR_SIZES"]:
         matched = [size for size in ("S", "M", "L", "XL")
                    if re.search(rf"\b{size}\b", answer)]
         if matched:
@@ -366,32 +369,34 @@ def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileDa
                 if size not in current:
                     current.append(size)
 
-    if "peux-tu fournir" in question:
+    elif question == QUESTION_IDS["RETRIES_TRIANGULATED"]:
         if answer.strip():
             profile.traces["retries_triangulated"] = True
-    elif "reprise" in question:
+
+    elif question == QUESTION_IDS["RETRIES_RATIO"]:
         parsed = _parse_retry_ratio(low)
         if parsed is not None:
             profile.traces["retries_after_fact"] = parsed
 
-    if "contexte" in question and low.startswith(("oui", "yes")):
-        profile.traces["context_versioned"] = True
+    elif question == QUESTION_IDS["ADOPTION_SIGNALS"]:
+        if low.startswith(("oui", "yes")):
+            profile.traces["context_versioned"] = True
 
-    if "chantiers" in question:
-        if "jusqu'au bout" in question or "menés au bout" in question:
-            nb = re.search(r"\d+", low)
-            if nb:
-                profile.traces["projects_completed"] = int(nb.group(0))
-        else:
-            numbers = re.findall(r"\d+", low)
-            if numbers:
-                profile.traces["parallel_projects"] = int(numbers[0])
-                if len(numbers) >= 2:
-                    profile.traces["projects_completed"] = int(numbers[1])
-                elif re.search(r"tou(?:s|t)\b", low):
-                    profile.traces["projects_completed"] = int(numbers[0])
+    elif question == QUESTION_IDS["PROJECTS_COMPLETED"]:
+        nb = re.search(r"\d+", low)
+        if nb:
+            profile.traces["projects_completed"] = int(nb.group(0))
 
-    if "niveau" in question:
+    elif question == QUESTION_IDS["PARALLEL_PROJECTS"]:
+        numbers = re.findall(r"\d+", low)
+        if numbers:
+            profile.traces["parallel_projects"] = int(numbers[0])
+            if len(numbers) >= 2:
+                profile.traces["projects_completed"] = int(numbers[1])
+            elif re.search(r"tou(?:s|t)\b", low):
+                profile.traces["projects_completed"] = int(numbers[0])
+
+    elif question == QUESTION_IDS["DECLARED_LEVEL"]:
         for word, level in _LEVELS_BY_KEYWORD:
             if re.search(rf"\b{word}\b", low):
                 profile.declared_level = Level[level]

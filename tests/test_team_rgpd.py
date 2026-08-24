@@ -241,3 +241,98 @@ class TestRGPDSanitizeGenerateProfile:
         assert "@" not in profile["meta"]["repo_path"]
         assert profile["meta"]["user"] == "alice"
         assert profile["meta"]["repo_path"] == "test-repo"
+
+
+class TestReviewFixes:
+    """Tests des correctifs review: XSS, opt-out survive remove, slug salted, etc."""
+
+    def test_export_html_escapes_xss(self, tmp_path):
+        """Fix #1: export_html échappe les caractères HTML dangereux."""
+
+        team = create_team("Test", ['<script>alert("xss")</script>'])
+        slug = next(iter(team.members.keys()))
+        profile = make_profile(pr_sizes=["M"], context_versioned=True)
+        evaluate_member(team, slug, profile)
+        out = tmp_path / "team.html"
+        export_html(team, out)
+        content = out.read_text(encoding="utf-8")
+        assert "<script>" not in content
+        assert "&lt;script&gt;" in content
+
+    def test_opt_out_survives_remove_no_purge(self, tmp_path):
+        """Fix #2: opt-out persisté dans l'historique après remove(purge=False)."""
+        from laivelup.team import remove_member, set_opt_out
+
+        team = create_team("Test", ["Alice", "Bob"])
+        slug_alice = next(s for s, m in team.members.items() if m.name == "Alice")
+        slug_bob = next(s for s, m in team.members.items() if m.name == "Bob")
+        profile = make_profile(pr_sizes=["M"], context_versioned=True)
+        evaluate_member(team, slug_alice, profile)
+        evaluate_member(team, slug_bob, profile)
+        set_opt_out(team, slug_alice, True)
+        remove_member(team, slug_alice, purge=False)
+        # L'historique d'Alice doit être marqué opt_out=True
+        alice_history = [h for h in team.history if h["slug"] == slug_alice]
+        assert len(alice_history) == 1
+        assert alice_history[0]["opt_out"] is True
+        # L'export ne doit pas inclure l'historique d'Alice
+        out = tmp_path / "team.json"
+        export_json(team, out)
+        data = json.loads(out.read_text(encoding="utf-8"))
+        assert all(h["slug"] != slug_alice for h in data["history"])
+
+    def test_slug_resists_dictionary_attack(self):
+        """Fix #3: slug avec sel résiste à une attaque par dictionnaire."""
+        from laivelup.utils import generate_team_salt
+        from laivelup.utils import slug as slug_fn
+
+        salt = generate_team_salt()
+        noms = ["Alice", "Bob", "Charlie", "Diana", "Eve"]
+        slugs_salts = {name: slug_fn(name, salt) for name in noms}
+        # Vérifier que les slugs sont uniques
+        assert len(set(slugs_salts.values())) == len(noms)
+        # Vérifier que sans sel, les slugs sont différents
+        slugs_no_salt = {name: slug_fn(name, None) for name in noms}
+        for name in noms:
+            assert slugs_salts[name] != slugs_no_salt[name]
+
+    def test_coercion_rejects_floats(self):
+        """Fix #4: normalize_profile rejette les floats non-entiers."""
+        from laivelup.scoring import normalize_profile
+
+        profile = ProfileData(
+            name="test",
+            traces={"parallel_projects": 3.7, "projects_completed": 2.3}
+        )
+        errors = normalize_profile(profile)
+        assert any("parallel_projects" in e and "integer" in e.lower() for e in errors)
+        assert any("projects_completed" in e and "integer" in e.lower() for e in errors)
+
+    def test_confidence_matches_limiting_axis(self):
+        """Fix #5: confidence du snapshot = axe plancher (pas le max)."""
+        team = create_team("Test", ["Alice"])
+        slug = next(iter(team.members.keys()))
+        profile = make_profile(
+            pr_sizes=["M", "M"],
+            context_versioned=True,
+            retries_after_fact=0.5,
+            parallel_projects=1,
+        )
+        verdict = evaluate_member(team, slug, profile)
+        member = team.members[slug]
+        # La confiance doit correspondre à l'axe plancher, pas le max
+        if verdict.limiting_axis:
+            axis_conf = next(
+                a.confidence for a in verdict.axis_scores
+                if a.axe == verdict.limiting_axis
+            )
+            assert member.confidence == axis_conf
+
+    def test_slug_in_utils_importable(self):
+        """Fix #9: slug est importable depuis utils.py."""
+        from laivelup.utils import generate_team_salt
+        from laivelup.utils import slug as slug_fn
+        salt = generate_team_salt()
+        result = slug_fn("test", salt)
+        assert "-" in result
+        assert len(result) <= 41

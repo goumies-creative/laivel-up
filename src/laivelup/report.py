@@ -8,11 +8,11 @@ Aucun neurotype n'est mesuré, demandé ni inféré.
 
 from __future__ import annotations
 
-import hashlib
 from html import escape
 from pathlib import Path
 
 from .model import Verdict, axis_label, level_label
+from .utils import slug
 
 
 def render_markdown(verdict: Verdict) -> str:
@@ -166,6 +166,4 @@ def write_reports(verdict: Verdict, out_dir: Path, with_html: bool = True) -> tu
 
 def _slug(name: str) -> str:
     # Slug court et stable, sans conserver de nom humain lisible (prudence RGPD).
-    digest = hashlib.sha256(name.encode("utf-8")).hexdigest()[:8]
-    cleaned = "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-") or "profil"
-    return f"{cleaned[:32]}-{digest}"
+    return slug(name)
