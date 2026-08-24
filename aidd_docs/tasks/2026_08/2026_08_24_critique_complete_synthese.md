@@ -1,8 +1,8 @@
 # Critique Complète — Synthèse LAIVEL UP
 
 **Date** : 2026-08-24
-**Objectif** : Bilan consolidé des 5 deep dives + review CE, pour décider du reste à faire avant la soumission hackathon (31/08 12h).
-**Méthode** : 5 sessions Claude Desktop (Sonnet 5) — 7-pillar AIDD audit → CE multi-persona review → 5 deep dives (security, adversarial, performance, architecture, maintainability, testing).
+**Objectif** : Bilan consolidé des 6 deep dives + review CE, pour décider du reste à faire avant la soumission hackathon (31/08 12h).
+**Méthode** : Sessions Claude Desktop + OpenCode — 7-pillar AIDD audit → CE multi-persona review → 6 deep dives (security, adversarial, performance, architecture, maintainability, testing).
 
 ---
 
@@ -74,8 +74,9 @@
 | 7 | DRY: extraire `_filter_history()` dans `team.py` | 5 min | Maintainability +0.1 |
 | 8 | DRY: extraire `_get_member()` dans `team.py` | 5 min | Maintainability +0.1 |
 | 9 | DRY: supprimer `_slug()` wrapper dupliqué | 5 min | Code propre |
-| 10 | Phase 4 hooks: `on-team-eval` pour intégrations futures | 1h | Fonctionnalité post-hackathon |
-| 11 | Vidéo longue 5 min: explication AIDD + résultats | 2h | Bonus soumission |
+| 10 | DRY: extraire CSS badge `.ok`/`.ko` dans constante partagée | 2 min | Maintainability +0.1 |
+| 11 | Phase 4 hooks: `on-team-eval` pour intégrations futures | 1h | Fonctionnalité post-hackathon |
+| 12 | Vidéo longue 5 min: explication AIDD + résultats | 2h | Bonus soumission |
 
 ---
 
@@ -103,7 +104,7 @@
 
 ## 6. Verdict final
 
-**LAIVEL UP est prêt pour la soumission.** Le codebase est propre (9/10 maintainability), sécurisé (9/10), performant (8.5/10), bien architecturé (9/10), et testé (8.5/10 — 344 tests, scoring 100%). Les 19 fixes de la session 3 critique ont couvert tous les findings critiques et majeurs. Il reste 3 tâches bloquantes (token, release, vidéo) et 4 nice-to-have DRY.
+**LAIVEL UP est prêt pour la soumission.** Le codebase est propre (9/10 maintainability), sécurisé (9/10), performant (8.5/10), bien architecturé (9/10), et testé (8.5/10 — 344 tests, scoring 100%). Les 19 fixes de la session 3 critique ont couvert tous les findings critiques et majeurs. Il reste 3 tâches bloquantes (token, release, vidéo) et 4 nice-to-have DRY + 2 nice-to-have feature/bonus.
 
 **Prochaine action** : configurer le token PyPI, tester le release workflow, puis passer à la vidéo.
 
