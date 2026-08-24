@@ -10,6 +10,10 @@
 │ --out                       PATH  Dossier des rapports. [default: rapports] │
 │ --html         --no-html          Générer le rapport HTML. [default: html]  │
 │ --verbose  -v                     Sortie détaillée technique.               │
+│ --json     -j                     Sortie JSON (CI/agent).                   │
+│ --fail-on                   TEXT  Fail si niveau inférieur (ex: RED).       │
+│ --fields                    TEXT  Filtrer champs JSON.                      │
+│ --quiet    -q                     Sortie JSON automatique.                  │
 │ --help                            Show this message and exit.               │
 └─────────────────────────────────────────────────────────────────────────────┘
 

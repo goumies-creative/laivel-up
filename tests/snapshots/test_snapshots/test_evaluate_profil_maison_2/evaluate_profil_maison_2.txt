@@ -1,18 +1,47 @@
-      Verdict · profil-maison-2      
-┌──────────────┬────────┬───────────┐
-│ Axe          │ Niveau │ Confiance │
-├──────────────┼────────┼───────────┤
-│ Taille       │ 🔺 Red │ 70%       │
-│ Harness      │ —      │ —         │
-│ Intervention │ 🔺 Red │ 40%       │
-│ En parallèle │ —      │ —         │
-└──────────────┴────────┴───────────┘
-Refus de trancher : données insuffisantes ou contradictoires.
-Questions à poser :
-  · Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?
-  · Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir quelques 
-PR typiques pour le corroborer ?
-  · As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
-  · Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont
-au bout ?
-Rapport Markdown : rapports\profil-maison-2-a7564097.md
+{
+  "name": "profil-maison-2",
+  "level": null,
+  "limiting_axis": "harness",
+  "axes": [
+    {
+      "axe": "size",
+      "level": "RED",
+      "confidence": 0.7,
+      "evidence": [
+        "2 PR S"
+      ],
+      "variance": null
+    },
+    {
+      "axe": "harness",
+      "level": null,
+      "confidence": 0.0,
+      "evidence": [],
+      "variance": null
+    },
+    {
+      "axe": "intervention",
+      "level": "RED",
+      "confidence": 0.4,
+      "evidence": [
+        "retry after the fact, on majority"
+      ],
+      "variance": null
+    },
+    {
+      "axe": "parallel",
+      "level": null,
+      "confidence": 0.0,
+      "evidence": [],
+      "variance": null
+    }
+  ],
+  "red_flags": [],
+  "next_steps": [
+    "Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?",
+    "Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir quelques PR typiques pour le corroborer ?",
+    "As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?",
+    "Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont au bout ?"
+  ],
+  "data_errors": []
+}

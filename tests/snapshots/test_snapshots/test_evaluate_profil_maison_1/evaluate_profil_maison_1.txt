@@ -1,15 +1,48 @@
-       Verdict · profil-maison-1       
-┌──────────────┬──────────┬───────────┐
-│ Axe          │ Niveau   │ Confiance │
-├──────────────┼──────────┼───────────┤
-│ Taille       │ 🔹 Blue  │ 90%       │
-│ Harness      │ —        │ —         │
-│ Intervention │ 🔺 Red   │ 40%       │
-│ En parallèle │ 🟢 Green │ 80%       │
-└──────────────┴──────────┴───────────┘
-Refus de trancher : données insuffisantes ou contradictoires.
-Questions à poser :
-  · Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir quelques 
-PR typiques pour le corroborer ?
-  · As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
-Rapport Markdown : rapports\profil-maison-1-8f2edaf9.md
+{
+  "name": "profil-maison-1",
+  "level": null,
+  "limiting_axis": "harness",
+  "axes": [
+    {
+      "axe": "size",
+      "level": "BLUE",
+      "confidence": 0.9,
+      "evidence": [
+        "1 PR S",
+        "3 PR M"
+      ],
+      "variance": null
+    },
+    {
+      "axe": "harness",
+      "level": null,
+      "confidence": 0.0,
+      "evidence": [],
+      "variance": null
+    },
+    {
+      "axe": "intervention",
+      "level": "RED",
+      "confidence": 0.4,
+      "evidence": [
+        "retry after the fact, on majority"
+      ],
+      "variance": null
+    },
+    {
+      "axe": "parallel",
+      "level": "GREEN",
+      "confidence": 0.8,
+      "evidence": [
+        "1 parallel projects"
+      ],
+      "variance": null
+    }
+  ],
+  "red_flags": [],
+  "next_steps": [
+    "Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir quelques PR typiques pour le corroborer ?",
+    "As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?"
+  ],
+  "data_errors": []
+}

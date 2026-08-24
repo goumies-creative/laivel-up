@@ -4,9 +4,11 @@
  Évaluation du niveau AIDD d'un développeur (piste Décodeuse).                 
                                                                                
 ┌─ Options ───────────────────────────────────────────────────────────────────┐
-│ --help          Show this message and exit.                                 │
+│ --version  -V        Affiche la version                                     │
+│ --help               Show this message and exit.                            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ┌─ Commands ──────────────────────────────────────────────────────────────────┐
+│ schema       Retourne le schema JSON de ce tool (auto-découverte agent).    │
 │ evaluate     Évalue un profil et écrit les rapports Markdown (+ HTML).      │
 │ interrogate  Mode entretien guidé (Décodeuse) : pose les questions,         │
 │              fusionne les réponses, re-score.                               │

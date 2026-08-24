@@ -1,15 +1,12 @@
 # Plan Critique Complète — Goumies Creative LAIVEL UP
 
 > **Date** : 2026-08-23
-> **Mode** : Plan (read-only) — exécuté via Claude Desktop + OpenCode
+> **Mode** : Plan (read-only) — à exécuter via Claude Desktop (comptes gratuits)
 > **Projet** : `C:\Users\Romy\Desktop\GoumiesLand\GoumiesCreative-Agency\hackathons\goumies-creative-laivel-up`
-> **Dernière mise à jour** : 2026-08-24 — état réel (toutes sessions complétées)
 
 ---
 
 ## [x] 1. Audit Global — 7 Piliers AIDD
-
-> **Fait** — Session 1 (Claude Desktop). Sortie : `aidd_docs/tasks/2026_08/2026_08_22_audit/`
 
 | # | Skill | Type | Emplacement Local | Sortie |
 |---|-------|------|-------------------|--------|
@@ -27,8 +24,6 @@
 ---
 
 ## [x] 2. Code Review Multi-Persona — Compound Engineering
-
-> **Fait** — Session 2 (Claude Desktop). Sortie : `docs/reviews/core-modules-correctness-security-review.md`
 
 | # | Skill | Type | Emplacement Local | Personas Sélectionnées (auto) |
 |---|-------|------|-------------------|-------------------------------|
@@ -50,19 +45,16 @@
 
 ---
 
-## [x] 3. Deep Dives Spécialisés — Agents CE (sessions séparées)
-
-> **Fait** — Sessions 3-5 (OpenCode). 6 deep dives livrés, score global 8.8/10.
-> Sortie : `aidd_docs/tasks/2026_08/2026_08_24_audit/` (security, adversarial, performance, architecture, maintainability, testing) + `aidd_docs/tasks/2026_08/2026_08_24_critique_complete_synthese.md`
+## 3. Deep Dives Spécialisés — Agents CE (sessions séparées)
 
 | # | Agent | Type | Emplacement Local | Focus |
 |---|-------|------|-------------------|-------|
-| 3a | `ce-security-sentinel` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-security-sentinel\` | Audit OWASP, secrets, input validation, auth |
-| 3b | `ce-adversarial-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-adversarial-reviewer\` | Scénarios d'attaque, failure modes |
-| 3c | `ce-performance-oracle` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-performance-oracle\` | Bottlenecks, complexité, load tests |
-| 3d | `ce-architecture-strategist` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-architecture-strategist\` | C4, ADRs, pattern compliance |
-| 3e | `ce-maintainability-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-maintainability-reviewer\` | Couplage, dead code, abstractions |
-| 3f | `ce-testing-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-testing-reviewer\` | Coverage gaps, brittle tests |
+| [x] 3a | `ce-security-sentinel` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-security-sentinel\` | Audit OWASP, secrets, input validation, auth |
+| [x] 3b | `ce-adversarial-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-adversarial-reviewer\` | Scénarios d'attaque, failure modes |
+| [x] 3c | `ce-performance-oracle` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-performance-oracle\` | Bottlenecks, complexité, load tests |
+| [x] 3d | `ce-architecture-strategist` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-architecture-strategist\` | C4, ADRs, pattern compliance |
+| [x] 3e | `ce-maintainability-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-maintainability-reviewer\` | Couplage, dead code, abstractions |
+| [x] 3f | `ce-testing-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-testing-reviewer\` | Coverage gaps, brittle tests |
 
 **Lancement** (chacun dans session Claude Desktop séparée) :
 ```bash
@@ -73,15 +65,13 @@
 
 ---
 
-## [x] 4. Documentation & Architecture Review
-
-> **Fait** — `ce-doc-review` appliqué aux 5 plans actifs. Sortie : `docs/reviews/2026-08-24-ce-doc-review-plans-actifs.md`
+## 4. Documentation & Architecture Review
 
 | # | Skill/Agent | Type | Emplacement Local | Focus |
 |---|-------------|------|-------------------|-------|
-| 4a | `ce-doc-review` | **Skill CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-doc-review\` | Spawn 7 reviewers doc (coherence, design, feasibility, product, security, scope, adversarial-doc) |
-| 4b | `ce-coherence-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-coherence-reviewer\` | Contradictions, terminology drift |
-| 4c | `ce-product-lens-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-product-lens-reviewer\` | Goal-work misalignment, opportunity cost |
+| [x] 4a | `ce-doc-review` | **Skill CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-doc-review\` | Spawn 7 reviewers doc (coherence, design, feasibility, product, security, scope, adversarial-doc) |
+| [x] 4b | `ce-coherence-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-coherence-reviewer\` | Contradictions, terminology drift |
+| [x] 4c | `ce-product-lens-reviewer` | **Agent CE** | `C:\Users\Romy\.cache\opencode\packages\compound-engineering@git+https_\github.com\EveryInc\compound-engineering-plugin.git\node_modules\compound-engineering\skills\ce-product-lens-reviewer\` | Goal-work misalignment, opportunity cost |
 
 **Docs à reviewer** : `spec.md`, `plan.md`, `METHODE.md`, `architecture.mmd`, `AI_ACT_CONFORMITY.md`, `AI_ACT_RISK_MANAGEMENT.md`, `RGPD_REGISTER.md`
 
@@ -93,13 +83,11 @@
 
 ---
 
-## [x] 5. Synthèse & Plan d'Action
-
-> **Fait** — Consolidation live dans OpenCode. Sortie : `docs/solutions/session-3-critique-audit-trail.md` + `aidd_docs/tasks/2026_08/2026_08_24_critique_complete_synthese.md`
+## 5. Synthèse & Plan d'Action
 
 | # | Activité | Type | Emplacement | Livrable |
 |---|----------|------|-------------|----------|
-| 5 | Consolidation rapports | Manuel (Claude Desktop) | N/A | `CRITIQUE_CONSOLIDEE_2026_08_23.md` |
+| [] 5 | Consolidation rapports | Manuel (Claude Desktop) | N/A | `CRITIQUE_CONSOLIDEE_2026_08_24.md` |
 
 **Contenu du livrable final** :
 - Top 5 fixes critiques (P0/P1) — security, correctness
@@ -159,22 +147,6 @@ aidd_docs/tasks/2026_08/
 | **3** | 3×15 min | 3 agents parallèles : security-sentinel, adversarial-reviewer, performance-oracle |
 | **4** | 20 min | `ce-doc-review` + architecture-strategist sur `architecture.mmd` |
 | **5** | 30 min | Synthèse + `CRITIQUE_CONSOLIDEE_2026_08_23.md` |
-
----
-
-## Résultat réel
-
-| Session | Statut | Sortie |
-|---------|--------|--------|
-| 1. Audit 7 piliers | ✅ Done | `aidd_docs/tasks/2026_08/2026_08_22_audit/` |
-| 2. CE Code Review | ✅ Done | `docs/reviews/core-modules-correctness-security-review.md` |
-| 3-5. Deep Dives | ✅ Done | 6 deep dives (security 9/10, architecture 9/10, maintainability 9/10, testing 8.5/10, adversarial, performance) |
-| 4. Doc Review | ✅ Done | `docs/reviews/2026-08-24-ce-doc-review-plans-actifs.md` |
-| 5. Synthèse | ✅ Done | Score global **8.8/10** |
-
-**Durée réelle** : ~4 sessions (2h30) au lieu de 5 prévues — gain via OpenCode multi-agents.
-
-**Fichiers produits** : 14 fichiers, commits `456fb09` → `b5b1232`.
 
 ---
 
