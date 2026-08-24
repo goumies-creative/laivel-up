@@ -34,34 +34,40 @@ def _git(repo: Path, args: list[str]) -> str:
 
 
 def _detect_pr_sizes(repo: Path, user: str) -> list[str]:
-    """Classe les PRs de l'utilisateur par taille (S/M/L/XL) via git log."""
+    """Classe les PRs de l'utilisateur par taille (S/M/L/XL) via un seul appel git."""
     log = _git(repo, [
-        "log", "--author=" + user, "--format=%H", "--merges",
-        "--since=1 year ago",
+        "log", "--author=" + user, "--merges", "--since=1 year ago",
+        "-m", "--first-parent", "--format=@@%H", "--shortstat",
     ])
     if not log:
         return []
 
-    sizes = []
-    for commit_hash in log.splitlines()[:50]:
-        stats = _git(repo, ["diff", "--stat", commit_hash + "^1", commit_hash])
-        if not stats:
-            continue
-        total = 0
-        for line in stats.splitlines():
+    sizes: list[str] = []
+    current_files = 0
+    for line in log.splitlines():
+        if line.startswith("@@"):
+            if current_files:
+                sizes.append(_bucket_size(current_files))
+            current_files = 0
+        else:
             match = re.search(r"(\d+) files? changed", line)
             if match:
-                total += int(match.group(1))
-        if total <= 3:
-            sizes.append("S")
-        elif total <= 10:
-            sizes.append("M")
-        elif total <= 30:
-            sizes.append("L")
-        else:
-            sizes.append("XL")
+                current_files = int(match.group(1))
+    if current_files:
+        sizes.append(_bucket_size(current_files))
 
-    return sizes if sizes else ["M"]
+    return sizes[:50] if sizes else ["M"]
+
+
+def _bucket_size(total: int) -> str:
+    """Convertit un nombre de fichiers modifiés en taille de PR (S/M/L/XL)."""
+    if total <= 3:
+        return "S"
+    if total <= 10:
+        return "M"
+    if total <= 30:
+        return "L"
+    return "XL"
 
 
 def _detect_context_versioned(repo: Path) -> bool:
@@ -113,7 +119,7 @@ def _detect_retries_after_fact(repo: Path, user: str) -> tuple[float | None, boo
     """Estime le ratio de reprise post-merge via commits de fix après merge."""
     log = _git(repo, [
         "log", "--author=" + user, "--format=%H %s",
-        "--since=1 year ago", "--all",
+        "--since=1 year ago", "--all", "-n", "100",
     ])
     if not log:
         return None, False
@@ -122,7 +128,7 @@ def _detect_retries_after_fact(repo: Path, user: str) -> tuple[float | None, boo
     fix_patterns = re.compile(r"\b(fix|correct|amend|revert|patch|oops)\b", re.I)
     total = 0
     fixes = 0
-    for line in lines[:100]:
+    for line in lines:
         parts = line.split(" ", 1)
         if len(parts) < 2:
             continue

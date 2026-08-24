@@ -29,6 +29,8 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `scoring.py` : normalize_profile rejette les floats non-entiers (B2 breaking)
 - `scoring.py` : _questions_for utilise QUESTION_IDS
 - `cli.py` : _merge_answer match par chaîne exacte (plus fragile substring)
+- `generate_profile.py` : _detect_pr_sizes 51→1 process git (perf 3.1)
+- `generate_profile.py` : _detect_retries_after_fact git log -n 100 (perf 3.2)
 - `.github/workflows/aidd-eval.yml` : fix injection shell via env: (adversarial #1)
 - `tests/test_install_clean.py` : result.output → result.stdout (adversarial #2)
 - `tests/conftest.py` : isolation .laivelup/ via autouse fixture (adversarial #3)
