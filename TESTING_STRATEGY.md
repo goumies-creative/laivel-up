@@ -119,8 +119,15 @@ def _normalize(text: str) -> str:
 | `test_json_injection.py` | 6 | Injection via JSON malveillant |
 | `test_path_traversal.py` | 3 | Manipulation de chemins |
 | `test_dos_profil_giant.py` | 4 | Profils géants (>1MB) |
-| `test_sha256_anonymization.py` | 6 | RGPD HMAC-SHA-256 |
+| `test_sha256_anonymization.py` | 6 | RGPD HMAC-SHA-256 + salt |
 | `test_bandit_regression.py` | 3 | Pas de nouvelles failles |
+
+### Répertoire `tests/` — Tests RGPD (session 3)
+
+| Fichier | Tests | Couvre |
+|---------|-------|--------|
+| `test_team_rgpd.py` | 19 | HMAC salt, XSS escape, confidence, opt-out, team name validation |
+| `test_scoring.py` (+2) | 2 | float("inf") rejection, non-integer float rejection |
 
 ### Baseline bandit
 

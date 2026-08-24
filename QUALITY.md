@@ -12,7 +12,11 @@
 | Aucune CVE dans les deps directes | pip-audit | 0 high/critical |
 | License MIT | LICENSE + headers | 100% fichiers .py |
 | Pas de secrets en dur | bandit B105/B106 | 0 findings |
-| SHA-256 pour hashing | hashlib | Pas de SHA-1 |
+| HMAC-SHA-256 pour hashing | hashlib + hmac | Pas de SHA-1, pas de SHA-256 brut pour RGPD |
+| XSS protection | html.escape | Toutes les sorties HTML |
+| Validation noms d'équipe | regex alphanum | `[a-zA-Z0-9_-]{1,64}` |
+| Limite membres par équipe | `_MAX_MEMBERS=50` | DoS mémoire prévenu |
+| Trim historique | `_MAX_HISTORY=100` | DoS mémoire prévenu |
 
 ### 2. Qualité de code
 
@@ -61,7 +65,8 @@ retries_after_fact
 |----------|-------|-----------|
 | Tests unitaires | pytest | 80% minimum globale |
 | Tests scoring | pytest-cov | 100% (non-négociable) |
-| Tests sécurité | pytest | `tests/security/` — 21 tests |
+| Tests sécurité | pytest | `tests/security/` — 22 tests |
+| Tests RGPD | pytest | `test_team_rgpd.py` — 19 tests |
 | Tests property-based | hypothesis | Invariantes fondamentaux |
 | Tests snapshot | pytest-snapshot | Sorties CLI stables |
 | Tests team tracker | pytest | Module team complet |

@@ -141,7 +141,7 @@ laivelup team remove Equipe-Alpha bob-81b637d8 --purge
 |---------|-------|--------------|
 | Accuracy | 4/5 | `python scripts/calibrate.py --diff` |
 | Explainability | 4/5 | `--verbose` + rapports MD/HTML |
-| Robustness | 4/5 | 143+ tests, CI matrix 3OS × 3Python |
+| Robustness | 4/5 | 143+ tests, CI matrix 3OS × 3Python, session 3 audit (8.8/10) |
 | Reusability | 4/5 | MIT, `pip install`, hooks, EXTENDING.md |
 
 ### Vidéo démo

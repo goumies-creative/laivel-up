@@ -16,6 +16,17 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `docs/VIDEO_PRODUCTION.md` : guide complet production vidéo (asciinema + Aegisub + FFmpeg)
 - `aidd_docs/.../video-demo-prompt.md` : prompt Claude Desktop pour génération script démo
 - `tests/test_demo.py` : tests structurels et d'exécution de demo.py
+- `tests/conftest.py` : isolation `.laivelup/` via autouse fixture (adversarial #3)
+- `tests/test_scoring.py::test_normalize_retries_inf_refuse` : float("inf") rejection (S6)
+- `tests/test_scoring.py::test_normalize_retries_float_refuse` : non-integer float rejection (S6)
+- `tests/test_team_rgpd.py::TestReviewFixes` : 6 tests post-CE-review (HMAC, XSS, confidence, opt-out)
+- `aidd_docs/.../audit/security.md` : deep dive sécurité (score 9/10)
+- `aidd_docs/.../audit/adversarial-deep-dive.md` : review adversariale (3 findings)
+- `aidd_docs/.../audit/performance-deep-dive.md` : deep dive performance (score 8.5/10)
+- `aidd_docs/.../audit/architecture-deep-dive.md` : deep dive architecture (score 9/10)
+- `aidd_docs/.../audit/maintainability-deep-dive.md` : deep dive maintenabilité (score 9/10)
+- `aidd_docs/.../2026_08_24_critique_complete_synthese.md` : synthèse session 3 (8.8/10)
+- `docs/solutions/session-3-critique-audit-trail.md` : learnings session 3
 
 ### Changed
 - `team.py` : HMAC-SHA256 avec sel par équipe (slug résistant dictionnaire)
@@ -32,15 +43,18 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `cli.py` : _merge_answer match par chaîne exacte (plus fragile substring)
 - `cli.py` : import QUESTION_IDS en tête de fichier (archi #5)
 - `report.py` : verdict_to_dict() sérialisation canonique Verdict→JSON (archi #3)
+- `report.py` : `<main>` tag dans le HTML (maintainability)
 - `scripts/ci_evaluate.py` : schema.validate_profile avant évaluation (archi #2)
 - `scripts/ci_evaluate.py` : utilise verdict_to_dict (archi #3)
 - `generate_profile.py` : _detect_pr_sizes 51→1 process git (perf 3.1)
 - `generate_profile.py` : _detect_retries_after_fact git log -n 100 (perf 3.2)
 - `.github/workflows/aidd-eval.yml` : fix injection shell via env: (adversarial #1)
 - `tests/test_install_clean.py` : result.output → result.stdout (adversarial #2)
-- `tests/conftest.py` : isolation .laivelup/ via autouse fixture (adversarial #3)
-- `docs/architecture.mmd` : +release_hackathon.sh, +run_all_examples.sh (archi #4)
-- `docs/adr/0007-team-tracker-rgpd-slug-sha256.md` : périmètre team uniquement (archi #1)
+- `docs/architecture.mmd` : +utils.py, +questions.py, +release_hackathon.sh, +run_all_examples.sh
+- `docs/adr/0007-team-tracker-rgpd-slug-sha256.md` : périmètre RGPD documenté (team salé, report brut)
+- `QUALITY.md` : +HMAC-SHA-256, +test counts, +session 3 audit
+- `TESTING_STRATEGY.md` : +security tests, +test counts
+- `TRANSPARENCE.md` : +HMAC salt, +RGPD scope
 - `CONTRIBUTING.md` : ajout section "Release Process" complète
 
 ## [0.2.0] - 2026-08-22

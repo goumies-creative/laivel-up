@@ -16,13 +16,15 @@ un autre usage.
   PR, mémoire projet versionnée, règles et agents, boucles de relance, ratio de
   reprise, chantiers menés en parallèle.
 - **Aucune donnée personnelle** : pas de nom réel exploité (le fichier de sortie
-  porte un slug haché), pas d'adresse, pas de localisation, pas de profil
-  personnel.
+  porte un slug pseudo-anonymisé via HMAC-SHA-256 avec sel par équipe), pas d'adresse, pas de
+  localisation, pas de profil personnel.
 - **Aucun neurotype demandé ni inféré** : le neurotype est hors périmètre, et
   aucune déduction (hyperfocus, etc.) n'est transformée en pénalité. Un pic est
   signalé en preuve, jamais utilisé pour fixer un niveau.
 - Les données restent sur la machine de l'utilisateur ; le CLI n'appelle aucun
   service externe.
+- **Opt-out RGPD** : un membre peut demander l'exclusion via `team opt-out` ;
+  ses données sont filtrées de tous les exports et de l'historique.
 
 ## Droit d'explication
 
@@ -50,11 +52,13 @@ documentée dans la sortie, et reproductible.
 ## Argument pitche-able (CNIL / AI Act)
 
 > Un outil qui évite trois pièges réglementaires : pas de données sensibles
-> traitées (aucun neurotype, aucune donnée personnelle), pas de décision
-> automatique opaque (chaque niveau s'explique, le développeur peut demander
-> pourquoi et comment), pas d'auto-pénalité biaisée (le moteur refuse plutôt
-> que de juger bas). La sobriété des données rend le projet minimalement
-> assujetti et factuellement démontrable.
+> traitées (aucun neurotype, aucune donnée personnelle exploitable — les slugs
+> sont pseudo-anonymisés via HMAC-SHA-256 avec sel par équipe, résistants à la
+> re-identification par dictionnaire), pas de décision automatique opaque (chaque
+> niveau s'explique, le développeur peut demander pourquoi et comment), pas
+> d'auto-pénalité biaisée (le moteur refuse plutôt que de juger bas). La
+> sobriété des données rend le projet minimalement assujetti et factuellement
+> démontrable.
 
 ## Limites connues
 
