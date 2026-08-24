@@ -29,6 +29,9 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `scoring.py` : normalize_profile rejette les floats non-entiers (B2 breaking)
 - `scoring.py` : _questions_for utilise QUESTION_IDS
 - `cli.py` : _merge_answer match par chaîne exacte (plus fragile substring)
+- `.github/workflows/aidd-eval.yml` : fix injection shell via env: (adversarial #1)
+- `tests/test_install_clean.py` : result.output → result.stdout (adversarial #2)
+- `tests/conftest.py` : isolation .laivelup/ via autouse fixture (adversarial #3)
 - `CONTRIBUTING.md` : ajout section "Release Process" complète
 - `docs/adr/0007-team-tracker-rgpd-slug-sha256.md` : menaces dictionnaire documentées
 

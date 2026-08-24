@@ -50,25 +50,33 @@ jobs:
 
       - name: Detect author
         id: author
+        env:
+          RAW_USER: ${{ inputs.user }}
+          ACTOR: ${{ github.actor }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "user=${{ inputs.user }}" >> $GITHUB_OUTPUT
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "user=$RAW_USER" >> $GITHUB_OUTPUT
           else
-            echo "user=${{ github.actor }}" >> $GITHUB_OUTPUT
+            echo "user=$ACTOR" >> $GITHUB_OUTPUT
           fi
 
       - name: Generate profile
+        env:
+          AUTHOR_USER: ${{ steps.author.outputs.user }}
         run: |
           python scripts/generate_profile.py \
-            --user "${{ steps.author.outputs.user }}" \
+            --user "$AUTHOR_USER" \
             --out profile.json \
             --verbose
 
       - name: Evaluate AIDD
         id: eval
+        env:
+          AUTHOR_USER: ${{ steps.author.outputs.user }}
         run: |
           python scripts/ci_evaluate.py \
-            --user "${{ steps.author.outputs.user }}" \
+            --user "$AUTHOR_USER" \
             --out verdict.md \
             --repo .
 

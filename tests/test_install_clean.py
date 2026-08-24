@@ -59,4 +59,4 @@ class TestInstallClean:
             timeout=60,
         )
         assert result.returncode == 0, f'laivelup evaluate failed: {result.stderr}'
-        assert 'Niveau' in result.output or 'Refus' in result.output or 'refus' in result.output
+        assert 'Niveau' in result.stdout or 'Refus' in result.stdout or 'refus' in result.stdout

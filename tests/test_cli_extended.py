@@ -220,6 +220,7 @@ class TestTeamCommands:
         assert r.exit_code == 1
 
     def test_team_export_md(self, tmp_path):
+        runner.invoke(app, ["team", "create", "Alpha", "alice,bob"], catch_exceptions=False)
         r = runner.invoke(app, ["team", "export", "Alpha", "--out", str(tmp_path)])
         assert r.exit_code == 0
         export_file = tmp_path / "equipe-Alpha.md"
@@ -229,6 +230,7 @@ class TestTeamCommands:
         assert "Membres" in content
 
     def test_team_export_format_inconnu(self):
+        runner.invoke(app, ["team", "create", "Alpha", "alice,bob"], catch_exceptions=False)
         r = runner.invoke(app, ["team", "export", "Alpha", "--format", "xml"])
         assert r.exit_code == 1
 
