@@ -26,6 +26,7 @@ from __future__ import annotations
 from collections import Counter
 
 from .model import AXES, AxisScore, Level, ProfileData, RedFlag, Verdict
+from .questions import QUESTION_IDS
 from .scoring_defaults import SCORING_DEFAULTS
 
 SIZE_VALUES = {"S", "M", "L", "XL"}
@@ -330,8 +331,6 @@ def progress_for_axis(axe: str, level: Level | None) -> list[str]:
 
 
 def _questions_for(profile: ProfileData) -> list[str]:
-    from .questions import QUESTION_IDS
-
     questions: list[str] = []
     t = profile.traces
     if t.get("pr_sizes") is None:

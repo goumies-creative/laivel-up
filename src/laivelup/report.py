@@ -167,3 +167,38 @@ def write_reports(verdict: Verdict, out_dir: Path, with_html: bool = True) -> tu
 def _slug(name: str) -> str:
     # Slug court et stable, sans conserver de nom humain lisible (prudence RGPD).
     return slug(name)
+
+
+def verdict_to_dict(verdict: Verdict) -> dict:
+    """Sérialisation canonique d'un Verdict en dict JSON-serialisable.
+
+    Fonction unique utilisée par ci_evaluate.py et team.py::export_json
+    pour garantir la cohérence des exports (AxeScore.evidence + variance inclus).
+    """
+    return {
+        "name": verdict.name,
+        "level": verdict.level.name if verdict.level else None,
+        "limiting_axis": verdict.limiting_axis,
+        "axes": [
+            {
+                "axe": a.axe,
+                "level": a.level.name if a.level else None,
+                "confidence": a.confidence,
+                "evidence": a.evidence,
+                "variance": a.variance,
+            }
+            for a in verdict.axis_scores
+        ],
+        "red_flags": [
+            {
+                "titre": f.titre,
+                "constat": f.constat,
+                "source": f.source,
+                "question": f.question,
+                "severite": f.severite,
+            }
+            for f in verdict.red_flags
+        ],
+        "next_steps": verdict.next_steps,
+        "data_errors": verdict.data_errors,
+    }

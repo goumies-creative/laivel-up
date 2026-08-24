@@ -20,6 +20,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
+from .questions import QUESTION_IDS
 from .report import write_reports
 from .schema import validate_profile
 from .scoring import evaluate
@@ -355,8 +356,6 @@ _LEVELS_BY_KEYWORD = (
 def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileData:
     """Fusionne la réponse dans les traces pour le rescore. Heuristiques simples,
     documentées dans METHODE.md, jamais de jugement basé sur la personne."""
-    from .questions import QUESTION_IDS
-
     low = answer.strip().lower()
 
     # B3: Matching par ID de question (stable) plutôt que par sous-chaîne texte libre

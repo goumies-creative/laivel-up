@@ -38,6 +38,16 @@ def main():
 
     profile = generate_profile(repo, args.user, verbose=False)
 
+    # Valider le profil contre le JSON Schema (fail-fast, ADR-0012)
+    from laivelup.schema import validate_profile
+
+    schema_errors = validate_profile(profile)
+    if schema_errors:
+        print("[AIDD] Profil invalide :", file=sys.stderr)
+        for e in schema_errors:
+            print(f"  · {e}", file=sys.stderr)
+        sys.exit(1)
+
     # Valider et évaluer
     from laivelup.model import ProfileData
     from laivelup.report import render_markdown
@@ -55,21 +65,8 @@ def main():
 
     # Générer le rapport
     if args.format == "json":
-        result = {
-            "name": verdict.name,
-            "level": verdict.level.name if verdict.level else None,
-            "limiting_axis": verdict.limiting_axis,
-            "axes": [
-                {"axe": a.axe, "level": a.level.name if a.level else None, "confidence": a.confidence}
-                for a in verdict.axis_scores
-            ],
-            "red_flags": [
-                {"titre": f.titre, "constat": f.constat}
-                for f in verdict.red_flags
-            ],
-            "next_steps": verdict.next_steps,
-        }
-        args.out.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        from laivelup.report import verdict_to_dict
+        args.out.write_text(json.dumps(verdict_to_dict(verdict), indent=2, ensure_ascii=False), encoding="utf-8")
     else:
         md = render_markdown(verdict)
         args.out.write_text(md, encoding="utf-8")
