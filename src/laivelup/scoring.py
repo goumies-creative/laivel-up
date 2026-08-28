@@ -29,8 +29,8 @@ from .model import AXES, AxisScore, Level, ProfileData, RedFlag, Verdict
 from .questions import QUESTION_IDS
 from .scoring_defaults import SCORING_DEFAULTS
 
-SIZE_VALUES = {'S', 'M', 'L', 'XL'}
 SIZE_ORDER = ['S', 'M', 'L', 'XL']
+SIZE_VALUES = frozenset(SIZE_ORDER)
 ADOPTION_SIGNALS = (
     'context_versioned',
     'agent_rules_versioned',
@@ -47,24 +47,24 @@ CONFIDENCE_HARNESS_ONLY: float = SCORING_DEFAULTS['CONFIDENCE_HARNESS_ONLY']  # 
 RETRIES_PER_LEVEL: dict[str, float] = SCORING_DEFAULTS['RETRIES_PER_LEVEL']  # type: ignore[assignment]
 
 
-def _as_float(value: object) -> float | None:
-    """float(value) or None if non-numeric (preserves None mapping → axis not provided)."""
+def _as_numeric(value: object, cast: type[float] | type[int]) -> float | int | None:
+    """cast(value) or None if non-numeric (preserves None mapping → axis not provided)."""
     if value is None:
         return None
     try:
-        return float(str(value))
+        return cast(str(value))  # type: ignore[no-any-return]
     except (TypeError, ValueError):
         return None
+
+
+def _as_float(value: object) -> float | None:
+    """float(value) or None if non-numeric."""
+    return _as_numeric(value, float)  # type: ignore[return-value]
 
 
 def _as_int(value: object) -> int | None:
-    """int(value) or None if non-integer (preserves None mapping → axis not provided)."""
-    if value is None:
-        return None
-    try:
-        return int(str(value))
-    except (TypeError, ValueError):
-        return None
+    """int(value) or None if non-integer."""
+    return _as_numeric(value, int)  # type: ignore[return-value]
 
 
 def normalize_profile(profile: ProfileData) -> list[str]:

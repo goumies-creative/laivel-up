@@ -160,7 +160,7 @@ def write_reports(
     verdict: Verdict, out_dir: Path, with_html: bool = True
 ) -> tuple[Path, Path | None]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    safe = _slug(verdict.name)
+    safe = slug(verdict.name)
     md = out_dir / f'{safe}.md'
     md.write_text(render_markdown(verdict), encoding='utf-8')
     html = None
@@ -168,11 +168,6 @@ def write_reports(
         html = out_dir / f'{safe}.html'
         html.write_text(render_html(verdict), encoding='utf-8')
     return md, html
-
-
-def _slug(name: str) -> str:
-    # Slug court et stable, sans conserver de nom humain lisible (prudence RGPD).
-    return slug(name)
 
 
 def verdict_to_dict(verdict: Verdict) -> dict:

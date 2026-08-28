@@ -33,6 +33,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from . import __version__
+from .encoding import ensure_utf8_env, make_console
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
 from .questions import QUESTION_IDS
 from .report import verdict_to_dict, write_reports
@@ -52,23 +53,13 @@ from .team import (
     set_opt_out,
 )
 
-# ─── Console setup (P0.2: TTY detection) ────────────────────────────
+# ─── Console setup (P0.2: TTY detection + encoding cross-platform) ──
+ensure_utf8_env()
 NO_COLOR = os.environ.get('NO_COLOR') is not None
 TTY = sys.stdout.isatty()
 
-
-def _make_console() -> Console:
-    """Console Rich pour stdout humain (désactivée en mode quiet/pipe)."""
-    return Console(no_color=NO_COLOR)
-
-
-def _make_error_console() -> Console:
-    """Console Rich pour stderr (toujours active)."""
-    return Console(stderr=True, no_color=NO_COLOR)
-
-
-console = _make_console()
-error_console = _make_error_console()
+console = make_console(no_color=NO_COLOR)
+error_console = Console(stderr=True, no_color=NO_COLOR)
 
 # ─── App ─────────────────────────────────────────────────────────────
 app = typer.Typer(
@@ -151,17 +142,6 @@ COMMAND_SCHEMA = {
         '2': 'Erreur de validation',
         '3': 'Erreur outil',
     },
-}
-
-# ─── Niveaux pour --fail-on ─────────────────────────────────────────
-_LEVEL_ORDER = {
-    Level.WHITE: 0,
-    Level.RED: 1,
-    Level.BLUE: 2,
-    Level.GREEN: 3,
-    Level.COPPER: 4,
-    Level.SILVER: 5,
-    Level.GOLD: 6,
 }
 
 
@@ -264,8 +244,7 @@ def _print_verdict(profile: ProfileData, verbosity: int = 1, use_json: bool = Fa
         for e in verdict.data_errors:
             error_console.print(f'  · {e}')
     elif verdict.decided:
-        if verdict.level is None:
-            return verdict
+        assert verdict.level is not None  # decided implies level is set
         console.print(
             f'[bold green]Niveau : {LEVEL_LABELS[verdict.level]}[/bold green]'
             f' · axe plancher : [bold]{verdict.limiting_axis}[/bold]'
@@ -336,8 +315,16 @@ def evaluate_profile(
 
     # --fail-on (P1.3)
     if fail_on and verdict.level is not None:
-        fail_level = Level[fail_on.upper()]
-        if _LEVEL_ORDER.get(verdict.level, 0) < _LEVEL_ORDER.get(fail_level, 0):
+        try:
+            fail_level = Level[fail_on.upper()]
+        except KeyError:
+            valid = ', '.join(l.name for l in Level)
+            error_console.print(
+                f'[bold red]Niveau inconnu pour --fail-on : {fail_on}[/bold red] '
+                f'(valeurs : {valid})'
+            )
+            raise typer.Exit(code=2)
+        if verdict.level.value < fail_level.value:
             if not use_json:
                 error_console.print(
                     f'\n[red]FAIL: niveau {LEVEL_LABELS[verdict.level]} < {LEVEL_LABELS[fail_level]}[/red]'
@@ -574,7 +561,8 @@ def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileDa
     low = answer.strip().lower()
 
     if question == QUESTION_IDS['PR_SIZES']:
-        matched = [size for size in ('S', 'M', 'L', 'XL') if re.search(rf'\b{size}\b', answer)]
+        tokens = set(low.split())
+        matched = [s.upper() for s in ('s', 'm', 'l', 'xl') if s in tokens]
         if matched:
             current = profile.traces.setdefault('pr_sizes', [])
             for size in matched:

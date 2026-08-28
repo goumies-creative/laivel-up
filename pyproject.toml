@@ -13,7 +13,7 @@ laivelup = "laivelup.cli:app"
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
-    "pytest-cov>=4.1",
+    "pytest-cov>=6.0",
     "hypothesis>=6.90",
     "pytest-snapshot>=0.8",
     "ruff>=0.5",

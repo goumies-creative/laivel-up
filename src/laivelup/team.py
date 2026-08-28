@@ -14,6 +14,7 @@ import contextlib
 import csv
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from html import escape as html_escape
@@ -31,8 +32,6 @@ _MAX_HISTORY = 100
 
 def _validate_team_name(name: str) -> None:
     """Valide qu'un nom d'équipe est sûr pour un chemin de fichier."""
-    import re
-
     if not name or not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}', name):
         raise ValueError(
             f"Nom d'équipe invalide : '{name}'. "
@@ -51,6 +50,9 @@ def save_team(team: Team, path: Path | None = None) -> Path:
     """Sauvegarde l'état de l'équipe en JSON."""
     target = _team_path(team.name, path)
     target.parent.mkdir(parents=True, exist_ok=True)
+    # Security: reject if parent is a symlink (G01)
+    if target.parent.exists() and target.parent.is_symlink():
+        raise ValueError(f'Refus : le répertoire parent est un symlink : {target.parent}')
     data = {
         'name': team.name,
         'salt': team.salt,
@@ -79,6 +81,9 @@ def load_team(name: str, path: Path | None = None) -> Team:
     source = _team_path(name, path)
     if not source.exists():
         return Team(name=name)
+    # Security: file size guard (G01)
+    if source.stat().st_size > 1 * 1024 * 1024:
+        raise ValueError(f"Fichier d'équipe trop volumineux (> 1 Mo) : {source}")
     data = json.loads(source.read_text(encoding='utf-8'))
     team_salt = data.get('salt', generate_team_salt())
     team = Team(name=data.get('name', name), salt=team_salt)
