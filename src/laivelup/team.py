@@ -25,7 +25,6 @@ from .scoring import evaluate
 from .utils import generate_team_salt, slug
 
 _DEFAULT_TEAM_DIR = Path('.laivelup') / 'teams'
-_MAX_TEAM_NAME_LEN = 64
 _MAX_MEMBERS = 50
 _MAX_HISTORY = 100
 
@@ -151,17 +150,17 @@ def create_team(name: str, member_names: list[str]) -> Team:
     return team
 
 
-def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
+def evaluate_member(team: Team, member_slug: str, profile: ProfileData) -> Verdict:
     """Évalue un membre de l'équipe et enregistre le snapshot."""
-    if slug not in team.members:
-        raise ValueError(f"Membre '{slug}' non trouvé dans l'équipe '{team.name}'")
+    if member_slug not in team.members:
+        raise ValueError(f"Membre '{member_slug}' non trouvé dans l'équipe '{team.name}'")
 
-    member = team.members[slug]
+    member = team.members[member_slug]
     if member.opt_out:
         raise ValueError(f"Membre '{member.name}' a activé l'opt-out RGPD — évaluation refusée.")
 
     verdict = evaluate(profile)
-    member = team.members[slug]
+    member = team.members[member_slug]
 
     # Fix #5: confiance de l'axe plancher (pas le max)
     axis_confidences = {a.axe: a.confidence for a in verdict.axis_scores}
@@ -170,7 +169,7 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
     )
 
     snapshot = MemberSnapshot(
-        slug=slug,
+        slug=member_slug,
         name=member.name,
         level=verdict.level,
         limiting_axis=verdict.limiting_axis,
@@ -178,13 +177,13 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
         red_flags_count=len(verdict.red_flags),
         next_steps_count=len(verdict.next_steps),
     )
-    team.members[slug] = snapshot
+    team.members[member_slug] = snapshot
 
     # Journaliser dans l'historique (B1: opt_out persisté dans l'historique)
     team.history.append(
         {
             'timestamp': snapshot.timestamp,
-            'slug': slug,
+            'slug': member_slug,
             'level': verdict.level.name if verdict.level else None,
             'limiting_axis': verdict.limiting_axis,
             'confidence': snapshot.confidence,
@@ -198,33 +197,33 @@ def evaluate_member(team: Team, slug: str, profile: ProfileData) -> Verdict:
     return verdict
 
 
-def remove_member(team: Team, slug: str, purge: bool = False) -> None:
+def remove_member(team: Team, member_slug: str, purge: bool = False) -> None:
     """Supprime un membre de l'équipe.
 
     Args:
         team: L'équipe
-        slug: Slug du membre à supprimer
+        member_slug: Slug du membre à supprimer
         purge: Si True, supprime aussi l'historique de ce membre
     """
-    if slug not in team.members:
-        raise ValueError(f"Membre '{slug}' non trouvé dans l'équipe '{team.name}'")
+    if member_slug not in team.members:
+        raise ValueError(f"Membre '{member_slug}' non trouvé dans l'équipe '{team.name}'")
 
     if purge:
-        team.history = [h for h in team.history if h.get('slug') != slug]
+        team.history = [h for h in team.history if h.get('slug') != member_slug]
     else:
         # B1: Marquer les entrées d'historique avec opt_out=True
         team.history = [
-            {**h, 'opt_out': True} if h.get('slug') == slug else h for h in team.history
+            {**h, 'opt_out': True} if h.get('slug') == member_slug else h for h in team.history
         ]
 
-    del team.members[slug]
+    del team.members[member_slug]
 
 
-def set_opt_out(team: Team, slug: str, opt_out: bool = True) -> None:
+def set_opt_out(team: Team, member_slug: str, opt_out: bool = True) -> None:
     """Active ou désactive l'opt-out RGPD pour un membre."""
-    if slug not in team.members:
-        raise ValueError(f"Membre '{slug}' non trouvé dans l'équipe '{team.name}'")
-    team.members[slug].opt_out = opt_out
+    if member_slug not in team.members:
+        raise ValueError(f"Membre '{member_slug}' non trouvé dans l'équipe '{team.name}'")
+    team.members[member_slug].opt_out = opt_out
 
 
 def export_json(team: Team, path: Path) -> Path:
@@ -304,7 +303,7 @@ def export_csv(team: Team, path: Path) -> Path:
     with open(path, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(['name', 'slug', 'level', 'limiting_axis', 'confidence', 'timestamp'])
-        for slug, m in team.members.items():
+        for member_slug, m in team.members.items():
             if m.opt_out:
                 continue
             writer.writerow(

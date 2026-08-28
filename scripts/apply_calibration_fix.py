@@ -92,8 +92,8 @@ def apply_scenario_a(
                 changes.append(f'[DRY RUN] {key}: {old_val} -> {new_val}')
             else:
                 current_source = current_source.replace(
-                    f'"{key}": {old_val}',
-                    f'"{key}": {new_val}',
+                    f"'{key}': {old_val}",
+                    f"'{key}': {new_val}",
                 )
                 changes.append(f'{key}: {old_val} -> {new_val}')
 
@@ -107,8 +107,8 @@ def apply_scenario_a(
                 changes.append(f'[DRY RUN] RETRIES_PER_LEVEL.{sub_key}: {old_val} -> {new_val}')
             else:
                 current_source = current_source.replace(
-                    f'"{sub_key}": {old_val}',
-                    f'"{sub_key}": {new_val}',
+                    f"'{sub_key}': {old_val}",
+                    f"'{sub_key}': {new_val}",
                 )
                 changes.append(f'RETRIES_PER_LEVEL.{sub_key}: {old_val} -> {new_val}')
 
