@@ -94,7 +94,7 @@ agg demo.cast demo.mp4 --theme monokai --speed 1.5
 | 0:00:30 | 0:00:40 | Etape 3 : Creation equipe RGPD |
 | 0:00:40 | 0:00:50 | Etape 4 : Evaluation membre |
 | 0:00:50 | 0:00:55 | Etape 5 : Export resultats |
-| 0:00:55 | 0:01:00 | Merci - MIT License - pip install laivel-up |
+| 0:00:55 | 0:01:00 | Merci - MIT License - pip install laivelup |
 
 ### Export SRT
 

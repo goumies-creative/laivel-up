@@ -4,7 +4,7 @@
 > Approche La Décodeuse : refus de deviner, questions au lieu de verdicts.
 
 [![CI](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/goumes-creative/laivel-up)](https://github.com/goumes-creative/laivel-up/releases)
+[![Release](https://img.shields.io/github/v/release/goumies-creative/laivel-up)](https://github.com/goumies-creative/laivel-up/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
@@ -120,7 +120,7 @@ MIT. AI-Driven Dev pourra réutiliser le projet en attribuant le travail à l'au
 ### Installation rapide
 
 ```bash
-pip install laivel-up
+pip install laivelup
 ```
 
 ### Évaluation d'un profil
@@ -147,12 +147,14 @@ laivelup team remove Equipe-Alpha bob-81b637d8 --purge
 
 ### Critères d'évaluation
 
-| Critère | Score | Vérification |
-|---------|-------|--------------|
-| Accuracy | 4/5 | `python scripts/calibrate.py --diff` |
-| Explainability | 4/5 | `--verbose` + rapports MD/HTML |
-| Robustness | 4/5 | 344+ tests, CI matrix 3OS × 3Python, session 3 audit (8.8/10) |
-| Reusability | 4/5 | MIT, `pip install`, hooks, EXTENDING.md |
+Libellés repris tels quels du sujet officiel (`SUJET.md`) — à vous de juger, pas à nous.
+
+| Critère | Preuve à vérifier |
+|---------|-------------------|
+| 🎯 Le bon niveau ? | `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff` — refuse un niveau (`UNDECIDED`) plutôt que d'en deviner un quand les données manquent |
+| 💬 On comprend pourquoi ? | `laivelup evaluate <profil> --verbose` + rapports MD/HTML — chaque verdict documente ses sources et ses limites |
+| 🔧 Comment tu l'as construit ? | `aidd_docs/` (sessions, audits, ADR) — orchestration OpenCode + compound-engineering, harnais documenté de bout en bout |
+| ✨ La qualité est là ? | 356 tests (88.73% coverage), ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |
 
 ### Vidéo démo
 

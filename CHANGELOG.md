@@ -5,9 +5,17 @@ Toutes les changements notables de LAIVEL UP sont documentés dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
-## [Unreleased]
+## [0.2.0] - 2026-08-28
 
 ### Added
+- `scoring_defaults.py` : extraction SCORING_DEFAULTS (seuils modifiables par scripts Plan B)
+- `scripts/calibrate_degraded.py` : mode dégradé diagnostic (strict/graceful, json/table/markdown)
+- `scripts/apply_calibration_fix.py` : scénarios A/B/C de patch calibration
+- `scripts/release_hackathon.sh` : release atomique (tag + push + GH Release + CI check)
+- `tests/test_calibrate_degraded.py` : 9 tests mode dégradé
+- `tests/test_apply_calibration_fix.py` : 6 tests patch calibration
+- `tests/test_scoring_defaults.py` : 5 tests extraction constantes
+- CI job `calibrate-degraded` dans `ci.yml`
 - `utils.py` : slug HMAC-SHA256 + generate_team_salt (shared)
 - `questions.py` : QUESTION_IDS dict partagé scoring/CLI
 - `scripts/demo.py` : script de démo 2 min pour enregistrement asciinema
@@ -35,6 +43,8 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `docs/solutions/session-3-critique-audit-trail.md` : learnings session 3
 
 ### Changed
+- `scoring.py` : import depuis `scoring_defaults.py`, aliases backward-compatible
+- `scoring.py` : remplacement `_SIZE_LEVEL` par dict lookup `SCORING_DEFAULTS["SIZE_LEVEL"]`
 - `team.py` : HMAC-SHA256 avec sel par équipe (slug résistant dictionnaire)
 - `team.py` : export_html échappe les caractères XSS (html.escape)
 - `team.py` : export_html échappe team.name dans le template HTML (S1)
@@ -65,22 +75,6 @@ et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 - `docs/CI_INTEGRATION.md` : +pr-quality-gate.yml, +workflows table
 - `docs/solutions/session-3-critique-audit-trail.md` : trail complet avec 5 learnings
 - `CONTRIBUTING.md` : ajout section "Release Process" complète
-
-## [0.2.0] - 2026-08-22
-
-### Added
-- `scoring_defaults.py` : extraction SCORING_DEFAULTS (seuils modifiables par scripts Plan B)
-- `scripts/calibrate_degraded.py` : mode dégradé diagnostic (strict/graceful, json/table/markdown)
-- `scripts/apply_calibration_fix.py` : scénarios A/B/C de patch calibration
-- `scripts/release_hackathon.sh` : release atomique (tag + push + GH Release + CI check)
-- `tests/test_calibrate_degraded.py` : 9 tests mode dégradé
-- `tests/test_apply_calibration_fix.py` : 6 tests patch calibration
-- `tests/test_scoring_defaults.py` : 5 tests extraction constantes
-- CI job `calibrate-degraded` dans `ci.yml`
-
-### Changed
-- `scoring.py` : import depuis `scoring_defaults.py`, aliases backward-compatible
-- `scoring.py` : remplacement `_SIZE_LEVEL` par dict lookup `SCORING_DEFAULTS["SIZE_LEVEL"]`
 
 ## [0.1.0] - 2026-08-21
 

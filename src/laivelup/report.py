@@ -69,7 +69,7 @@ def render_html(verdict: Verdict) -> str:
         badge = 'Données invalides : refus de trancher'
         kelas = 'ko'
     elif verdict.decided:
-        badge = level_label(verdict.level)
+        badge = escape(level_label(verdict.level))  # level_label returns hardcoded safe strings
         kelas = 'ok'
     else:
         badge = 'Données insuffisantes : refus de trancher'
@@ -83,7 +83,7 @@ def render_html(verdict: Verdict) -> str:
     errors_section = f'<h2>Données invalides</h2>{errors_html}' if verdict.data_errors else ''
     rows = []
     for a in verdict.axis_scores:
-        label = level_label(a.level)
+        label = escape(level_label(a.level))  # level_label returns hardcoded safe strings
         conf = f'{a.confidence:.0%}' if a.level is not None else '—'
         ev = escape(', '.join(a.evidence))
         if a.variance:
@@ -160,12 +160,18 @@ def write_reports(
     verdict: Verdict, out_dir: Path, with_html: bool = True
 ) -> tuple[Path, Path | None]:
     out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir_resolved = out_dir.resolve()
     safe = slug(verdict.name)
     md = out_dir / f'{safe}.md'
+    # Security: ensure the generated path stays within out_dir
+    if not md.resolve().is_relative_to(out_dir_resolved):
+        raise ValueError(f'Generated path escapes output directory: {md}')
     md.write_text(render_markdown(verdict), encoding='utf-8')
     html = None
     if with_html:
         html = out_dir / f'{safe}.html'
+        if not html.resolve().is_relative_to(out_dir_resolved):
+            raise ValueError(f'Generated path escapes output directory: {html}')
         html.write_text(render_html(verdict), encoding='utf-8')
     return md, html
 

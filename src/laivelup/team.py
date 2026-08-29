@@ -28,6 +28,7 @@ from .utils import generate_team_salt, slug
 _DEFAULT_TEAM_DIR = Path('.laivelup') / 'teams'
 _MAX_MEMBERS = 50
 _MAX_HISTORY = 100
+MAX_TEAM_FILE_MB = 1  # Teams can accumulate history, so smaller limit than profiles
 
 
 def _validate_team_name(name: str) -> None:
@@ -47,7 +48,7 @@ def _team_path(name: str, path: Path | None = None) -> Path:
 
 
 def save_team(team: Team, path: Path | None = None) -> Path:
-    """Sauvegarde l'état de l'équipe en JSON."""
+    """Sauvegarde l'état de l'équipe en JSON (atomic write)."""
     target = _team_path(team.name, path)
     target.parent.mkdir(parents=True, exist_ok=True)
     # Security: reject if parent is a symlink (G01)
@@ -72,7 +73,20 @@ def save_team(team: Team, path: Path | None = None) -> Path:
         },
         'history': team.history,
     }
-    target.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
+    # Atomic write: temp file + os.replace (avoids TOCTOU + partial writes)
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(
+        mode='w', encoding='utf-8', dir=target.parent, delete=False, suffix='.tmp'
+    ) as tmp:
+        json.dump(data, tmp, indent=2, ensure_ascii=False)
+        tmp_path = Path(tmp.name)
+    try:
+        tmp_path.replace(target)
+    except Exception:
+        with contextlib.suppress(OSError):
+            tmp_path.unlink()
+        raise
     return target
 
 
@@ -82,8 +96,8 @@ def load_team(name: str, path: Path | None = None) -> Team:
     if not source.exists():
         return Team(name=name)
     # Security: file size guard (G01)
-    if source.stat().st_size > 1 * 1024 * 1024:
-        raise ValueError(f"Fichier d'équipe trop volumineux (> 1 Mo) : {source}")
+    if source.stat().st_size > MAX_TEAM_FILE_MB * 1024 * 1024:
+        raise ValueError(f"Fichier d'équipe trop volumineux (> {MAX_TEAM_FILE_MB} Mo) : {source}")
     data = json.loads(source.read_text(encoding='utf-8'))
     team_salt = data.get('salt', generate_team_salt())
     team = Team(name=data.get('name', name), salt=team_salt)
@@ -165,7 +179,6 @@ def evaluate_member(team: Team, member_slug: str, profile: ProfileData) -> Verdi
         raise ValueError(f"Membre '{member.name}' a activé l'opt-out RGPD — évaluation refusée.")
 
     verdict = evaluate(profile)
-    member = team.members[member_slug]
 
     # Fix #5: confiance de l'axe plancher (pas le max)
     axis_confidences = {a.axe: a.confidence for a in verdict.axis_scores}

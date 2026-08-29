@@ -14,6 +14,12 @@ rapports/
 correctness_review.json
 tests/snapshots/
 
+# Caches d'outils (mypy, ruff, pytest, hypothesis)
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+
 # Generated artifacts (CI, benchmarks, local runs)
 *.verdict.md
 verdict.md

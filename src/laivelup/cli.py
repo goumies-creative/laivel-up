@@ -11,6 +11,10 @@ Usage :
   laivelup schema                              # schema JSON (auto-découverte agent)
   laivelup --version                           # version
 
+Environment :
+  NO_COLOR    désactive les couleurs (supporté par Rich)
+  FORCE_COLOR force les couleurs même en pipe (supporté par Rich)
+
 Exit codes :
   0  Succès
   1  Erreur métier (membre non trouvé, format inconnu)
@@ -35,7 +39,7 @@ from rich.table import Table
 from . import __version__
 from .encoding import ensure_utf8_env, make_console
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
-from .questions import QUESTION_IDS
+from .questions import QUESTION_IDS, QUESTION_TRACE_KEYS
 from .report import verdict_to_dict, write_reports
 from .schema import validate_profile
 from .scoring import evaluate
@@ -54,7 +58,7 @@ from .team import (
 )
 
 # ─── Console setup (P0.2: TTY detection + encoding cross-platform) ──
-ensure_utf8_env()
+# Note: ensure_utf8_env() is called lazily in main() to avoid side effects at import time
 NO_COLOR = os.environ.get('NO_COLOR') is not None
 TTY = sys.stdout.isatty()
 
@@ -148,7 +152,7 @@ COMMAND_SCHEMA = {
 # ─── --version (P1.2) ────────────────────────────────────────────────
 def _version_callback(value: bool) -> None:
     if value:
-        print(f'laivelup {__version__}')
+        error_console.print(f'laivelup {__version__}')
         raise typer.Exit(0)
 
 
@@ -220,9 +224,8 @@ def _load_profile(path: Path) -> ProfileData:
     )
 
 
-def _print_verdict(profile: ProfileData, verbosity: int = 1, use_json: bool = False) -> Verdict:
+def _print_verdict(verdict: Verdict, verbosity: int = 1, use_json: bool = False) -> Verdict:
     """Affiche le verdict et le retourne."""
-    verdict = evaluate(profile)
 
     if use_json:
         return verdict
@@ -284,16 +287,25 @@ def evaluate_profile(
     verbose: bool = typer.Option(False, '--verbose', '-v', help='Sortie détaillée technique.'),
     json_output: bool = typer.Option(False, '--json', '-j', help='Sortie JSON (CI/agent).'),
     fail_on: str | None = typer.Option(
-        None, '--fail-on', help='Fail si niveau inférieur (ex: RED).'
+        None,
+        '--fail-on',
+        help='Fail si niveau inférieur (valeurs : RED, BLUE, GREEN, COPPER, SILVER, GOLD).',
     ),
     fields: str | None = typer.Option(None, '--fields', help='Filtrer champs JSON.'),
     quiet: bool = typer.Option(False, '--quiet', '-q', help='Sortie JSON automatique.'),
 ) -> None:
     """Évalue un profil et écrit les rapports Markdown (+ HTML)."""
+    # Validate: --verbose and --quiet are mutually exclusive
+    if verbose and quiet:
+        error_console.print(
+            '[bold red]--verbose et --quiet sont mutuellement exclusifs.[/bold red]'
+        )
+        raise typer.Exit(code=2)
     profile = _load_profile(profil)
 
     use_json = json_output or quiet or not TTY
-    verdict = _print_verdict(profile, verbosity=2 if verbose else 1, use_json=use_json)
+    verdict = evaluate(profile)
+    _print_verdict(verdict, verbosity=2 if verbose else 1, use_json=use_json)
 
     # JSON output (P0.1)
     if use_json:
@@ -314,22 +326,28 @@ def evaluate_profile(
         )
 
     # --fail-on (P1.3)
-    if fail_on and verdict.level is not None:
-        try:
-            fail_level = Level[fail_on.upper()]
-        except KeyError:
-            valid = ', '.join(l.name for l in Level)
-            error_console.print(
-                f'[bold red]Niveau inconnu pour --fail-on : {fail_on}[/bold red] '
-                f'(valeurs : {valid})'
-            )
-            raise typer.Exit(code=2)
-        if verdict.level.value < fail_level.value:
+    if fail_on:
+        if verdict.level is None:
             if not use_json:
                 error_console.print(
-                    f'\n[red]FAIL: niveau {LEVEL_LABELS[verdict.level]} < {LEVEL_LABELS[fail_level]}[/red]'
+                    '[yellow]Avertissement : verdict non décidé (niveau=None), --fail-on ignoré[/yellow]'
                 )
-            raise typer.Exit(1)
+        else:
+            try:
+                fail_level = Level[fail_on.upper()]
+            except KeyError:
+                valid = ', '.join(l.name for l in Level)
+                error_console.print(
+                    f'[bold red]Niveau inconnu pour --fail-on : {fail_on}[/bold red] '
+                    f'(valeurs : {valid})'
+                )
+                raise typer.Exit(code=2)
+            if verdict.level.value < fail_level.value:
+                if not use_json:
+                    error_console.print(
+                        f'\n[red]FAIL: niveau {LEVEL_LABELS[verdict.level]} < {LEVEL_LABELS[fail_level]}[/red]'
+                    )
+                raise typer.Exit(1)
 
 
 # ─── interrogate command ────────────────────────────────────────────
@@ -350,6 +368,8 @@ def interrogate(
         'tu réponds, je réévalue à chaque fois.'
     )
 
+    # Build reverse mapping: question text -> question ID
+    qid_by_text = {text: qid for qid, text in QUESTION_IDS.items()}
     asked: set[str] = set()
     for _ in range(max_turns):
         verdict = evaluate(profile)
@@ -370,27 +390,30 @@ def interrogate(
                 )
             )
         ]
-        questions = [q for q in (candidates or verdict.next_steps) if q not in asked]
+        # Filter out already-asked questions by checking their IDs
+        questions = [
+            q for q in (candidates or verdict.next_steps) if qid_by_text.get(q, q) not in asked
+        ]
         if not questions:
             break
         q = questions[0]
-        asked.add(q)
+        # Track by question ID (more robust than text)
+        qid = qid_by_text.get(q, q)
+        asked.add(qid)
         answer = Prompt.ask(f'[bold]{q}[/bold]')
-        profile.answers['last_answer'] = answer
         profile = _merge_answer(profile, q, answer)
     else:
         verdict = evaluate(profile)
 
     if verdict.decided:
-        if verdict.level is None:
-            return
+        assert verdict.level is not None  # decided implies level is set
         console.print(f'[bold green]Verdict établi : {LEVEL_LABELS[verdict.level]}[/bold green]')
     else:
         console.print(
             "[bold yellow]Fin de l'entretien sans verdict ferme : le refus reste explicite.[/bold yellow]"
         )
 
-    verdict = _print_verdict(profile, verbosity=2 if verbose else 1)
+    _print_verdict(verdict, verbosity=2 if verbose else 1)
     md, html_path = write_reports(verdict, out)
     console.print(
         f'[dim]Rapport Markdown : {md}[/dim]'
@@ -399,6 +422,9 @@ def interrogate(
 
 
 # --- Team Tracker commands --------------------------------------------------------
+
+
+_TEAM_SUBCOMMANDS = {'create', 'evaluate', 'export', 'opt-out', 'remove'}
 
 
 @team_app.command(name='create')
@@ -411,8 +437,21 @@ def team_create(
     if not member_list:
         error_console.print('[bold red]Aucun membre fourni.[/bold red]')
         raise typer.Exit(code=1)
-    team = create_team(name, member_list)
-    save_team(team)
+    if name in _TEAM_SUBCOMMANDS:
+        error_console.print(
+            f'[yellow]Avertissement : le nom d\'équipe "{name}" correspond à une sous-commande. '
+            f"Cela peut créer une ambiguïté à l'usage.[/yellow]"
+        )
+    try:
+        team = create_team(name, member_list)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
+    try:
+        save_team(team)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     console.print(
         f"[bold green]Équipe '{team.name}' créée[/bold green] avec {len(team.members)} membres :"
     )
@@ -427,21 +466,33 @@ def team_evaluate(
     profil: Path = typer.Argument(..., help='Profil JSON du membre.'),
     out: Path = typer.Option(Path('rapports'), '--out', help='Dossier des rapports.'),
     verbose: bool = typer.Option(False, '--verbose', '-v', help='Sortie détaillée.'),
+    html: bool = typer.Option(True, '--html/--no-html', help='Générer le rapport HTML.'),
 ) -> None:
     """Évalue un membre de l'équipe et enregistre le résultat."""
-    profile = _load_profile(profil)
-    team = load_team(team_name)
+    try:
+        profile = _load_profile(profil)
+        team = load_team(team_name)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     if member_slug not in team.members:
         error_console.print(
             f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]"
         )
-        error_console.print('Membres disponibles :')
-        for slug, m in team.members.items():
-            error_console.print(f'  · {m.name} → [dim]{slug}[/dim]')
+        if team.members:
+            error_console.print('Membres disponibles :')
+            for slug, m in team.members.items():
+                error_console.print(f'  · {m.name} → [dim]{slug}[/dim]')
+        else:
+            error_console.print('[dim]Aucun membre dans cette équipe.[/dim]')
         raise typer.Exit(code=1)
 
     verdict = evaluate_member(team, member_slug, profile)
-    save_team(team)
+    try:
+        save_team(team)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
 
     console.print(f'[bold]Verdict pour {member_slug} :[/bold]')
     if verdict.decided and verdict.level is not None:
@@ -449,7 +500,7 @@ def team_evaluate(
     else:
         console.print('[bold yellow]Refus de trancher.[/bold yellow]')
 
-    md, html_path = write_reports(verdict, out)
+    md, html_path = write_reports(verdict, out, with_html=html)
     console.print(f'[dim]Rapport : {md}[/dim]')
 
 
@@ -472,11 +523,19 @@ def team_export(
         error_console.print('Formats disponibles : md, html, csv, json')
         raise typer.Exit(code=1)
 
-    team = load_team(team_name)
+    try:
+        team = load_team(team_name)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     if not team.members:
         error_console.print(f"[bold yellow]Équipe '{team_name}' introuvable ou vide.[/bold yellow]")
         raise typer.Exit(code=1)
-    out_file = export_fn(team, out / f'equipe-{team_name}.{format}')
+    try:
+        out_file = export_fn(team, out / f'equipe-{team_name}.{format}')
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     console.print(f'[bold green]Export : {out_file}[/bold green]')
 
 
@@ -489,14 +548,22 @@ def team_opt_out(
     ),
 ) -> None:
     """Active ou désactive l'opt-out RGPD pour un membre."""
-    team = load_team(team_name)
+    try:
+        team = load_team(team_name)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     if member_slug not in team.members:
         error_console.print(
             f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]"
         )
         raise typer.Exit(code=1)
     set_opt_out(team, member_slug, enable)
-    save_team(team)
+    try:
+        save_team(team)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     action = 'activé' if enable else 'désactivé'
     console.print(f'[bold green]Opt-out {action}[/bold green] pour le membre {member_slug}')
 
@@ -510,14 +577,22 @@ def team_remove(
     ),
 ) -> None:
     """Supprime un membre de l'équipe."""
-    team = load_team(team_name)
+    try:
+        team = load_team(team_name)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     if member_slug not in team.members:
         error_console.print(
             f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]"
         )
         raise typer.Exit(code=1)
     remove_member(team, member_slug, purge)
-    save_team(team)
+    try:
+        save_team(team)
+    except ValueError as e:
+        error_console.print(f'[bold red]{e}[/bold red]')
+        raise typer.Exit(code=2)
     action = 'et son historique supprimé' if purge else 'supprimé'
     console.print(f"[bold green]Membre {action}[/bold green] de l'équipe '{team_name}'")
 

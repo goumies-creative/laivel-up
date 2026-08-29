@@ -82,6 +82,8 @@ def ascii_fallback(text: str) -> str:
         '\u25cf': '[*]',  # ●
         '\u25cb': '[ ]',  # ○
         '\u2022': '*',  # •
+        # Note: — maps to - (not ·) because this is ASCII fallback for legacy terminals
+        # that can't display · anyway. Project convention (· for —) applies to source text.
         '\u2014': '-',  # —
         '\u2026': '...',  # …
         '\u00b7': '.',  # ·

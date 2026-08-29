@@ -58,6 +58,9 @@ class TestExamplesValidate:
         if not officials:
             pytest.skip('Aucun profil officiel trouvé')
         for path in officials:
+            # Skip expected.json (not a profile, just expected levels)
+            if path.name == 'expected.json':
+                continue
             data = json.loads(path.read_text(encoding='utf-8'))
             errors = _validate_with_local_schema(data)
             assert errors == [], f'{path.name}: {errors}'

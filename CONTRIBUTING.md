@@ -131,10 +131,10 @@ Le workflow `.github/workflows/release.yml` :
 
 ```bash
 # Vérifier PyPI
-pip install laivel-up==X.Y.Z
+pip install laivelup==X.Y.Z
 
 # Vérifier GitHub Release
-gh release view vX.Y.Z -R goumes-creative/laivel-up
+gh release view vX.Y.Z -R goumies-creative/laivel-up
 ```
 
 ## Code de conduite

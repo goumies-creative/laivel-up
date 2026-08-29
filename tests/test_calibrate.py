@@ -22,6 +22,7 @@ from calibrate import (  # noqa: E402
     _fix_suggestion,
     _load_expected,
     _load_profile,
+    _profile_files,
     calibrate,
     generate_template,
 )
@@ -308,3 +309,15 @@ class TestCalibrate:
         monkeypatch.setattr('calibrate.PROFILES_DIR', profiles_dir)
         errors = calibrate(tmp_path / 'expected.json')
         assert errors == 1
+
+    def test_expected_json_exclu_du_glob(self, tmp_path, monkeypatch):
+        profiles_dir = tmp_path / 'profils'
+        profiles_dir.mkdir()
+        _profile_json(profiles_dir, 'alice', _BLUE_TRACES)
+        expected = _expected_json(profiles_dir, {'alice': 'BLUE'})
+
+        monkeypatch.setattr('calibrate.PROFILES_DIR', profiles_dir)
+        files = _profile_files(expected)
+        assert expected not in files
+        assert len(files) == 1
+        assert files[0].stem == 'alice'

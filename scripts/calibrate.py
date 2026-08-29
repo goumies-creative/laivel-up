@@ -7,6 +7,10 @@ Usage :
   python scripts/calibrate.py --expected grille/profils-officiels/expected.json
   python scripts/calibrate.py --expected grille/profils-officiels/expected.json --fix
   python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff
+
+Correctif (28/08) : le glob des profils incluait `expected.json` lui-même
+(fichier de réponses, pas un profil), listé comme un 5e profil fantôme
+"expected: pas dans expected.json" dans la sortie. Exclu du glob désormais.
 """
 
 from __future__ import annotations
@@ -43,6 +47,15 @@ LEVEL_LABELS = {
 }
 
 
+def _profile_files(expected_path: Path | None = None) -> list[Path]:
+    """Liste les fichiers de profils, en excluant les fichiers de réponses
+    attendues (expected.json ou équivalent passé via --expected)."""
+    excluded = {EXPECTED_FILE.name}
+    if expected_path is not None:
+        excluded.add(expected_path.name)
+    return sorted(p for p in PROFILES_DIR.glob('*.json') if p.name not in excluded)
+
+
 def _load_profile(path: Path) -> ProfileData:
     """Charge un profil JSON en ProfileData."""
     data = json.loads(path.read_text(encoding='utf-8'))
@@ -70,7 +83,7 @@ def _load_expected(path: Path) -> dict[str, str]:
 
 def generate_template() -> None:
     """Génère un expected.json.template avec tous les profils trouvés."""
-    profiles = sorted(PROFILES_DIR.glob('*.json'))
+    profiles = _profile_files()
     if not profiles:
         print(f'Aucun profil trouvé dans {PROFILES_DIR}')
         return
@@ -136,7 +149,7 @@ def calibrate(expected_path: Path, fix: bool = False, diff: bool = False) -> int
         print(f'Aucun niveau attendu dans {expected_path}')
         return 0
 
-    profiles = sorted(PROFILES_DIR.glob('*.json'))
+    profiles = _profile_files(expected_path)
     errors = 0
     results = []
 

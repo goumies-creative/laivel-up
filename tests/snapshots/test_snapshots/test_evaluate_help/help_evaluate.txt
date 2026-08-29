@@ -11,7 +11,8 @@
 │ --html         --no-html          Générer le rapport HTML. [default: html]  │
 │ --verbose  -v                     Sortie détaillée technique.               │
 │ --json     -j                     Sortie JSON (CI/agent).                   │
-│ --fail-on                   TEXT  Fail si niveau inférieur (ex: RED).       │
+│ --fail-on                   TEXT  Fail si niveau inférieur (valeurs : RED,  │
+│                                   BLUE, GREEN, COPPER, SILVER, GOLD).       │
 │ --fields                    TEXT  Filtrer champs JSON.                      │
 │ --quiet    -q                     Sortie JSON automatique.                  │
 │ --help                            Show this message and exit.               │

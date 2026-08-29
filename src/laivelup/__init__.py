@@ -6,7 +6,7 @@ niveau via min() sur 4 axes, confiance par axe, refus de trancher
 quand les données mentent, avec la question à poser à la place.
 """
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 from .scoring_defaults import SCORING_DEFAULTS
 

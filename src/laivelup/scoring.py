@@ -51,8 +51,14 @@ def _as_numeric(value: object, cast: type[float] | type[int]) -> float | int | N
     """cast(value) or None if non-numeric (preserves None mapping → axis not provided)."""
     if value is None:
         return None
+    if isinstance(value, bool):
+        return None  # bool is subclass of int, reject explicitly
+    if cast is int and not isinstance(value, (int, str)):
+        return None
+    if not isinstance(value, (int, float, str)):
+        return None
     try:
-        return cast(str(value))  # type: ignore[no-any-return]
+        return cast(value)
     except (TypeError, ValueError):
         return None
 
