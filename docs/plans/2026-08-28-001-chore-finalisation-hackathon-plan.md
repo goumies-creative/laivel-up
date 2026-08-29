@@ -729,4 +729,4 @@ pas de franglais.
 - `scripts/demo.py` : commentaires asciinema
 
 **Méthode :** passage en revue avec Claude Desktop (compte gratuit)
-via le prompt de revue copy française.
+via le prompt [`docs/prompts/revue-copy-francaise.md`](docs/prompts/revue-copy-francaise.md).
