@@ -39,7 +39,7 @@ d'attendre un upload.
 
 ## 1. P0 — Bloquants absolus
 
-### ☐ 1.1 — Extracteur profils officiels → `ProfileData`
+### ☑ 1.1 — Extracteur profils officiels → `ProfileData`
 **Effort : M (2-3h) · Deadline : 29/08 fin de journée**
 
 **Statut : ✅ FAIT (28/08 soir)**
@@ -62,18 +62,30 @@ seul vrai bloc de code neuf du week-end.
 
 **Sortie :** fichiers JSON par profil dans `grille/profils-officiels/{perceval,bohort,leodagan,arthur}.json`, plus `grille/profils-officiels/expected.json` (niveaux donnés par `profiles/README.md` officiel).
 
-**Résultat calibration :**
+**Résultat calibration (29/08, run confirmé par Romy) :** `Calibration : 4 profils testes, 0 erreurs` — les 4 profils matchent exactement `expected.json` :
+- arthur → COPPER (confirmé)
+- bohort → BLUE (confirmé)
+- leodagan → GREEN (confirmé)
+- perceval → RED (confirmé)
+
+**Correction :** la note précédente ci-dessous (28/08 soir, perceval/leodagan UNDECIDED, arthur/bohort RED) est périmée — remplacée par ce run réel, seule source de vérité désormais. Aucun écart à corriger : ni fix manuel ni `apply_calibration_fix.py --scenario A` ne sont nécessaires.
+
+<details>
+<summary>Ancienne note (28/08 soir, périmée)</summary>
+
 - perceval : UNDECIDED (refus correct - harness axis null, pas de signaux d'adoption)
 - leodagan : UNDECIDED (refus correct - intervention axis 40% confidence, sous le seuil)
 - arthur : RED (données extraites correctement, scoring AND rule appliquée)
 - bohort : RED (données extraites correctement, scoring AND rule appliquée)
 
-**Note :** Les UNDECIDED et écarts de niveau sont attendus - le scoring engine refuse de deviner ce qui n'est pas prouvé (feature, pas bug). Les données extraites reflètent ce qui peut être prouvé, pas ce qui est attendu officiellement.
+</details>
+
+**Note :** ce résultat confirme que l'extracteur ET le moteur de scoring produisent exactement les niveaux officiels attendus, sans deviner ni forcer un verdict — le meilleur cas de figure possible pour le critère "Le bon niveau ?".
 
 - ✅ Script écrit
 - ✅ Lancer `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff`
 - ✅ Documenter le résultat dans ce plan
-- ☐ Décider fix manuel du script vs `scripts/apply_calibration_fix.py --scenario A` (si écarts non acceptés)
+- ☑ Décider fix manuel du script vs `scripts/apply_calibration_fix.py --scenario A` (si écarts non acceptés) — **sans objet : 0 erreur, calibrage parfait, aucune décision à prendre**
 
 ---
 
@@ -183,6 +195,8 @@ d'explication.
 - ☐ Relire `docs/VIDEO_PRODUCTION.md` et vérifier qu'il prévoit des sous-titres/texte à l'écran
 - ☐ Tourner (2 min max)
 - ☐ Vérifier la compréhension **son coupé**
+
+**Statut (29/08) :** infrastructure sous-titres vérifiée OK (burn-in via Aegisub/SRT/ffmpeg, conforme à la contrainte "muette"). Typo `pip install laivel-up` → `laivelup` corrigée dans le tableau de sous-titres. `scripts/demo.py` enrichi avec des commentaires `#` explicatifs (une ligne vide `#` puis le commentaire, style asciinema officiel) avant chaque commande, pour porter le critère "on comprend pourquoi" même son coupé — vérifié sans régression sur `tests/test_demo.py`. Narration TTS (étape 4) laissée en option, à produire si le temps le permet. Tableau de sous-titres d'`Aegisub` mis à jour (29/08) pour reprendre mot pour mot ces commentaires — timestamps conservés en l'état (approximatifs) avec note explicite à recaler après enregistrement réel. Reste à toi : tourner l'enregistrement asciinema et valider la lisibilité son coupé une fois le montage fait.
 
 ### ☑ 2.3 — Fixer/vérifier `docs/adr/0007-team-tracker-rgpd-slug-sha256.md`
 **Effort : S (15 min) · Deadline : 30/08**
@@ -406,6 +420,221 @@ meilleure preuve du critère "Comment tu l'as construit ?".
 
 ---
 
+## 9. CLI Ergonomics — diagnostic et pistes
+
+> **Où on en est déjà :** la CLI (`cli.py`, Typer + Rich) a une base solide,
+> pas un point de départ : détection TTY (`sys.stdout.isatty()`), respect de
+> `NO_COLOR`/`FORCE_COLOR`, gestion cross-platform de l'encodage
+> (`encoding.py::ensure_utf8_env`), sortie JSON dédiée (`--json`, `--quiet`),
+> `--fail-on` pour CI, commande `schema` pour l'auto-découverte agent, codes
+> de sortie documentés (0/1/2/3). "Moderne, ergonomique, cross-platform"
+> n'est pas un chantier from scratch — c'est du polish sur une fondation qui
+> tient déjà debout.
+
+> **Règle d'ordre :** ne pas commencer 9.1 avant que 1.6, 2.2 et 2.4 soient
+> bouclés. Le rendu du 31/08 prime sur le polish.
+
+### 9.1 — Avant le rendu (faible risque, fort impact démo)
+
+#### ☐ 9.1.a — Activer la complétion shell native de Typer
+**Effort : XS (10 min) · Sans risque de régression**
+
+**Pourquoi :** `app = typer.Typer(add_completion=False, ...)` désactive
+explicitement une fonctionnalité que Typer offre gratuitement (bash/zsh/
+fish/PowerShell). Une complétion qui marche cross-shell au premier `Tab` est
+un des signaux "CLI moderne" les plus visibles pour un jury technique — et
+ça ne coûte qu'un changement de flag.
+
+- ☐ `add_completion=False` → `add_completion=True`
+- ☐ Documenter `laivelup --install-completion` dans le README (section "Pour les juges")
+- ☐ Vérifier sur PowerShell (le cas cross-platform le moins testé habituellement)
+
+#### ☐ 9.1.b — `--no-color` / `--color` explicites, pas seulement les variables d'env
+**Effort : XS (15 min)**
+
+**Pourquoi :** `NO_COLOR`/`FORCE_COLOR` sont respectées (`encoding.py`), mais
+ce sont des variables d'environnement, pas un flag CLI. Un utilisateur qui
+découvre l'outil cherche `--no-color`/`--help` avant de chercher une variable
+d'env. Les deux mécanismes cohabitent facilement (le flag surcharge l'env).
+
+- ☐ Ajouter `--color/--no-color` sur `evaluate` a minima (ou au niveau du callback global `main()`)
+
+#### ☐ 9.1.c — Aligner MD/HTML/table Rich sur la même hiérarchie de couleurs par niveau
+**Effort : S (30 min)**
+
+**Pourquoi :** `_print_verdict` affiche les axes dans une `rich.Table`
+neutre (pas de couleur par niveau), alors que le badge final est vert/rouge.
+Un axe RED perdu au milieu d'une table monochrome est moins lisible qu'un
+axe RED affiché en rouge — la couleur porte de l'information, actuellement
+utilisée seulement sur le verdict final, pas sur le détail qui le justifie.
+
+- ☐ Mapper chaque `Level` à un style Rich cohérent avec les couleurs déjà
+  choisies pour le HTML (§10) et les sous-titres vidéo
+- ☐ Respecter `NO_COLOR`/`--no-color` : aucune info ne doit dépendre
+  uniquement de la couleur (le texte du niveau reste toujours affiché)
+
+#### ☐ 9.1.d — `--help` avec exemples d'usage (epilog Typer)
+**Effort : S (20 min)**
+
+**Pourquoi :** le docstring du module (haut de `cli.py`) contient déjà de
+très bons exemples (`laivelup evaluate profil.json --json`, etc.) mais ils ne
+sont visibles qu'en lisant le code source, pas via `laivelup --help` ou
+`laivelup evaluate --help`. Typer supporte un paramètre `epilog=` par
+commande — aucune raison de garder cette doc "cachée".
+
+- ☐ Reprendre les exemples du docstring module dans `epilog=` de chaque commande concernée
+
+### 9.2 — Vision post-hackathon (effort plus important, à ne pas commencer avant le rendu)
+
+#### ☐ 9.2.a — Commande `laivelup doctor`
+**Effort : M (2-3h)**
+
+**Pourquoi :** convention de plus en plus répandue dans les CLI modernes
+(diagnostic autonome à la `flutter doctor`) : vérifier version Python,
+encodage terminal, capacité couleur, permissions d'écriture du dossier
+`--out`, etc. Utile pour le support cross-platform ("ça marche pas chez
+moi") sans avoir à lire les tracebacks.
+
+- ☐ Vérifications : version Python ≥ requis, `sys.stdout.encoding`, capacité
+  couleur du terminal, écriture possible dans le dossier courant
+- ☐ Sortie lisible + `--json` pour un usage scripté
+
+#### ☐ 9.2.b — Fichier de config utilisateur (XDG cross-platform)
+**Effort : M (2h)**
+
+**Pourquoi :** les options répétées à chaque appel (`--out`, `--no-html`,
+couleur) sont un point de friction pour un usage répété. Un fichier de
+config avec valeurs par défaut, surchargées par les flags CLI, est un
+pattern standard des CLI matures (git, npm) — mais ce n'est pas un besoin du
+hackathon, juste un confort d'usage à moyen terme.
+
+- ☐ Respecter les conventions XDG sur Linux/Mac, `%APPDATA%` sur Windows
+  (le genre de piège cross-platform qu'`encoding.py` gère déjà bien ailleurs)
+
+#### ☐ 9.2.c — Indicateurs de progression (Rich `Progress`/spinner) pour `interrogate`
+**Effort : S (1h)**
+
+**Pourquoi :** perception de réactivité, pas de gain de vitesse réel (le
+calcul est déjà quasi instantané) — mais un entretien multi-tours sans aucun
+retour visuel entre les questions peut sembler figé, surtout la première
+fois.
+
+#### ☐ 9.2.d — Benchmark du temps de démarrage à froid
+**Effort : XS (15 min) pour mesurer, S/M pour optimiser si besoin**
+
+**Pourquoi :** "performante" se vérifie, ne se déclare pas. `typer` + `rich`
+ont un coût d'import non-nul ; mesurer `time laivelup --version` donne un
+chiffre concret à citer (ou à améliorer via imports paresseux des
+sous-modules `team`) plutôt qu'une affirmation en l'air.
+
+- ☐ Mesurer sur les 3 OS de la matrice CI si possible (Windows a
+  historiquement un coût de démarrage Python plus élevé que Linux/Mac)
+
+---
+
+## 10. Sorties HTML — diagnostic et pistes
+
+> **Où on en est déjà :** `report.py::render_html` génère un fichier HTML
+> autonome (CSS inline, zéro dépendance externe — aucun CDN, aucune police
+> distante). C'est délibérément bien : un jury qui ouvre le rapport hors
+> ligne ou sur un poste sans accès réseau le voit correctement. Ne pas perdre
+> cette propriété en ajoutant des polices/Google Fonts pendant le redesign.
+
+### 10.0 — Identité visuelle : décidé
+
+**Décision (29/08, Romy) :** identité neutre, **pas** la charte Goumies Creative. Explicitement **anti "AI slop"** : pas de dégradé, pas d'animation. Ni identité d'agence, ni esthétique générique "SaaS IA" (pastilles arrondies, ombres douces, dégradés violet-bleu) — un rapport factuel qui a l'air fabriqué avec soin, pas généré en un prompt.
+
+### 10.1 — Avant le rendu (faible risque, gain d'accessibilité et de lisibilité réels)
+
+#### ☐ 10.1.a — Combler l'écart de contenu MD ↔ HTML
+**Effort : XS (10 min)**
+
+**Pourquoi :** `render_markdown` inclut une ligne "Sources : référentiel AIDD
+officiel (URL)" dans la section Transparence. `render_html::transparency`
+omet cette ligne — quelqu'un qui lit seulement le HTML n'a pas le lien vers
+le référentiel officiel. Petit écart, mais un jury qui compare les deux
+formats le remarquera.
+
+- ☐ Ajouter la ligne Sources (avec `<a href>`) dans `render_html`
+
+#### ☐ 10.1.b — Accessibilité de la table (lecteurs d'écran)
+**Effort : XS (15 min)**
+
+**Pourquoi :** la `<table>` n'a ni `<caption>` ni `scope="col"` sur les
+`<th>` — un lecteur d'écran ne peut pas annoncer "colonne Confiance" quand
+l'utilisateur navigue cellule par cellule, seulement "colonne 3". Ce sont
+deux attributs HTML natifs, aucune dépendance, un vrai gain WCAG.
+
+- ☐ `<caption>Détail par axe d'évaluation</caption>`
+- ☐ `scope="col"` sur chaque `<th>`
+
+#### ☐ 10.1.c — Les blocs "flag"/"next" ne doivent pas coder l'info seulement par la couleur
+**Effort : S (20 min)**
+
+**Pourquoi :** `.flag` (rouge, bordure gauche) et `.next` (bleu, bordure
+gauche) distinguent "red flag" de "prochaine étape" uniquement par une
+bordure colorée. Un utilisateur daltonien ou un lecteur d'écran (qui ignore
+le CSS) ne perçoit pas cette distinction. Le titre de section ("Red flags"
+en `<h2>`) aide, mais chaque bloc individuel gagnerait un préfixe explicite.
+
+- ☐ Ajouter un préfixe visuellement discret mais lisible ("⚠ Vigilance" /
+  "→ Piste") à chaque bloc, pas seulement la couleur de bordure
+
+#### ☐ 10.1.d — Vérifier les contrastes WCAG AA des badges
+**Effort : XS (10 min, juste un calcul)**
+
+**Pourquoi :** `.ok` (fond `#d1f5d8`, texte `#0b5b23`) et `.ko` (fond
+`#ffe3e3`, texte `#8b1a1a`) semblent visuellement contrastés mais "semblent"
+n'est pas une preuve. Un ratio calculé (objectif ≥ 4.5:1 pour texte normal)
+prend deux minutes et devient une preuve citable dans le README si besoin
+("accessibilité vérifiée, pas supposée").
+
+#### ☐ 10.1.e — Hiérarchie typographique : le verdict doit dominer visuellement la page
+**Effort : S (30-45 min)**
+
+**Pourquoi :** actuellement `<h1>` (titre) et le badge de verdict ont un
+poids visuel proche — taille de police 1.5rem pour le titre, badge en
+`padding: .3rem .7rem`. Sur un rapport dont le but est "on comprend le
+niveau en un coup d'œil" (critère jury n°1), le niveau devrait être
+l'élément le plus massif de la page, pas une pastille au même niveau que le
+titre.
+
+- ☐ Agrandir significativement le badge de verdict (voir §10.2 pour la
+  direction artistique complète)
+
+### 10.2 — Vision post-hackathon : direction artistique complète
+
+**Objectif : minimalisme brutaliste — bordures franches, pas d'ombres ni de
+dégradés, hiérarchie typographique nette, haute densité d'information sans
+surcharge visuelle — sans reprendre les trames/textures qui identifient
+visuellement le site Goumies Creative** (l'outil est un livrable MIT
+indépendant, cf. §10.0).
+
+Principes bruts, sans réponse arrêtée sur les valeurs exactes (à itérer) :
+
+- ☐ **Grille visible, pas de coins arrondis, pas d'ombre portée** — bordures
+  `solid` de 2-3px plutôt que `border-radius`/`box-shadow` (déjà le cas pour
+  le tableau ; à étendre à tous les blocs)
+- ☐ **Un seul accent color** utilisé avec parcimonie (le niveau obtenu, et
+  rien d'autre) — actuellement 2 couleurs sémantiques (vert/rouge) + 2 autres
+  pour flag/next : cohérent à réduire ou à justifier explicitement
+- ☐ **Empilement vertical strict, pas de mise en page en colonnes** —
+  cohérent avec le côté "rapport", pas "dashboard"
+- ☐ **Typographie : une police d'affichage forte pour le verdict (grande
+  taille, graisse marquée), une police neutre pour le corps, une police mono
+  pour les données chiffrées** (confiance %, noms de traces) — renforce
+  visuellement le message "ceci est mesuré, pas déclaré"
+- ☐ **Mode sombre via `prefers-color-scheme`** (pas de toggle JS, juste une
+  media query CSS) — cohérent avec ta préférence perso pour le HTML sombre,
+  sans imposer de JS à un rapport qui doit rester un fichier statique simple
+- ☐ **Feuille de style d'impression (`@media print`)** — un jury qui imprime
+  ou exporte en PDF ne devrait pas perdre la lisibilité des badges colorés
+- ☐ **Audit WCAG outillé** (axe-core ou Lighthouse CI en local, pas seulement
+  une vérification manuelle) une fois le design stabilisé — transforme les
+  vérifications ponctuelles du §10.1 en garde-fou reproductible
+
+---
+
 ## Journal de bord
 
 **28/08 — Fait :**
@@ -461,3 +690,43 @@ meilleure preuve du critère "Comment tu l'as construit ?".
   - 1.6 (push tag, vérif secret PyPI, publication) — actions git/GitHub hors de portée de l'accès fichiers
   - 2.1 (table Critères d'évaluation README) — nécessite le libellé exact de `SUJET.md` du dépôt officiel, pas encore lu cette session
   - 2.2 (vidéo), 2.4 (formulaire de rendu) — actions manuelles de ton côté
+
+**29/08 (suite) — 2.1, 2.2, 1.1 :**
+- **2.1 fait** : `SUJET.md` du dépôt officiel lu, table "Critères d'évaluation" du README refaite avec les libellés exacts et des preuves à vérifier au lieu de scores auto-attribués
+- **2.2 avancé** : `docs/VIDEO_PRODUCTION.md` vérifié conforme à la contrainte "muette" (sous-titres burn-in). Typo `laivel-up` corrigée dans le script de sous-titres. `scripts/demo.py` enrichi de commentaires `#` explicatifs par étape (style asciinema officiel), sans régression sur `tests/test_demo.py`. Tableau de sous-titres réaligné sur ces commentaires, timing marqué provisoire (à recaler après tournage réel)
+- **1.1 clos** : Romy a lancé `calibrate.py --diff` en réel — **0 erreurs, 4/4 profils matchent `expected.json`** (arthur COPPER, bohort BLUE, leodagan GREEN, perceval RED). La note précédente (UNDECIDED sur perceval/leodagan) était périmée, corrigée dans le plan. Aucune décision de fix à prendre : le calibrage est parfait
+
+**29/08 (suite) — Sections 9 et 10, CLI ergonomics et sorties HTML :**
+- Lecture complète de `cli.py` (Typer/Rich) et `report.py` (HTML/MD) avant d'écrire quoi que ce soit — diagnostic basé sur le code réel, pas de recommandations génériques
+- Ajout de la section **9 (CLI Ergonomics)** : constat que la base est déjà solide (TTY detection, NO_COLOR/FORCE_COLOR, JSON/fail-on/schema), puis 4 items «avant le rendu» (complétion shell, --no-color/--color explicites, couleurs par niveau cohérentes CLI/HTML, epilog --help) et 4 items «vision post-hackathon» (doctor, config XDG, progress indicators, benchmark démarrage)
+- Ajout de la section **10 (Sorties HTML)** : constat que le HTML est déjà autonome (zero dépendance externe, à préserver), question ouverte posée sur l'identité visuelle (Goumies vs LAIVEL UP indépendant), 5 items «avant le rendu» (parité MD/HTML, accessibilité table, blocs flag/next non-color-only, contraste WCAG, hiérarchie typo du verdict), puis vision complète de direction artistique brutaliste (grille visible, un seul accent, typographie à 3 registres, dark mode CSS, print stylesheet, audit WCAG outillé)
+- Règle explicite posée : ne pas commencer 9.1/10.1 avant que 1.6, 2.2 et 2.4 soient bouclés — le rendu du 31/08 prime sur le polish
+
+**30/08 — Items 2.5, nettoyage CLI :**
+- **2.5 fait** : `--quiet` supprimé de la CLI (doublon inutile de `--json`), "La Décodeuse" supprimé de la CLI, `__init__.py`, `demo.py` — tous les textes affichés aux utilisateurs sont désormais en français correct, sans référence au repo du hackathon
+- **Pipeline documenté** : section « Pipeline d'évaluation » ajoutée au README, section « Profils officiels » ajoutée au CONTRIBUTING
+- **Copy scoring** : "tenir au bout" → "mener à terme" (scoring.py:304)
+- **Verbose fix** : `_print_verdict` refactoré de `verbosity: int` (inutile) à `is_verbose: bool` fonctionnel — `-v` affiche désormais les axes, confiances, évidences, variance
+- **Inclusif** : "un développeur" → "des développeurs" dans CLI + docs (README, METHODE, TRANSPARENCE, grille, spec)
+- **Copy AIDD** : "niveau AIDD" → "niveau d'adoption de l'AIDD" dans la CLI
+- **Snapshot** : `test_main_help` et `test_interrogate_help` mis à jour
+- **README-OFFICIEL** : lien officiel vers SUJET.md ajouté
+
+### ☐ 2.5 — Revue copy française complète
+**Effort : M · Deadline : 30/08**
+
+**Pourquoi :** tous les textes affichés aux utilisateurs doivent être
+impeccables, en français correct, intelligibles et accessibles.
+Pas de reprise de la doc du repo ou du trailer officiel du hackathon,
+pas de franglais.
+
+**Périmètre :**
+- `src/laivelup/cli.py` : help texts, messages d'erreur, docstrings
+- `src/laivelup/scoring.py` : messages progress_for_axis
+- `src/laivelup/report.py` : labels rapports MD/HTML
+- `src/laivelup/team.py` : messages d'erreur
+- `README.md` : sections visibles par les juges
+- `scripts/demo.py` : commentaires asciinema
+
+**Méthode :** passage en revue avec Claude Desktop (compte gratuit)
+via le prompt de revue copy française.

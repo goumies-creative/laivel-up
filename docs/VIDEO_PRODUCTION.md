@@ -89,12 +89,15 @@ agg demo.cast demo.mp4 --theme monokai --speed 1.5
 |-------|-----|------------------|
 | 0:00:00 | 0:00:03 | LAIVEL UP - CLI d evaluation AIDD |
 | 0:00:03 | 0:00:08 | Methode La Decodeuse : refus de deviner |
-| 0:00:08 | 0:00:15 | Etape 1 : Aide CLI |
-| 0:00:15 | 0:00:30 | Etape 2 : Evaluation profil maison |
-| 0:00:30 | 0:00:40 | Etape 3 : Creation equipe RGPD |
-| 0:00:40 | 0:00:50 | Etape 4 : Evaluation membre |
-| 0:00:50 | 0:00:55 | Etape 5 : Export resultats |
+| 0:00:08 | 0:00:15 | Decouvrir les commandes disponibles |
+| 0:00:15 | 0:00:23 | Contexte versionne, regles agent : signal de rigueur |
+| 0:00:23 | 0:00:30 | Retries apres coup : le moteur ne triche pas la lecture |
+| 0:00:30 | 0:00:40 | Le nom n apparait jamais en clair dans les rapports |
+| 0:00:40 | 0:00:50 | Meme moteur, agrege au niveau equipe |
+| 0:00:50 | 0:00:55 | Rapport exportable, pret a partager |
 | 0:00:55 | 0:01:00 | Merci - MIT License - pip install laivelup |
+
+> **Timing provisoire.** Ces débuts/fins reprennent la structure de la version précédente du tableau (approximative, non calculée depuis les `time.sleep()` de `demo.py`). Le texte, lui, est aligné sur les commentaires `#` ajoutés dans `scripts/demo.py` (29/08). Recaler les timestamps dans Aegisub une fois l'enregistrement asciinema réel disponible : la vitesse de conversion `agg --speed 1.5` et le temps d'exécution réel des commandes CLI font que la durée vidéo ne correspond pas linéairement aux constantes `PAUSE_SHORT/MEDIUM/LONG` du script.
 
 ### Export SRT
 

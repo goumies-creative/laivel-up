@@ -5,7 +5,7 @@ pitche-able face à la CNIL et à l'AI Act.
 
 ## Finalité
 
-Évaluer le niveau d'**adoption de l'IA** dans le workflow d'un développeur,
+Évaluer le niveau d'**adoption de l'IA** dans le workflow des développeurs,
 selon la grille officielle du hackathon LAIVEL UP (7 niveaux, 4 axes). La
 finalité est unique, déclarée et limitée : aucune donnée n'est collectée pour
 un autre usage.

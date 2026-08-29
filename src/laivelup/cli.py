@@ -1,5 +1,5 @@
 # Copyright 2026 Romy Alula — MIT License
-"""CLI d'évaluation AIDD · LAIVEL UP · piste Décodeuse.
+"""CLI d'évaluation AIDD · LAIVEL UP.
 
 Usage :
   laivelup evaluate profil.json                 # verdict + rapports md/html
@@ -68,7 +68,7 @@ error_console = Console(stderr=True, no_color=NO_COLOR)
 # ─── App ─────────────────────────────────────────────────────────────
 app = typer.Typer(
     add_completion=False,
-    help="Évaluation du niveau AIDD d'un développeur (piste Décodeuse).",
+    help="Évaluation du niveau d'adoption de l'AIDD des développeurs.",
     no_args_is_help=True,
 )
 team_app = typer.Typer(help="Gestion d'équipes et suivi multi-membres.")
@@ -80,7 +80,7 @@ MAX_JSON_MB = 2
 COMMAND_SCHEMA = {
     'name': 'laivelup',
     'version': __version__,
-    'description': "Évaluation du niveau AIDD d'un développeur",
+    'description': "Évaluation du niveau d'adoption de l'AIDD des développeurs",
     'commands': {
         'evaluate': {
             'description': 'Évalue un profil et génère les rapports',
@@ -102,7 +102,6 @@ COMMAND_SCHEMA = {
                     'description': 'Fail si niveau inférieur (ex: RED)',
                 },
                 '--fields': {'type': 'string', 'description': 'Filtrer champs JSON'},
-                '--quiet': {'type': 'boolean', 'default': False, 'description': 'Sortie JSON auto'},
                 '--verbose': {
                     'type': 'boolean',
                     'default': False,
@@ -111,7 +110,7 @@ COMMAND_SCHEMA = {
             },
         },
         'interrogate': {
-            'description': 'Mode entretien guidé (Décodeuse)',
+            'description': 'Mode entretien guidé',
             'args': {
                 'profil': {
                     'type': 'string',
@@ -167,7 +166,7 @@ def main(
         help='Affiche la version',
     ),
 ) -> None:
-    """Évaluation du niveau AIDD d'un développeur."""
+    """Évaluation du niveau d'adoption de l'AIDD des développeurs."""
 
 
 # ─── schema command (P0.3) ──────────────────────────────────────────
@@ -224,7 +223,7 @@ def _load_profile(path: Path) -> ProfileData:
     )
 
 
-def _print_verdict(verdict: Verdict, verbosity: int = 1, use_json: bool = False) -> Verdict:
+def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = False) -> Verdict:
     """Affiche le verdict et le retourne."""
 
     if use_json:
@@ -265,10 +264,28 @@ def _print_verdict(verdict: Verdict, verbosity: int = 1, use_json: bool = False)
         if f.question:
             error_console.print(f'    → Question : {f.question}')
 
-    if verbosity >= 1 and verdict.decided:
+    if verdict.decided:
         console.print("[dim]· comment monter d'un cran ·[/dim]")
         for n in verdict.next_steps:
             console.print(f'[dim]  · {n}[/dim]')
+
+    if is_verbose:
+        console.print('[dim]· détails techniques ·[/dim]')
+        for a in verdict.axis_scores:
+            label = axis_label(a.axe)
+            lvl = level_label(a.level)
+            conf = f'{a.confidence:.0%}' if a.level is not None else '—'
+            console.print(f'[dim]  · {label}: {lvl} ({conf})[/dim]')
+            if a.evidence:
+                for ev in a.evidence:
+                    console.print(f'[dim]      source: {ev}[/dim]')
+            if a.variance:
+                console.print(f'[dim]      variance: {a.variance}[/dim]')
+        if verdict.data_errors:
+            console.print('[dim]  · données invalides:[/dim]')
+            for e in verdict.data_errors:
+                console.print(f'[dim]      · {e}[/dim]')
+
     return verdict
 
 
@@ -292,20 +309,13 @@ def evaluate_profile(
         help='Fail si niveau inférieur (valeurs : RED, BLUE, GREEN, COPPER, SILVER, GOLD).',
     ),
     fields: str | None = typer.Option(None, '--fields', help='Filtrer champs JSON.'),
-    quiet: bool = typer.Option(False, '--quiet', '-q', help='Sortie JSON automatique.'),
 ) -> None:
     """Évalue un profil et écrit les rapports Markdown (+ HTML)."""
-    # Validate: --verbose and --quiet are mutually exclusive
-    if verbose and quiet:
-        error_console.print(
-            '[bold red]--verbose et --quiet sont mutuellement exclusifs.[/bold red]'
-        )
-        raise typer.Exit(code=2)
     profile = _load_profile(profil)
 
-    use_json = json_output or quiet or not TTY
+    use_json = json_output or not TTY
     verdict = evaluate(profile)
-    _print_verdict(verdict, verbosity=2 if verbose else 1, use_json=use_json)
+    _print_verdict(verdict, is_verbose=verbose, use_json=use_json)
 
     # JSON output (P0.1)
     if use_json:
@@ -358,7 +368,7 @@ def interrogate(
     max_turns: int = typer.Option(6, '--max-turns', help='Nombre max de questions posées.'),
     verbose: bool = typer.Option(False, '--verbose', '-v', help='Sortie détaillée technique.'),
 ) -> None:
-    """Mode entretien guidé (Décodeuse) : pose les questions, fusionne les réponses, re-score."""
+    """Mode entretien guidé : pose les questions, fusionne les réponses, re-score."""
     if profil is not None:
         profile = _load_profile(profil)
     else:
@@ -413,7 +423,7 @@ def interrogate(
             "[bold yellow]Fin de l'entretien sans verdict ferme : le refus reste explicite.[/bold yellow]"
         )
 
-    _print_verdict(verdict, verbosity=2 if verbose else 1)
+    _print_verdict(verdict, is_verbose=verbose)
     md, html_path = write_reports(verdict, out)
     console.print(
         f'[dim]Rapport Markdown : {md}[/dim]'

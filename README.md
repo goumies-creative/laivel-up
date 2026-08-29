@@ -1,6 +1,6 @@
 # LAIVEL UP · CLI d'évaluation AIDD
 
-> Moteur d'évaluation du niveau **AI-Driven Development** d'un développeur.
+> Moteur d'évaluation du niveau d'adoption de l'**AI-Driven Development** des développeurs.
 > Approche La Décodeuse : refus de deviner, questions au lieu de verdicts.
 
 [![CI](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml)
@@ -108,6 +108,29 @@ Voir [METHODE.md](METHODE.md) pour la description complète de l'algorithme.
 - **Refus de deviner** : données insuffisantes → questions, jamais de niveau arbitraire
 - **Équité structurelle** : aucun neurotype demandé ni inféré
 - **Transparence** : chaque verdict documente ses sources et limites
+
+## Pipeline d'évaluation
+
+Les profils doivent être **standardisés** avant évaluation. La chaîne complète :
+
+```
+scripts/extract_official_profile.py   ← convertit les données brutes
+         ↓
+grille/profils-officiels/*.json       ← format normalisé (ProfileData)
+         ↓
+scripts/calibrate.py                  ← vérifie la calibration
+         ↓
+laivelup evaluate <profil>.json       ← évalue et génère les rapports
+```
+
+> ⚠️ Ne jamais lancer `laivelup evaluate` sur des fichiers non standardisés.
+> Utiliser d'abord `scripts/extract_official_profile.py` pour convertir
+> les données brutes en format `ProfileData`.
+
+| Script | Rôle | Usage |
+|--------|------|-------|
+| `extract_official_profile.py` | Extrait et standardise les profils bruts | `python scripts/extract_official_profile.py --source ../laivel-up/profiles` |
+| `calibrate.py` | Vérifie que les verdicts correspondent aux niveaux attendus | `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff` |
 
 ## Licence
 

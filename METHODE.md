@@ -5,7 +5,7 @@
 
 ## Vision
 
-L'outil évalue le niveau d'adoption **AI-Driven Development** d'un développeur
+L'outil évalue le niveau d'adoption de l'**AI-Driven Development** des développeurs
 en se basant sur des **traces observables** (pas sur ce que la personne dit de
 soi). Il applique la méthode **La Décodeuse** : quand les données manquent ou
 se contredisent, l'outil refuse de trancher et pose des questions ciblées plutôt

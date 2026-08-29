@@ -18,8 +18,16 @@ from pathlib import Path
 
 DEMO_DIR = Path(__file__).resolve().parent.parent
 PROFILS = [
-    ('profil-maison-1.json', 'Profil 1 : contexte + rules'),
-    ('profil-maison-2.json', 'Profil 2 : boucles de relance'),
+    (
+        'profil-maison-1.json',
+        'Profil 1 : contexte + rules',
+        'Contexte versionné, règles agent : signal de rigueur',
+    ),
+    (
+        'profil-maison-2.json',
+        'Profil 2 : boucles de relance',
+        'Retries après coup : le moteur ne triche pas la lecture',
+    ),
 ]
 
 PAUSE_SHORT = 2
@@ -27,8 +35,11 @@ PAUSE_MEDIUM = 4
 PAUSE_LONG = 6
 
 
-def _run(cmd: str, label: str, pause: int = PAUSE_MEDIUM) -> None:
-    """Exécute une commande CLI et affiche un séparateur."""
+def _run(cmd: str, label: str, comment: str = '', pause: int = PAUSE_MEDIUM) -> None:
+    """Affiche un commentaire explicatif, exécute une commande CLI, affiche un séparateur."""
+    if comment:
+        print('#')
+        print(f'# {comment}')
     print(f'\n{"=" * 60}')
     print(f'  {label}')
     print(f'{"=" * 60}\n')
@@ -46,19 +57,22 @@ def _run(cmd: str, label: str, pause: int = PAUSE_MEDIUM) -> None:
 def main() -> None:
     """Scénario démo complet 5 étapes (~50s + pauses)."""
     print("LAIVEL UP — Démo CLI d'évaluation AIDD\n")
-    print('Méthode La Décodeuse : refus de deviner, questions au lieu de verdicts.')
+    print('Méthode : refus de deviner, questions au lieu de verdicts.')
     time.sleep(PAUSE_SHORT)
 
     # Étape 1 : Aide
-    _run('laivelup --help', 'Étape 1 : Aide CLI', PAUSE_SHORT)
+    _run(
+        'laivelup --help', 'Étape 1 : Aide CLI', 'Découvrir les commandes disponibles', PAUSE_SHORT
+    )
 
     # Étape 2 : Évaluation profil 1
-    for profil, description in PROFILS:
+    for profil, description, comment in PROFILS:
         profil_path = DEMO_DIR / 'exemples' / profil
         if profil_path.exists():
             _run(
                 f'laivelup evaluate {profil_path} --no-html',
                 f'Étape 2 : {description}',
+                comment,
                 PAUSE_LONG,
             )
         else:
@@ -68,6 +82,7 @@ def main() -> None:
     _run(
         'laivelup team create DemoEquipe Alice,Bob,Charlie',
         'Étape 3 : Création équipe (RGPD)',
+        "Le nom n'apparaît jamais en clair dans les rapports",
         PAUSE_MEDIUM,
     )
 
@@ -77,6 +92,7 @@ def main() -> None:
         _run(
             f'laivelup team evaluate DemoEquipe alice {profil_path}',
             'Étape 4 : Évaluation membre',
+            'Même moteur, agrégé au niveau équipe',
             PAUSE_MEDIUM,
         )
 
@@ -86,6 +102,7 @@ def main() -> None:
     _run(
         f'laivelup team export DemoEquipe --format md --out {rapport_dir}',
         'Étape 5 : Export résultats',
+        'Rapport exportable, prêt à partager',
         PAUSE_SHORT,
     )
 

@@ -53,6 +53,27 @@
 Le niveau global est le **minimum** des niveaux de tous les axes.
 Exemple : taille=Gold, harness=Blue, intervention=Red, parallel=Green → niveau Red (axe plancher).
 
+## Extracteur profils officiels → traces (`scripts/extract_official_profile.py`)
+
+Convertit un dossier de profil officiel brut en `ProfileData` consommable par `evaluate()`.
+
+| Pièce source | Champ lu | Trace produite |
+|---|---|---|
+| `profile.json` | `profile_id` | `name` |
+| `git-activity.json` → `pull_requests.size_distribution` | compte par taille (XS→S, S, M, L, XL) | `pr_sizes` (pondéré par le compte réel) |
+| `git-activity.json` → `parallelism.max_concurrent_branches` | — | `parallel_projects` |
+| `git-activity.json` → `repositories` | — | `projects_completed` (proxy) |
+| `git-activity.json` → `context_files.agents_md` | booléen | `context_versioned` |
+| `git-activity.json` → `context_files.rules_count` + `agents_count` | l'un OU l'autre > 0 | `agent_rules_versioned` |
+| `git-activity.json` → `context_files.hooks_count` | > 0 | `retry_loops` |
+| `git-activity.json` → `assistant_usage` | présence d'outils ou de sessions | `prompts` (signal plancher : sans lui, RED devient un refus) |
+| `git-activity.json` → `pull_requests` (corrections/merges/total) | ratio borné 0-1 | `retries_after_fact` |
+| `git-activity.json` → `pull_requests.total` | > 0 | `retries_triangulated` (mesuré, jamais déclaratif) |
+| `session.md` | mots-clés d'autonomie | `agents_autonomous` |
+| `declaratif.md` | mots-clés de niveau (FR/EN) | `declared_level` seul — jamais dans `traces` |
+
+**Non utilisés par l'extracteur** : `pull-requests.json` (page partielle, non exploitée) et `sonar-measures.json` (aucune lecture).
+
 ## Fichiers clés
 
 | Fichier | Rôle |
@@ -61,4 +82,5 @@ Exemple : taille=Gold, harness=Blue, intervention=Red, parallel=Green → niveau
 | `src/laivelup/model.py` | `Level`, `AxisScore`, `Verdict`, `ProfileData` |
 | `schemas/profile.schema.json` | Validation des profils JSON |
 | `scripts/calibrate.py` | Comparaison verdicts vs attendus |
+| `scripts/extract_official_profile.py` | Conversion profil officiel brut → traces normalisées |
 | `grille/aidd.md` | Grille officielle complète |

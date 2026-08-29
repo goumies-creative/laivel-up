@@ -68,6 +68,22 @@ mypy src/
 bandit -r src/
 ```
 
+## Profils officiels
+
+Les profils bruts (dossier `../laivel-up/profiles`) doivent être convertis
+avant usage :
+
+```bash
+# Extraire et standardiser les profils
+python scripts/extract_official_profile.py --source ../laivel-up/profiles
+
+# Vérifier la calibration
+python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff
+```
+
+> ⚠️ Ne jamais évaluer un fichier non standardisé. Voir `docs/GRID_QUICKREF.md`
+> pour le mapping complet des champs.
+
 ## Structure des commits
 
 Format conventionnel :

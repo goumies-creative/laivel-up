@@ -116,7 +116,7 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "-ra -q --strict-markers --strict-config --cov=src/laivelup --cov-fail-under=85 --cov-branch"
+addopts = "-ra -q --strict-markers --strict-config --cov=src/laivelup --cov=scripts --cov-fail-under=85 --cov-branch"
 markers = [
     "slow: marks tests as slow",
     "install: marks tests that test installation",
@@ -129,7 +129,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["src/laivelup"]
+source = ["src/laivelup", "scripts"]
 omit = ["tests/*", "*/__pycache__/*"]
 
 [tool.coverage.report]

@@ -10,9 +10,11 @@
 
 ## Le sujet
 
+> [Sujet officiel](https://github.com/ai-driven-dev/laivel-up/blob/main/SUJET.md)
+
 Tout le monde est capable de coder avec l'IA.
 
-Mais ce qui différencie un développeur d'un autre : c'est sa capacité à générer du code de qualité avec de l'IA.
+Mais ce qui différencie des développeurs les uns des autres : c'est leur capacité à générer du code de qualité avec de l'IA.
 
 Son niveau, en quelque sorte.
 

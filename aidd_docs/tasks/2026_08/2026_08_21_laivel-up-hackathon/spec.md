@@ -21,7 +21,7 @@ acceptance_criteria:
 ## Contexte
 
 Hackathon AI-Driven Dev, 1re édition. 28-31 août 2026.
-Défi : construire l'outil qui évalue le niveau AIDD d'un développeur.
+Défi : construire l'outil qui évalue le niveau AIDD des développeurs.
 Critères : accuracy (4/5), explainability (4/5), robustness (4/5), reusability (4/5).
 Rendu : dépôt MIT, outil CLI fonctionnel, méthode 1 page, vidéo 2 min.
 

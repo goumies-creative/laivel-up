@@ -1,7 +1,7 @@
                                                                                
  Usage: root [OPTIONS] COMMAND [ARGS]...                                       
                                                                                
- Évaluation du niveau AIDD d'un développeur (piste Décodeuse).                 
+ Évaluation du niveau d'adoption de l'AIDD des développeurs.                   
                                                                                
 ┌─ Options ───────────────────────────────────────────────────────────────────┐
 │ --version  -V        Affiche la version                                     │
@@ -10,8 +10,8 @@
 ┌─ Commands ──────────────────────────────────────────────────────────────────┐
 │ schema       Retourne le schema JSON de ce tool (auto-découverte agent).    │
 │ evaluate     Évalue un profil et écrit les rapports Markdown (+ HTML).      │
-│ interrogate  Mode entretien guidé (Décodeuse) : pose les questions,         │
-│              fusionne les réponses, re-score.                               │
+│ interrogate  Mode entretien guidé : pose les questions, fusionne les        │
+│              réponses, re-score.                                            │
 │ team         Gestion d'équipes et suivi multi-membres.                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 

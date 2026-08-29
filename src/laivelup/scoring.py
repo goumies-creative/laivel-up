@@ -301,7 +301,7 @@ def progress_for_axis(axe: str, level: Level | None) -> list[str]:
         return [f'Axe « {axe} » : données insuffisantes pour trancher, voir les questions posées.']
     steps = {
         'size': {
-            Level.RED: 'Passer de features S à M : livrer des PR multi-étapes et les tenir au bout.',
+            Level.RED: 'Passer de features S à M : livrer des PR multi-étapes et les mener à terme.',
             Level.BLUE: 'Passer à des features L : enchaîner plusieurs étapes dans une même PR.',
             Level.GREEN: 'Pousser à des features XL multi-modules régulières.',
             Level.COPPER: 'Maintenir un habituel L-XL, pas seulement un pic.',

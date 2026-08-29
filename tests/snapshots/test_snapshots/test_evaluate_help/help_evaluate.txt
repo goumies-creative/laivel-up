@@ -14,7 +14,6 @@
 │ --fail-on                   TEXT  Fail si niveau inférieur (valeurs : RED,  │
 │                                   BLUE, GREEN, COPPER, SILVER, GOLD).       │
 │ --fields                    TEXT  Filtrer champs JSON.                      │
-│ --quiet    -q                     Sortie JSON automatique.                  │
 │ --help                            Show this message and exit.               │
 └─────────────────────────────────────────────────────────────────────────────┘
 

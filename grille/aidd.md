@@ -25,7 +25,7 @@ levels:
 ---
 # Référentiel AIDD
 
-Sept niveaux d'adoption de l'IA dans le workflow d'un développeur.
+Sept niveaux d'adoption de l'IA dans le workflow des développeurs.
 
 **Les niveaux se cumulent.** Chaque niveau garde ce que le précédent apporte.
 
