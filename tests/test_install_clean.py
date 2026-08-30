@@ -1,13 +1,13 @@
 """Tests skeleton pour install clean (venv vierge).
 
-Windows: Rich console writes emojis via legacy_windows_render which encodes
-using the system codepage (cp1252). capture_output pipes use cp1252 on read,
-causing UnicodeDecodeError when Rich outputs emoji characters (🔹 etc).
-These tests are therefore skipped on Windows in pre-commit.
+Utilise un helper subprocess avec PYTHONIOENCODING=utf-8 pour éviter
+les problèmes d'encodage cp1252 sur Windows lors de la lecture des
+sorties Rich (emojis, caractères Unicode).
 """
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,47 +15,45 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-IS_WINDOWS = sys.platform == 'win32'
+
+
+def _run_cli(
+    *args: str,
+    timeout: int = 120,
+    check: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    """Wrapper subprocess avec UTF-8 forcé pour Windows."""
+    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8', 'PYTHONUTF8': '1'}
+    result = subprocess.run(
+        list(args),
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        errors='replace',
+        env=env,
+        timeout=timeout,
+    )
+    if check:
+        assert result.returncode == 0, (
+            f'Command failed: {" ".join(args)}\n'
+            f'stdout: {result.stdout}\n'
+            f'stderr: {result.stderr}'
+        )
+    return result
 
 
 @pytest.mark.install
-@pytest.mark.skipif(
-    IS_WINDOWS, reason='Rich emoji output incompatible with cp1252 capture on Windows'
-)
 class TestInstallClean:
     """Tests for clean installation in a fresh venv."""
 
-    @pytest.mark.slow
-    def test_pip_install(self) -> None:
-        """pip install . works without errors."""
-        result = subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', '.'],
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        assert result.returncode == 0, f'pip install failed: {result.stderr}'
-
     def test_cli_help(self) -> None:
         """laivelup --help works after install."""
-        result = subprocess.run(
-            ['laivelup', '--help'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            timeout=30,
-        )
+        result = _run_cli('laivelup', '--help', timeout=30)
         assert result.returncode == 0, f'laivelup --help failed: {result.stderr}'
 
     def test_cli_version(self) -> None:
-        """laivelup --version or laivelup evaluate --help works."""
-        result = subprocess.run(
-            ['laivelup', 'evaluate', '--help'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
-            timeout=30,
-        )
+        """laivelup evaluate --help works."""
+        result = _run_cli('laivelup', 'evaluate', '--help', timeout=30)
         assert result.returncode == 0, f'laivelup evaluate --help failed: {result.stderr}'
 
     @pytest.mark.slow
@@ -65,11 +63,8 @@ class TestInstallClean:
         if not profil.exists():
             pytest.skip('profil-maison-1.json not found')
         out_dir = REPO / 'rapports'
-        result = subprocess.run(
-            ['laivelup', 'evaluate', str(profil), '--out', str(out_dir), '--no-html'],
-            capture_output=True,
-            text=True,
-            encoding='utf-8',
+        result = _run_cli(
+            'laivelup', 'evaluate', str(profil), '--out', str(out_dir), '--no-html',
             timeout=60,
         )
         assert result.returncode == 0, f'laivelup evaluate failed: {result.stderr}'

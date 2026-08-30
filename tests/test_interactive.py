@@ -155,7 +155,7 @@ def test_interrogate_aboutit_a_un_verdict(monkeypatch, tmp_path):
     monkeypatch.setattr(cli.Prompt, 'ask', lambda prompt, **kw: next(answers))
     r = runner.invoke(cli.app, ['interrogate', '--max-turns', '6', '--out', str(tmp_path)])
     assert r.exit_code == 0
-    assert 'Verdict établi' in r.output
+    assert 'NIVEAU DEBLOQUE' in r.output or 'NIVEAU DÉBLOQUÉ' in r.output or 'Verdict établi' in r.output
 
 
 def test_interrogate_ne_repose_jamais_la_meme_question(monkeypatch, tmp_path):

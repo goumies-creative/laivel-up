@@ -1,21 +1,121 @@
-Mode entretien guidé · je pose les questions ouvertes, tu réponds, je réévalue à
-chaque fois.
-Verdict établi : 🔹 Blue
-          Verdict · entretien          
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┓
-┃ Axe          ┃ Niveau   ┃ Confiance ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━┩
-│ Taille       │ 🔹 Blue  │ 60%       │
-│ Harness      │ 🔹 Blue  │ 90%       │
-│ Intervention │ 🔹 Blue  │ 80%       │
-│ En parallèle │ 🟢 Green │ 80%       │
-└──────────────┴──────────┴───────────┘
-Niveau : 🔹 Blue · axe plancher : size
-· comment monter d'un cran ·
-  · Passer à des features L : enchaîner plusieurs étapes dans une même PR.
-Rapport Markdown : 
+
++------------------------------------------+
+| LAIVEL UP         |
+| Mode Entretien              |
+|                                          |
+| Questions ouvertes > Réponses > Re-score |
++------------------------------------------+
+
+
+  ÉTAPE 1/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  Taille: ░░░░░░░
+  Harness: ░░░░░░░
+  Intervention: ░░░░░░░
+  En parallèle: ░░░░░░░
+  > Axe plancher : size
+
+
+> QUESTION 1/6 ██████████
+
+
+> OK Réponse enregistrée.
+
+  ÉTAPE 2/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  Taille: ███░░░░
+  Harness: ░░░░░░░
+  Intervention: ░░░░░░░
+  En parallèle: ░░░░░░░
+  > Axe plancher : harness
+
+
+> QUESTION 2/6 ██████████
+
+
+> OK Réponse enregistrée.
+
+  ÉTAPE 3/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  Taille: ███░░░░
+  Harness: ░░░░░░░
+  Intervention: ░░░░░░░
+  En parallèle: ░░░░░░░
+  > Axe plancher : harness
+
+
+> QUESTION 3/6 ██████████
+
+
+> OK Réponse enregistrée.
+
+  ÉTAPE 4/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  Taille: ███░░░░
+  Harness: ░░░░░░░
+  Intervention: ███░░░░
+  En parallèle: ░░░░░░░
+  > Axe plancher : harness
+
+
+> QUESTION 4/6 ██████████
+
+
+> OK Réponse enregistrée.
+
+  ÉTAPE 5/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  Taille: ███░░░░
+  Harness: ░░░░░░░
+  Intervention: ███░░░░
+  En parallèle: ░░░░░░░
+  > Axe plancher : harness
+
+
+> QUESTION 5/6 ██████████
+
+
+> OK Réponse enregistrée.
+
+  ÉTAPE 6/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  Taille: ███░░░░
+  Harness: ███░░░░
+  Intervention: ███░░░░
+  En parallèle: ░░░░░░░
+  > Axe plancher : parallel
+
+
+> QUESTION 6/6 ██████████
+
+
+> OK Réponse enregistrée.
+
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
++------------------------------------------+
+| *** NIVEAU DÉBLOQUÉ *** |
+|                                          |
+|   🔹 Blue        |
+|                                          |
+|   Axe plancher : size         |
++------------------------------------------+
+
+
+               VERDICT : entretien               
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
+┃ AXE          ┃ NIVEAU   ┃ BARRE   ┃ CONFIANCE ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
+│ Taille       │ 🔹 Blue  │ ███░░░░ │ 60%       │
+│ Harness      │ 🔹 Blue  │ ███░░░░ │ 90%       │
+│ Intervention │ 🔹 Blue  │ ███░░░░ │ 80%       │
+│ En parallèle │ 🟢 Green │ ████░░░ │ 80%       │
+└──────────────┴──────────┴─────────┴───────────┘
+
+  > NIVEAU : 🔹 Blue
+  > Axe plancher : size
+
+  --- Comment monter d'un cran ---
+  > Passer à des features L : enchaîner plusieurs étapes dans une même PR.
+
+> Rapport Markdown : 
 <TMP>
 ict_attei0\entretien-24e8cdb9.md
-Rapport HTML : 
+> Rapport HTML     : 
 <TMP>
 ict_attei0\entretien-24e8cdb9.html
+
