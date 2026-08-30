@@ -37,6 +37,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from . import __version__
+from .calibrate_dashboard import generate_calibrate_html
 from .encoding import ensure_utf8_env, make_console
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
 from .questions import QUESTION_IDS, QUESTION_TRACE_KEYS
@@ -223,68 +224,171 @@ def _load_profile(path: Path) -> ProfileData:
     )
 
 
-def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = False) -> Verdict:
-    """Affiche le verdict et le retourne."""
+# ─── 8-bit NES art constants ───────────────────────────────────────
+NES_BORDER = '#3a3a5c'
+NES_ACCENT = '#00aaff'
+NES_SUCCESS = '#00cc44'
+NES_WARNING = '#ccaa00'
+NES_DANGER = '#cc3333'
 
+PIXEL_H = '\u2580'  # ▀ upper half block
+PIXEL_L = '\u2584'  # ▄ lower half block
+PIXEL_F = '\u2588'  # █ full block
+PIXEL_M = '\u2592'  # ▒ medium shade
+PIXEL_D = '\u2591'  # ░ light shade
+
+# ASCII art borders for NES-style boxes
+BOX_TL = '+'
+BOX_TR = '+'
+BOX_BL = '+'
+BOX_BR = '+'
+BOX_H = '-'
+BOX_V = '|'
+
+
+def _nes_box(lines: list[str], color: str = 'cyan', width: int = 40) -> None:
+    """Affiche un cadre NES-style en ASCII art."""
+    border = BOX_H * (width - 2)
+    open_tag = f'[bold {color}]'
+    close_tag = '[/' + f'bold {color}]'
+    console.print(open_tag + BOX_TL + border + BOX_TR + close_tag)
+    for line in lines:
+        padded = line.ljust(width - 4)
+        console.print(
+            open_tag + BOX_V + close_tag + ' ' + padded + ' ' + open_tag + BOX_V + close_tag
+        )
+    console.print(open_tag + BOX_BL + border + BOX_BR + close_tag)
+
+
+def _nes_progress_bar(current: int, total: int, width: int = 20, color: str = 'green') -> str:
+    """Barre de progression NES en blocs pixel."""
+    filled = int((current / total) * width) if total > 0 else 0
+    empty = width - filled
+    return f'[{color}]{PIXEL_F * filled}[/{color}][dim]{PIXEL_D * empty}[/dim]'
+
+
+def _nes_level_bar(level: Level | None, max_level: Level = Level.GOLD) -> str:
+    """Barre de niveau pixel pour un axe."""
+    if level is None:
+        return f'[dim]{PIXEL_D * 7}[/dim]'
+    filled = level.value + 1
+    empty = max_level.value + 1 - filled
+    colors = {
+        Level.WHITE: 'dim',
+        Level.RED: 'red',
+        Level.BLUE: 'blue',
+        Level.GREEN: 'green',
+        Level.COPPER: 'yellow',
+        Level.SILVER: 'bright_white',
+        Level.GOLD: 'bright_yellow',
+    }
+    c = colors.get(level, 'dim')
+    return f'[{c}]{PIXEL_F * filled}[/{c}][dim]{PIXEL_D * empty}[/dim]'
+
+
+def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = False) -> Verdict:
+    """Affiche le verdict en style NES 8-bit."""
     if use_json:
         return verdict
 
-    table = Table(title=f'Verdict · {verdict.name}')
-    table.add_column('Axe')
-    table.add_column('Niveau')
-    table.add_column('Confiance')
+    console.print()
+
+    # Tableau des axes
+    table = Table(
+        title=f'VERDICT : {verdict.name}',
+        border_style=NES_BORDER,
+        header_style='bold cyan',
+    )
+    table.add_column('AXE', style='bold')
+    table.add_column('NIVEAU')
+    table.add_column('BARRE')
+    table.add_column('CONFIANCE')
+
     for a in verdict.axis_scores:
+        lvl_str = level_label(a.level)
+        bar = _nes_level_bar(a.level)
+        conf = f'{a.confidence:.0%}' if a.level is not None else '--'
+        color = (
+            'green'
+            if a.level is not None and a.level.value >= 3
+            else 'yellow'
+            if a.level is not None
+            else 'dim'
+        )
         table.add_row(
             axis_label(a.axe),
-            level_label(a.level),
-            f'{a.confidence:.0%}' if a.level is not None else '—',
+            f'[{color}]{lvl_str}[/{color}]',
+            bar,
+            conf,
         )
     console.print(table)
 
+    console.print()
+
     if verdict.data_errors:
-        error_console.print('[bold red]Données invalides : refus de trancher.[/bold red]')
+        _nes_box(
+            [
+                '[bold red]!! DONNÉES INVALIDES !![/bold red]',
+                '[red]Refus de trancher.[/red]',
+            ],
+            color='red',
+            width=44,
+        )
         for e in verdict.data_errors:
-            error_console.print(f'  · {e}')
+            console.print(f'  [red]> {e}[/red]')
     elif verdict.decided:
-        assert verdict.level is not None  # decided implies level is set
-        console.print(
-            f'[bold green]Niveau : {LEVEL_LABELS[verdict.level]}[/bold green]'
-            f' · axe plancher : [bold]{verdict.limiting_axis}[/bold]'
-        )
+        assert verdict.level is not None
+        label = LEVEL_LABELS[verdict.level]
+        console.print(f'  [bold green]> NIVEAU : {label}[/bold green]')
+        if verdict.limiting_axis:
+            console.print(f'  [bold]> Axe plancher : {verdict.limiting_axis}[/bold]')
     else:
-        console.print(
-            '[bold yellow]Refus de trancher : données insuffisantes ou contradictoires.[/bold yellow]'
+        _nes_box(
+            [
+                '[bold yellow]!! REFUS DE TRANCHER !![/bold yellow]',
+                '[yellow]Données insuffisantes.[/yellow]',
+            ],
+            color='yellow',
+            width=44,
         )
-        console.print('Questions à poser :')
+        console.print()
+        console.print('[dim]  Questions à poser :[/dim]')
         for q in verdict.next_steps:
-            console.print(f'  · {q}')
+            console.print(f'  [dim]> {q}[/dim]')
 
+    # Red flags
     for f in verdict.red_flags:
-        error_console.print(f'[bold red]⚠ {f.titre}[/bold red] · {f.constat}')
+        console.print()
+        console.print(f'  [bold red]!! ALERTE : {f.titre}[/bold red]')
+        console.print(f'     {f.constat}')
         if f.question:
-            error_console.print(f'    → Question : {f.question}')
+            console.print(f'     [cyan]> {f.question}[/cyan]')
 
+    # Next steps
     if verdict.decided:
-        console.print("[dim]· comment monter d'un cran ·[/dim]")
+        console.print()
+        console.print("[dim]  --- Comment monter d'un cran ---[/dim]")
         for n in verdict.next_steps:
-            console.print(f'[dim]  · {n}[/dim]')
+            console.print(f'  [dim]> {n}[/dim]')
 
+    # Verbose
     if is_verbose:
-        console.print('[dim]· détails techniques ·[/dim]')
+        console.print()
+        console.print('[dim]  --- Détails techniques ---[/dim]')
         for a in verdict.axis_scores:
             label = axis_label(a.axe)
             lvl = level_label(a.level)
-            conf = f'{a.confidence:.0%}' if a.level is not None else '—'
-            console.print(f'[dim]  · {label}: {lvl} ({conf})[/dim]')
+            conf = f'{a.confidence:.0%}' if a.level is not None else '--'
+            console.print(f'  [dim]> {label}: {lvl} ({conf})[/dim]')
             if a.evidence:
                 for ev in a.evidence:
-                    console.print(f'[dim]      source: {ev}[/dim]')
+                    console.print(f'     [dim]  source: {ev}[/dim]')
             if a.variance:
-                console.print(f'[dim]      variance: {a.variance}[/dim]')
+                console.print(f'     [dim]  variance: {a.variance}[/dim]')
         if verdict.data_errors:
-            console.print('[dim]  · données invalides:[/dim]')
+            console.print('[dim]  > donnees invalides:[/dim]')
             for e in verdict.data_errors:
-                console.print(f'[dim]      · {e}[/dim]')
+                console.print(f'     [dim]  > {e}[/dim]')
 
     return verdict
 
@@ -330,10 +434,11 @@ def evaluate_profile(
             md, html_path = write_reports(verdict, out, with_html=html)
     else:
         md, html_path = write_reports(verdict, out, with_html=html)
-        console.print(
-            f'[dim]Rapport Markdown : {md}[/dim]'
-            + (f'\n[dim]Rapport HTML : {html_path}[/dim]' if html_path else '')
-        )
+        console.print()
+        console.print(f'[dim]> Rapport Markdown : {md}[/dim]')
+        if html_path:
+            console.print(f'[dim]> Rapport HTML     : {html_path}[/dim]')
+        console.print()
 
     # --fail-on (P1.3)
     if fail_on:
@@ -373,18 +478,34 @@ def interrogate(
         profile = _load_profile(profil)
     else:
         profile = ProfileData(name='entretien')
-    console.print(
-        '[bold]Mode entretien guidé[/bold] · je pose les questions ouvertes, '
-        'tu réponds, je réévalue à chaque fois.'
+
+    # ── Introduction 8-bit ──
+    console.print()
+    _nes_box(
+        [
+            '[bold cyan]LAIVEL UP[/bold cyan]',
+            '[cyan]Mode Entretien[/cyan]',
+            '',
+            '[dim]Questions ouvertes > Réponses > Re-score[/dim]',
+        ],
+        color='cyan',
+        width=44,
     )
+    console.print()
 
     # Build reverse mapping: question text -> question ID
     qid_by_text = {text: qid for qid, text in QUESTION_IDS.items()}
     asked: set[str] = set()
-    for _ in range(max_turns):
+
+    for turn in range(1, max_turns + 1):
         verdict = evaluate(profile)
+
         if verdict.decided:
             break
+
+        # ── Indicateur de progression 8-bit ──
+        _print_interrogate_score(verdict, turn, max_turns)
+
         candidates = [
             q
             for q in verdict.next_steps
@@ -396,39 +517,94 @@ def interrogate(
                     'reprise',
                     'contexte',
                     'chantiers',
-                    'vérifier',
+                    'verifier',
                 )
             )
         ]
-        # Filter out already-asked questions by checking their IDs
         questions = [
             q for q in (candidates or verdict.next_steps) if qid_by_text.get(q, q) not in asked
         ]
         if not questions:
             break
         q = questions[0]
-        # Track by question ID (more robust than text)
         qid = qid_by_text.get(q, q)
         asked.add(qid)
-        answer = Prompt.ask(f'[bold]{q}[/bold]')
+
+        # ── Question 8-bit ──
+        console.print()
+        console.print(f'[bold cyan]> QUESTION {turn}/{max_turns} {PIXEL_F * 10}[/bold cyan]')
+        console.print()
+        answer = Prompt.ask(f'[white]{q}[/white]')
         profile = _merge_answer(profile, q, answer)
+
+        # ── Feedback 8-bit ──
+        console.print()
+        console.print('[green]> OK[/green] [dim]Réponse enregistrée.[/dim]')
     else:
         verdict = evaluate(profile)
 
+    # ── Resultat final 8-bit ──
+    console.print()
+    console.print(f'[dim]{PIXEL_H * 44}[/dim]')
+    console.print()
+
     if verdict.decided:
-        assert verdict.level is not None  # decided implies level is set
-        console.print(f'[bold green]Verdict établi : {LEVEL_LABELS[verdict.level]}[/bold green]')
+        assert verdict.level is not None
+        label = LEVEL_LABELS[verdict.level]
+        _nes_box(
+            [
+                '[bold green]*** NIVEAU DÉBLOQUÉ ***[/bold green]',
+                '',
+                f'  [bold green]{label}[/bold green]',
+                '',
+                f'  [dim]Axe plancher : {verdict.limiting_axis}[/dim]',
+            ],
+            color='green',
+            width=44,
+        )
     else:
-        console.print(
-            "[bold yellow]Fin de l'entretien sans verdict ferme : le refus reste explicite.[/bold yellow]"
+        _nes_box(
+            [
+                '[bold yellow]!! REFUS DE TRANCHER !![/bold yellow]',
+                '',
+                '[dim]  Données insuffisantes.[/dim]',
+                '[dim]  Le refus est explicite.[/dim]',
+            ],
+            color='yellow',
+            width=44,
         )
 
+    console.print()
     _print_verdict(verdict, is_verbose=verbose)
     md, html_path = write_reports(verdict, out)
-    console.print(
-        f'[dim]Rapport Markdown : {md}[/dim]'
-        + (f'\n[dim]Rapport HTML : {html_path}[/dim]' if html_path else '')
-    )
+    console.print()
+    console.print(f'[dim]> Rapport Markdown : {md}[/dim]')
+    if html_path:
+        console.print(f'[dim]> Rapport HTML     : {html_path}[/dim]')
+    console.print()
+
+
+def _print_interrogate_score(verdict: Verdict, turn: int, max_turns: int) -> None:
+    """Affiche un indicateur visuel du score actuel pendant l'entretien."""
+    console.print()
+    console.print(f'[dim]  ÉTAPE {turn}/{max_turns} {PIXEL_H * 20}[/dim]')
+
+    if not verdict.axis_scores:
+        return
+
+    # Barre de progression par axe (style NES)
+    parts = []
+    for a in verdict.axis_scores:
+        label = axis_label(a.axe)
+        bar = _nes_level_bar(a.level)
+        parts.append(f'{label}: {bar}')
+
+    for p in parts:
+        console.print(f'  {p}')
+
+    if verdict.limiting_axis:
+        console.print(f'  [dim]> Axe plancher : {verdict.limiting_axis}[/dim]')
+    console.print()
 
 
 # --- Team Tracker commands --------------------------------------------------------
@@ -605,6 +781,54 @@ def team_remove(
         raise typer.Exit(code=2)
     action = 'et son historique supprimé' if purge else 'supprimé'
     console.print(f"[bold green]Membre {action}[/bold green] de l'équipe '{team_name}'")
+
+
+# ─── calibrate command (dashboard HTML) ──────────────────────────────
+@app.command(name='calibrate')
+def calibrate_cmd(
+    expected: Path = typer.Option(
+        None,
+        '--expected',
+        help='Chemin vers expected.json (défaut : grille/profils-officiels/expected.json)',
+    ),
+    profiles_dir: Path = typer.Option(None, '--profiles-dir', help='Dossier des profils officiels'),
+    out: Path = typer.Option(Path('rapports'), '--out', help='Dossier de sortie.'),
+    show_proof: bool = typer.Option(
+        False, '--show-proof', help='Affiche le tableau de preuve en CLI.'
+    ),
+) -> None:
+    """Compare les verdicts aux niveaux attendus et génère un dashboard HTML."""
+    from .calibrate_core import run_calibration
+
+    result = run_calibration(expected=expected, profiles_dir=profiles_dir)
+
+    if show_proof:
+        # Tableau CLI
+        table = Table(title=f'Calibration · {result.total} profils · {result.errors} erreurs')
+        table.add_column('Profil')
+        table.add_column('Obtenu')
+        table.add_column('Attendu')
+        table.add_column('Statut')
+        for r in result.rows:
+            status_icon = '✅' if r.status == 'OK' else '❌' if r.status == 'FAIL' else '⏭️'
+            table.add_row(
+                r.name,
+                r.obtained or 'UNDECIDED',
+                r.expected or '—',
+                f'{status_icon} {r.detail}',
+            )
+        console.print(table)
+        if result.errors == 0:
+            console.print('[bold green]Calibration réussie : 0 erreur[/bold green]')
+        else:
+            console.print(f'[bold red]{result.errors} erreur(s) de calibration[/bold red]')
+
+    # Dashboard HTML
+    html_path = out / 'calibrate-dashboard.html'
+    out.mkdir(parents=True, exist_ok=True)
+    html_content = generate_calibrate_html(result)
+    html_path.write_text(html_content, encoding='utf-8')
+    console.print(f'[dim]Dashboard calibration : {html_path}[/dim]')
 
 
 # --- Retry ratio parsing ---------------------------------------------------------
