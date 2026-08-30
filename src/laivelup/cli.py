@@ -916,5 +916,27 @@ def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileDa
     return profile
 
 
+# ─── tui command ──────────────────────────────────────────────
+@app.command()
+def tui(
+    profil: Path | None = typer.Argument(None, help='Profil JSON à évaluer (optionnel).'),
+) -> None:
+    """Lance l'interface TUI rétro 8-bit interactive."""
+    if not TTY:
+        # Non-TTY : fallback CLI classique
+        if profil:
+            evaluate_profile(profil, Path('rapports'), True, False, False, None, None)
+        return
+    try:
+        from laivelup.tui.app import LaivelUpApp
+    except ImportError:
+        error_console.print(
+            '[bold red]Textual non installé.[/bold red] Installez-le : pip install textual'
+        )
+        raise typer.Exit(code=3)
+    app = LaivelUpApp(profil=profil)
+    app.run()
+
+
 if __name__ == '__main__':
     app()

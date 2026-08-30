@@ -14,6 +14,7 @@
 │              réponses, re-score.                                            │
 │ calibrate    Compare les verdicts aux niveaux attendus et génère un         │
 │              dashboard HTML.                                                │
+│ tui          Lance l'interface TUI rétro 8-bit interactive.                 │
 │ team         Gestion d'équipes et suivi multi-membres.                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 

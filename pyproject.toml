@@ -4,7 +4,7 @@ version = "0.2.0"
 description = "CLI d'évaluation AIDD · LAIVEL UP · Décodeuse way (cadrage, confiance, red flags)"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["typer>=0.20", "rich", "jsonschema>=4.20"]
+dependencies = ["typer>=0.20", "rich", "jsonschema>=4.20", "textual>=0.40"]
 license = {text = "MIT"}
 
 [project.scripts]
@@ -83,6 +83,7 @@ select = [
 "tests/test_apply_calibration_fix.py" = ["ARG002", "E501"]
 "tests/fixtures/*" = ["I001", "F401"]
 "tests/security/*" = ["E501", "F401"]
+"src/laivelup/tui/*" = ["E501", "F401", "RUF012"]
 "docs/*" = ["E501"]
 
 [tool.ruff.format]
@@ -110,6 +111,14 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = "rich.*"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "textual.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "laivelup.tui.*"
+ignore_errors = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
