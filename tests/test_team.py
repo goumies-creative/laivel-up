@@ -22,6 +22,8 @@ from laivelup.team import (
     export_html,
     export_json,
     export_markdown,
+    remove_member,
+    set_opt_out,
 )
 
 
@@ -232,3 +234,169 @@ class TestExport:
         out = tmp_path / 'subdir' / 'team.json'
         result = export_json(team_with_data, out)
         assert result.exists()
+
+
+# --- Gaps de couverture (coverage-90-closing-gaps.md) ----------------------
+
+
+class TestValidateTeamName:
+    """Nom d'équipe invalide pour un chemin de fichier."""
+
+    def test_empty_name_raises(self):
+        with pytest.raises(ValueError, match='invalide'):
+            create_team('', ['Alice'])
+
+    def test_name_with_slash_raises(self):
+        with pytest.raises(ValueError, match='invalide'):
+            create_team('a/b', ['Alice'])
+
+
+class TestSaveTeamSymlinkGuard:
+    """Refus d'écrire si le dossier parent est un symlink (G01)."""
+
+    def test_parent_symlink_raises(self, tmp_path, monkeypatch):
+        from laivelup.team import save_team
+
+        team = create_team('SymlinkTest', ['Alice'])
+        target = tmp_path / 'team.json'
+        monkeypatch.setattr(Path, 'is_symlink', lambda _self: True)
+        with pytest.raises(ValueError, match='symlink'):
+            save_team(team, target)
+
+
+class TestSaveTeamCleanupOnFailure:
+    """Le fichier temporaire est nettoyé si le replace atomique échoue."""
+
+    def test_replace_failure_cleans_temp_file(self, tmp_path, monkeypatch):
+        from laivelup import team as team_mod
+
+        team = create_team('CleanupTest', ['Alice'])
+        target = tmp_path / 'team.json'
+
+        def failing_replace(_self, _dest):
+            raise OSError('disk full')
+
+        monkeypatch.setattr(Path, 'replace', failing_replace)
+        with pytest.raises(OSError):
+            team_mod.save_team(team, target)
+        assert list(tmp_path.glob('*.tmp')) == []
+
+
+class TestLoadTeamFileSizeGuard:
+    """Refus de charger un fichier d'équipe trop volumineux (G01)."""
+
+    def test_file_too_large_raises(self, tmp_path):
+        from laivelup.team import MAX_TEAM_FILE_MB, load_team
+
+        path = tmp_path / 'huge.json'
+        path.write_text('x' * (MAX_TEAM_FILE_MB * 1024 * 1024 + 10), encoding='utf-8')
+        with pytest.raises(ValueError, match='volumineux'):
+            load_team('huge', path)
+
+
+class TestLoadTeamInvalidLevel:
+    """Un niveau JSON invalide (Level[key] -> KeyError) est absorbé silencieusement."""
+
+    def test_invalid_level_string_is_suppressed_to_none(self, tmp_path):
+        from laivelup.team import load_team
+
+        path = tmp_path / 'team.json'
+        data = {
+            'name': 'InvalidLevel',
+            'salt': 'abc',
+            'members': {
+                'alice-12345678': {
+                    'name': 'Alice',
+                    'slug': 'alice-12345678',
+                    'level': 'PLATINUM',
+                    'limiting_axis': None,
+                    'confidence': 0.0,
+                    'timestamp': '',
+                    'red_flags_count': 0,
+                    'next_steps_count': 0,
+                    'opt_out': False,
+                }
+            },
+            'history': [],
+        }
+        path.write_text(json.dumps(data), encoding='utf-8')
+        team = load_team('InvalidLevel', path)
+        assert team.members['alice-12345678'].level is None
+
+
+class TestCreateTeamTooManyMembers:
+    def test_more_than_max_members_raises(self):
+        with pytest.raises(ValueError, match='Trop de membres'):
+            create_team('BigTeam', [f'membre{i}' for i in range(51)])
+
+
+class TestEvaluateMemberHistoryTrim:
+    """L'historique est tronqué automatiquement au-delà de _MAX_HISTORY entrées."""
+
+    def test_history_trimmed_after_101_evaluations(self):
+        from laivelup.team import _MAX_HISTORY
+
+        team = create_team('TrimTeam', ['Alice'])
+        member_slug = next(iter(team.members.keys()))
+        profile = make_profile(
+            pr_sizes=['M', 'M'],
+            context_versioned=True,
+            retries_after_fact=0.3,
+            parallel_projects=1,
+        )
+        for _ in range(_MAX_HISTORY + 1):
+            evaluate_member(team, member_slug, profile)
+        assert len(team.history) == _MAX_HISTORY
+
+
+class TestRemoveSetOptOutMemberNotFound:
+    def test_remove_member_not_found_raises(self):
+        team = create_team('Alpha', ['Alice'])
+        with pytest.raises(ValueError, match='non trouvé'):
+            remove_member(team, 'inexistant-000')
+
+    def test_set_opt_out_member_not_found_raises(self):
+        team = create_team('Alpha', ['Alice'])
+        with pytest.raises(ValueError, match='non trouvé'):
+            set_opt_out(team, 'inexistant-000')
+
+
+class TestExportOptOutExclusion:
+    """export_markdown / export_csv / export_html excluent les membres en opt-out."""
+
+    @pytest.fixture
+    def team_with_opted_out_member(self):
+        team = create_team('OptExport', ['Alice', 'Bob'])
+        slug_alice = next(s for s, m in team.members.items() if m.name == 'Alice')
+        slug_bob = next(s for s, m in team.members.items() if m.name == 'Bob')
+        profile = make_profile(
+            pr_sizes=['M', 'M'],
+            context_versioned=True,
+            retries_after_fact=0.3,
+            parallel_projects=1,
+        )
+        evaluate_member(team, slug_alice, profile)
+        evaluate_member(team, slug_bob, profile)
+        set_opt_out(team, slug_alice, True)
+        return team
+
+    def test_export_markdown_excludes_opted_out(self, team_with_opted_out_member, tmp_path):
+        out = tmp_path / 'team.md'
+        export_markdown(team_with_opted_out_member, out)
+        content = out.read_text(encoding='utf-8')
+        assert 'Alice' not in content
+        assert 'Bob' in content
+
+    def test_export_csv_excludes_opted_out(self, team_with_opted_out_member, tmp_path):
+        out = tmp_path / 'team.csv'
+        export_csv(team_with_opted_out_member, out)
+        content = out.read_text(encoding='utf-8')
+        assert 'Alice' not in content
+        assert 'Bob' in content
+
+    def test_export_html_excludes_opted_out(self, team_with_opted_out_member, tmp_path):
+        out = tmp_path / 'team.html'
+        export_html(team_with_opted_out_member, out)
+        content = out.read_text(encoding='utf-8')
+        assert 'Alice' not in content
+        assert 'Bob' in content

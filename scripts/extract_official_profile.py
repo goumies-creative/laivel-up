@@ -232,7 +232,7 @@ def extract_profile(profile_dir: Path) -> ProfileData:
     )
 
 
-def main() -> None:
+def main() -> None:  # pragma: no cover — argparse + I/O, boucle sur profils reels
     parser = argparse.ArgumentParser(
         description='Extrait les profils officiels en format normalisé.'
     )

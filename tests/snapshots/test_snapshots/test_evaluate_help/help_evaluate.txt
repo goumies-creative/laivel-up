@@ -16,4 +16,12 @@
 │ --fields                    TEXT  Filtrer champs JSON.                      │
 │ --help                            Show this message and exit.               │
 └─────────────────────────────────────────────────────────────────────────────┘
+                                                                               
+ Exemples :                                                                    
+ laivelup evaluate profil.json                 Verdict + rapports md/html      
+ laivelup evaluate profil.json --json          Sortie JSON (CI/agent)          
+ laivelup evaluate profil.json --fail-on RED   Exit 1 si niveau < RED          
+ laivelup evaluate profil.json --out rapports  Choisir le dossier de sortie    
+ laivelup evaluate profil.json --no-html       Rapport Markdown seul           
+                                                                               
 

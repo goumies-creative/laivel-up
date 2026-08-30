@@ -35,9 +35,7 @@ def _run_cli(
     )
     if check:
         assert result.returncode == 0, (
-            f'Command failed: {" ".join(args)}\n'
-            f'stdout: {result.stdout}\n'
-            f'stderr: {result.stderr}'
+            f'Command failed: {" ".join(args)}\nstdout: {result.stdout}\nstderr: {result.stderr}'
         )
     return result
 
@@ -64,8 +62,19 @@ class TestInstallClean:
             pytest.skip('profil-maison-1.json not found')
         out_dir = REPO / 'rapports'
         result = _run_cli(
-            'laivelup', 'evaluate', str(profil), '--out', str(out_dir), '--no-html',
+            'laivelup',
+            'evaluate',
+            str(profil),
+            '--out',
+            str(out_dir),
+            '--no-html',
             timeout=60,
         )
         assert result.returncode == 0, f'laivelup evaluate failed: {result.stderr}'
-        assert 'Niveau' in result.stdout or 'Refus' in result.stdout or 'refus' in result.stdout
+        # Non-TTY (subprocess) => JSON par design ; TTY => verdict texte
+        assert (
+            'Niveau' in result.stdout
+            or 'Refus' in result.stdout
+            or 'refus' in result.stdout
+            or '"level"' in result.stdout
+        )

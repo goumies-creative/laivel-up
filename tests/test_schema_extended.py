@@ -119,3 +119,27 @@ class TestValidateMinimal:
             },
         }
         assert _validate_minimal(data) == []
+
+
+# --- _load_schema / fallback ImportError (coverage-90-closing-gaps) ----
+
+
+class TestLoadSchemaMissing:
+    def test_schema_not_found_raises_runtime_error(self, monkeypatch, tmp_path):
+        from laivelup import schema as schema_mod
+
+        monkeypatch.setattr(schema_mod, '_SCHEMA_PATH', tmp_path / 'nope.json')
+        monkeypatch.setattr(schema_mod, '_schema', None)
+        with pytest.raises(RuntimeError, match='Schema introuvable'):
+            schema_mod._load_schema()
+
+
+class TestValidateProfileImportFallback:
+    def test_jsonschema_import_error_falls_back_to_minimal(self, monkeypatch):
+        import sys
+
+        from laivelup import schema as schema_mod
+
+        monkeypatch.setitem(sys.modules, 'jsonschema', None)
+        errors = schema_mod.validate_profile({'traces': {}})
+        assert any('name' in e for e in errors)

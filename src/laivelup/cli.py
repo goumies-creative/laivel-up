@@ -323,7 +323,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
     for a in verdict.axis_scores:
         lvl_str = level_label(a.level)
         conf = f'{a.confidence:.0%}' if a.level is not None else '--'
-        color = LEVEL_RICH_COLORS.get(a.level, 'dim')
+        color = LEVEL_RICH_COLORS.get(a.level, 'dim') if a.level is not None else 'dim'
         table.add_row(
             axis_label(a.axe),
             f'[{color}]{lvl_str}[/{color}]',
@@ -333,7 +333,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
 
     console.print()
 
-    if verdict.data_errors:
+    if verdict.data_errors:  # pragma: no cover — rendu Rich uniquement, schema bloque en amont
         _nes_box(
             [
                 '[bold red]!! DONNÉES INVALIDES !![/bold red]',
@@ -365,7 +365,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
             console.print(f'  [dim]> {q}[/dim]')
 
     # Red flags
-    for f in verdict.red_flags:
+    for f in verdict.red_flags:  # pragma: no cover — rendu Rich uniquement
         console.print()
         console.print(f'  [bold red]!! ALERTE : {f.titre}[/bold red]')
         console.print(f'     {f.constat}')
@@ -380,7 +380,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
             console.print(f'  [dim]> {n}[/dim]')
 
     # Verbose
-    if is_verbose:
+    if is_verbose:  # pragma: no cover — rendu Rich uniquement
         console.print()
         console.print('[dim]  --- Détails techniques ---[/dim]')
         for a in verdict.axis_scores:

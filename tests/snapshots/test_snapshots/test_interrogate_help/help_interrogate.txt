@@ -12,4 +12,10 @@
 │ --verbose    -v               Sortie détaillée technique.                   │
 │ --help                        Show this message and exit.                   │
 └─────────────────────────────────────────────────────────────────────────────┘
+                                                                               
+ Exemples :                                                                    
+ laivelup interrogate                          Démarre un entretien à vide     
+ laivelup interrogate profil.json              Repart d'un profil existant     
+ laivelup interrogate profil.json --max-turns 3                                
+                                                                               
 

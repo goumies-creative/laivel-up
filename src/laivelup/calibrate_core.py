@@ -44,10 +44,7 @@ def _profile_files(profiles_dir: Path, expected_name: str) -> list[Path]:
 def _load_profile(path: Path) -> ProfileData:
     data = json.loads(path.read_text(encoding='utf-8'))
     declared = data.get('declared_level')
-    if isinstance(declared, str) and declared:
-        declared = Level[declared.upper()]
-    else:
-        declared = None
+    declared = Level[declared.upper()] if isinstance(declared, str) and declared else None
     return ProfileData(
         name=data.get('name', path.stem),
         declared_level=declared,
@@ -83,14 +80,16 @@ def run_calibration(
         stem = p.stem
 
         if stem not in expected_data:
-            rows.append(CalibrationRow(
-                name=stem,
-                status='SKIP',
-                detail='pas dans expected.json',
-                obtained=verdict.level.name if verdict.level else 'UNDECIDED',
-                expected=None,
-                axis_scores=verdict.axis_scores,
-            ))
+            rows.append(
+                CalibrationRow(
+                    name=stem,
+                    status='SKIP',
+                    detail='pas dans expected.json',
+                    obtained=verdict.level.name if verdict.level else 'UNDECIDED',
+                    expected=None,
+                    axis_scores=verdict.axis_scores,
+                )
+            )
             continue
 
         exp_level = expected_data[stem]
@@ -98,53 +97,63 @@ def run_calibration(
 
         if exp_level == 'UNDECIDED':
             if not verdict.decided:
-                rows.append(CalibrationRow(
-                    name=stem,
-                    status='OK',
-                    detail='refus confirmé',
-                    obtained='UNDECIDED',
-                    expected='UNDECIDED',
-                    axis_scores=verdict.axis_scores,
-                ))
+                rows.append(
+                    CalibrationRow(
+                        name=stem,
+                        status='OK',
+                        detail='refus confirmé',
+                        obtained='UNDECIDED',
+                        expected='UNDECIDED',
+                        axis_scores=verdict.axis_scores,
+                    )
+                )
             else:
-                rows.append(CalibrationRow(
-                    name=stem,
-                    status='FAIL',
-                    detail=f'attendu UNDECIDED, obtenu {obt_level}',
-                    obtained=obt_level,
-                    expected='UNDECIDED',
-                    axis_scores=verdict.axis_scores,
-                ))
+                rows.append(
+                    CalibrationRow(
+                        name=stem,
+                        status='FAIL',
+                        detail=f'attendu UNDECIDED, obtenu {obt_level}',
+                        obtained=obt_level,
+                        expected='UNDECIDED',
+                        axis_scores=verdict.axis_scores,
+                    )
+                )
                 errors += 1
         elif verdict.decided and verdict.level is not None:
             if verdict.level.name == exp_level:
-                rows.append(CalibrationRow(
-                    name=stem,
-                    status='OK',
-                    detail=obt_level,
-                    obtained=obt_level,
-                    expected=exp_level,
-                    axis_scores=verdict.axis_scores,
-                ))
+                rows.append(
+                    CalibrationRow(
+                        name=stem,
+                        status='OK',
+                        detail=obt_level,
+                        obtained=obt_level,
+                        expected=exp_level,
+                        axis_scores=verdict.axis_scores,
+                    )
+                )
             else:
-                rows.append(CalibrationRow(
-                    name=stem,
-                    status='FAIL',
-                    detail=f'attendu {exp_level}, obtenu {obt_level}',
-                    obtained=obt_level,
-                    expected=exp_level,
-                    axis_scores=verdict.axis_scores,
-                ))
+                rows.append(
+                    CalibrationRow(
+                        name=stem,
+                        status='FAIL',
+                        detail=f'attendu {exp_level}, obtenu {obt_level}',
+                        obtained=obt_level,
+                        expected=exp_level,
+                        axis_scores=verdict.axis_scores,
+                    )
+                )
                 errors += 1
         else:
-            rows.append(CalibrationRow(
-                name=stem,
-                status='FAIL',
-                detail=f'attendu {exp_level}, obtenu UNDECIDED',
-                obtained='UNDECIDED',
-                expected=exp_level,
-                axis_scores=verdict.axis_scores,
-            ))
+            rows.append(
+                CalibrationRow(
+                    name=stem,
+                    status='FAIL',
+                    detail=f'attendu {exp_level}, obtenu UNDECIDED',
+                    obtained='UNDECIDED',
+                    expected=exp_level,
+                    axis_scores=verdict.axis_scores,
+                )
+            )
             errors += 1
 
     return CalibrationResult(

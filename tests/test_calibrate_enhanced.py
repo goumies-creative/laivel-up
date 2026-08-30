@@ -3,16 +3,13 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
-import pytest
 from typer.testing import CliRunner
 
 from laivelup.calibrate_core import CalibrationResult, run_calibration
 from laivelup.calibrate_dashboard import generate_calibrate_html
 from laivelup.cli import app
-from laivelup.model import AxisScore, Level
 
 runner = CliRunner()
 
@@ -31,7 +28,7 @@ class TestCalibrateCore:
             assert row.status in ('OK', 'FAIL', 'SKIP')
             assert row.detail
 
-    def test_calibration_with_expected(self, tmp_path):
+    def test_calibration_with_expected(self):
         profiles_dir = Path(__file__).parent.parent / 'grille' / 'profils-officiels'
         expected = profiles_dir / 'expected.json'
         if expected.exists():
@@ -45,8 +42,8 @@ class TestCalibrateDashboard:
             total=4,
             errors=0,
             rows=[],
-            profiles_dir=Path('.'),
-            expected_path=Path('.'),
+            profiles_dir=Path(),
+            expected_path=Path(),
         )
         html = generate_calibrate_html(result)
         assert 'Calibration AIDD' in html
@@ -58,8 +55,8 @@ class TestCalibrateDashboard:
             total=4,
             errors=1,
             rows=[],
-            profiles_dir=Path('.'),
-            expected_path=Path('.'),
+            profiles_dir=Path(),
+            expected_path=Path(),
         )
         html = generate_calibrate_html(result)
         assert '1 erreur' in html
@@ -69,8 +66,8 @@ class TestCalibrateDashboard:
             total=0,
             errors=0,
             rows=[],
-            profiles_dir=Path('.'),
-            expected_path=Path('.'),
+            profiles_dir=Path(),
+            expected_path=Path(),
         )
         html = generate_calibrate_html(result)
         assert 'Calibration AIDD' in html

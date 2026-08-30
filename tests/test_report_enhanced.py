@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from laivelup.model import AxisScore, Level, RedFlag, Verdict
 from laivelup.report import (
     GLOSSARY,
@@ -16,20 +14,24 @@ from laivelup.report import (
 
 
 def _make_verdict(**kwargs) -> Verdict:
-    defaults = dict(
-        name='Test',
-        level=Level.BLUE,
-        axis_scores=[
+    defaults = {
+        'name': 'Test',
+        'level': Level.BLUE,
+        'axis_scores': [
             AxisScore(axe='size', level=Level.BLUE, confidence=0.8, evidence=['2 PR M']),
-            AxisScore(axe='harness', level=Level.BLUE, confidence=0.9, evidence=['context present']),
-            AxisScore(axe='intervention', level=Level.BLUE, confidence=0.7, evidence=['retry partiel']),
+            AxisScore(
+                axe='harness', level=Level.BLUE, confidence=0.9, evidence=['context present']
+            ),
+            AxisScore(
+                axe='intervention', level=Level.BLUE, confidence=0.7, evidence=['retry partiel']
+            ),
             AxisScore(axe='parallel', level=Level.GREEN, confidence=0.6, evidence=['2 projets']),
         ],
-        limiting_axis='size',
-        data_errors=[],
-        red_flags=[],
-        next_steps=[],
-    )
+        'limiting_axis': 'size',
+        'data_errors': [],
+        'red_flags': [],
+        'next_steps': [],
+    }
     defaults.update(kwargs)
     return Verdict(**defaults)
 
@@ -95,8 +97,11 @@ class TestAxisDetail:
         v = _make_verdict(
             axis_scores=[
                 AxisScore(
-                    axe='size', level=Level.BLUE, confidence=0.8,
-                    evidence=['3 PR S'], variance='pic XL',
+                    axe='size',
+                    level=Level.BLUE,
+                    confidence=0.8,
+                    evidence=['3 PR S'],
+                    variance='pic XL',
                 ),
             ]
         )
@@ -130,9 +135,7 @@ class TestNextStepsHtml:
 class TestFlagsHtml:
     def test_flags_section(self):
         v = _make_verdict(
-            red_flags=[
-                RedFlag(severite=2, titre='Flag', constat='x', source='y', question='Q?')
-            ]
+            red_flags=[RedFlag(severite=2, titre='Flag', constat='x', source='y', question='Q?')]
         )
         html = render_html(v)
         assert 'Flag' in html

@@ -1,7 +1,7 @@
 # Copyright 2026 Romy Alula — MIT License
 """Tests cli.py : _load_profile erreurs, _parse_retry_ratio, _merge_answer, team commands.
 
-Cible : 85% branch sur cli.py.
+Cible : 90% branch sur cli.py.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
+from laivelup import __version__
 from laivelup.cli import _merge_answer, _parse_retry_ratio, app
 from laivelup.model import Level, ProfileData
 
@@ -529,3 +530,664 @@ class TestHistoryTrim:
         # Testons en simulant : si on a 101 entrées et qu'on en ajoute une, le trim coupe
         team.history = team.history[-_MAX_HISTORY:]
         assert len(team.history) == _MAX_HISTORY
+
+
+# --- --version, schema, --color (P1.2 / P0.3) ----------------------------
+
+
+class TestVersionAndSchema:
+    def test_version_flag(self):
+        r = runner.invoke(app, ['--version'])
+        assert r.exit_code == 0
+        assert __version__ in r.output or 'laivelup' in r.output.lower()
+
+    def test_schema_command(self):
+        r = runner.invoke(app, ['schema'])
+        assert r.exit_code == 0
+        data = json.loads(r.output)
+        assert 'laivelup' in data.get('name', '').lower() or 'commands' in data
+
+    def test_no_color_flag(self, tmp_path):
+        profile = tmp_path / 'p.json'
+        profile.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['S'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['--no-color', 'evaluate', str(profile), '--no-html'])
+        assert r.exit_code == 0
+
+
+# --- _nes_progress_bar ---------------------------------------------------
+
+
+class TestNesProgressBar:
+    def test_basic(self):
+        from laivelup.cli import _nes_progress_bar
+
+        result = _nes_progress_bar(5, 10)
+        assert '█' in result or '░' in result
+
+    def test_zero_total(self):
+        from laivelup.cli import _nes_progress_bar
+
+        result = _nes_progress_bar(0, 0)
+        assert isinstance(result, str)
+
+    def test_full_bar(self):
+        from laivelup.cli import _nes_progress_bar
+
+        result = _nes_progress_bar(10, 10)
+        assert '█' in result
+
+
+# --- team evaluate: member not found -------------------------------------
+
+
+class TestTeamEvaluateMemberNotFound:
+    def test_member_not_found_shows_available(self, tmp_path):
+        runner.invoke(app, ['team', 'create', 'Alpha', 'alice,bob'], catch_exceptions=False)
+        r = runner.invoke(
+            app, ['team', 'evaluate', 'Alpha', 'wrong-slug', str(tmp_path / 'p.json')]
+        )
+        assert r.exit_code != 0
+
+    def test_team_not_found(self, tmp_path):
+        profile = tmp_path / 'p.json'
+        profile.write_text(json.dumps({'name': 'x'}), encoding='utf-8')
+        r = runner.invoke(app, ['team', 'evaluate', 'Nonexistent', 'slug', str(profile)])
+        assert r.exit_code != 0
+
+
+# --- team opt-out / remove ------------------------------------------------
+
+
+class TestTeamOptOutRemove:
+    def _create_team_with_eval(self, tmp_path):
+        profile = tmp_path / 'p.json'
+        profile.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['S'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        r_create = runner.invoke(
+            app, ['team', 'create', 'OptTeam', 'alice,bob'], catch_exceptions=False
+        )
+        import re
+
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+        runner.invoke(
+            app,
+            [
+                'team',
+                'evaluate',
+                'OptTeam',
+                alice_slug,
+                str(profile),
+                '--out',
+                str(tmp_path / 'out'),
+            ],
+            catch_exceptions=False,
+        )
+        return alice_slug
+
+    def test_opt_out_enable(self, tmp_path):
+        slug_val = self._create_team_with_eval(tmp_path)
+        r = runner.invoke(app, ['team', 'opt-out', 'OptTeam', slug_val])
+        assert r.exit_code == 0
+
+    def test_opt_out_disable(self, tmp_path):
+        slug_val = self._create_team_with_eval(tmp_path)
+        runner.invoke(app, ['team', 'opt-out', 'OptTeam', slug_val], catch_exceptions=False)
+        r = runner.invoke(app, ['team', 'opt-out', 'OptTeam', slug_val, '--disable'])
+        assert r.exit_code == 0
+
+    def test_opt_out_member_not_found(self):
+        runner.invoke(app, ['team', 'create', 'OptTeam2', 'alice'], catch_exceptions=False)
+        r = runner.invoke(app, ['team', 'opt-out', 'OptTeam2', 'wrong-slug'])
+        assert r.exit_code == 1
+
+    def test_remove_member(self, tmp_path):
+        slug_val = self._create_team_with_eval(tmp_path)
+        r = runner.invoke(app, ['team', 'remove', 'OptTeam', slug_val])
+        assert r.exit_code == 0
+
+    def test_remove_with_purge(self, tmp_path):
+        slug_val = self._create_team_with_eval(tmp_path)
+        r = runner.invoke(app, ['team', 'remove', 'OptTeam', slug_val, '--purge'])
+        assert r.exit_code == 0
+
+    def test_remove_member_not_found(self):
+        runner.invoke(app, ['team', 'create', 'OptTeam3', 'alice'], catch_exceptions=False)
+        r = runner.invoke(app, ['team', 'remove', 'OptTeam3', 'wrong-slug'])
+        assert r.exit_code == 1
+
+
+# --- team export error paths ----------------------------------------------
+
+
+class TestTeamExportErrors:
+    def test_export_nonexistent_team(self):
+        r = runner.invoke(app, ['team', 'export', 'Nonexistent'])
+        assert r.exit_code != 0
+
+    def test_export_empty_team(self, tmp_path):
+        runner.invoke(app, ['team', 'create', 'EmptyTeam', 'x'], catch_exceptions=False)
+        # Just test the path exists — empty teams still export
+        r = runner.invoke(app, ['team', 'export', 'EmptyTeam', '--out', str(tmp_path)])
+        assert r.exit_code == 0
+
+
+# --- team create ambiguity warning ----------------------------------------
+
+
+class TestTeamCreateAmbiguity:
+    def test_name_matches_subcommand(self):
+        r = runner.invoke(app, ['team', 'create', 'create', 'alice,bob'])
+        # Should still succeed but with a warning
+        assert r.exit_code == 0
+
+
+# --- --json --fields filter -----------------------------------------------
+
+
+class TestJsonFieldsFilter:
+    def test_fields_filter(self):
+        r = runner.invoke(
+            app,
+            [
+                'evaluate',
+                str(REPO / 'exemples' / 'profil-maison-1.json'),
+                '--json',
+                '--no-html',
+                '--fields',
+                'name,level',
+            ],
+        )
+        assert r.exit_code == 0
+        data = json.loads(r.output)
+        assert set(data.keys()) <= {'name', 'level'}
+
+
+# --- undecided verdict + --fail-on warning --------------------------------
+
+
+class TestUndecidedFailOn:
+    def test_undecided_with_fail_on(self, tmp_path):
+        profile = tmp_path / 'minimal.json'
+        profile.write_text(json.dumps({'name': 'minimal'}), encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(profile), '--fail-on', 'RED', '--no-html'])
+        # Should either warn or exit — just verify no crash
+        assert r.exit_code in (0, 1)
+
+
+# --- --verbose with evidence + variance -----------------------------------
+
+
+class TestVerboseMode:
+    def test_verbose_shows_details(self, tmp_path):
+        profile = tmp_path / 'rich.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'verbose-test',
+                    'declared_level': 'BLUE',
+                    'traces': {
+                        'pr_sizes': ['M', 'L', 'M'],
+                        'context_versioned': True,
+                        'agent_rules_versioned': True,
+                        'retries_after_fact': 0.2,
+                        'retries_triangulated': True,
+                        'parallel_projects': 3,
+                        'projects_completed': 2,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--no-html', '--verbose'])
+        assert r.exit_code == 0
+
+    def test_verbose_with_peak_variance(self, tmp_path):
+        """Verbose mode with isolated peak triggers variance display."""
+        profile = tmp_path / 'peak.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'peak-test',
+                    'traces': {
+                        'pr_sizes': ['S', 'S', 'XL'],
+                        'parallel_projects': 1,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--no-html', '--verbose'])
+        assert r.exit_code == 0
+
+
+# --- JSON report path with --out -------------------------------------------
+
+
+class TestJsonReportPath:
+    def test_json_with_explicit_out(self, tmp_path):
+        """--json with explicit --out writes report files."""
+        profile = tmp_path / 'p.json'
+        profile.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['M'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        report_dir = tmp_path / 'reports'
+        r = runner.invoke(
+            app,
+            ['evaluate', str(profile), '--json', '--no-html', '--out', str(report_dir)],
+        )
+        assert r.exit_code == 0
+        data = json.loads(r.output)
+        assert 'name' in data
+
+    def test_non_json_prints_report_paths(self, tmp_path):
+        """Non-JSON mode prints report paths."""
+        profile = tmp_path / 'p.json'
+        profile.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['M'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--no-html'])
+        assert r.exit_code == 0
+
+    def test_fail_on_undecided_warns(self, tmp_path):
+        """--fail-on with undecided verdict prints warning."""
+        profile = tmp_path / 'minimal.json'
+        profile.write_text(json.dumps({'name': 'minimal'}), encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(profile), '--fail-on', 'RED', '--no-html'])
+        assert r.exit_code in (0, 2)
+
+
+# --- interrogate: early break + empty score ---------------------------------
+
+
+class TestInterrogateEdgeCases:
+    def test_interrogate_early_break(self, monkeypatch, tmp_path):
+        """Verdict decided early → break on first turn."""
+        from laivelup import cli
+
+        # Provide enough info for immediate verdict
+        answers = iter(
+            ['souvent des M', 'bleu', '40%', 'oui voici 3 PR', "oui j'ai un contexte", '1 chantier']
+        )
+        monkeypatch.setattr(cli.Prompt, 'ask', lambda prompt, **kw: next(answers))
+        r = runner.invoke(
+            cli.app,
+            ['interrogate', '--max-turns', '10', '--out', str(tmp_path)],
+        )
+        assert r.exit_code == 0
+
+    def test_interrogate_score_bar(self):
+        """Test _print_interrogate_score with empty axis_scores."""
+        from laivelup.cli import _print_interrogate_score
+        from laivelup.model import Verdict
+
+        v = Verdict(name='test', level=None, axis_scores=[], limiting_axis=None)
+        _print_interrogate_score(v, 1, 6)
+
+
+# --- team commands: error paths ---------------------------------------------
+
+
+class TestTeamErrorPaths:
+    def test_team_create_save_error(self, monkeypatch):
+        """team create when save_team raises ValueError."""
+        from laivelup import cli
+
+        def failing_save(*_args, **_kwargs):
+            raise ValueError('Permission refusée')
+
+        monkeypatch.setattr(cli, 'save_team', failing_save)
+        r = runner.invoke(app, ['team', 'create', 'FailTeam', 'alice,bob'])
+        assert r.exit_code == 2
+
+    def test_team_evaluate_save_error(self, tmp_path, monkeypatch):
+        """team evaluate when save_team raises ValueError."""
+        from laivelup import cli
+
+        r_create = runner.invoke(
+            app, ['team', 'create', 'SaveErr2', 'alice'], catch_exceptions=False
+        )
+
+        profile = tmp_path / 'p.json'
+        profile.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['M'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        import re
+
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+
+        def failing_save(*_args, **_kwargs):
+            raise ValueError('Disque plein')
+
+        monkeypatch.setattr(cli, 'save_team', failing_save)
+        r = runner.invoke(
+            app,
+            [
+                'team',
+                'evaluate',
+                'SaveErr2',
+                alice_slug,
+                str(profile),
+                '--out',
+                str(tmp_path / 'out'),
+            ],
+        )
+        assert r.exit_code == 2
+
+    def test_team_export_save_error(self, tmp_path, monkeypatch):
+        """team export when export function raises ValueError."""
+        from laivelup import cli
+
+        runner.invoke(app, ['team', 'create', 'ExportErr', 'alice'], catch_exceptions=False)
+
+        def failing_export(*_args, **_kwargs):
+            raise ValueError('Export impossible')
+
+        monkeypatch.setattr(cli, 'export_markdown', failing_export)
+        r = runner.invoke(
+            app, ['team', 'export', 'ExportErr', '--format', 'md', '--out', str(tmp_path)]
+        )
+        assert r.exit_code == 2
+
+    def test_team_optout_save_error(self, monkeypatch):
+        """team opt-out when save_team raises ValueError."""
+        from laivelup import cli
+
+        r_create = runner.invoke(app, ['team', 'create', 'OptErr', 'alice'], catch_exceptions=False)
+        import re
+
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+
+        def failing_save(*_args, **_kwargs):
+            raise ValueError('Permission refusée')
+
+        monkeypatch.setattr(cli, 'save_team', failing_save)
+        r = runner.invoke(app, ['team', 'opt-out', 'OptErr', alice_slug])
+        assert r.exit_code == 2
+
+    def test_team_remove_save_error(self, monkeypatch):
+        """team remove when save_team raises ValueError."""
+        from laivelup import cli
+
+        r_create = runner.invoke(app, ['team', 'create', 'RmErr', 'alice'], catch_exceptions=False)
+        import re
+
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+
+        def failing_save(*_args, **_kwargs):
+            raise ValueError('Permission refusée')
+
+        monkeypatch.setattr(cli, 'save_team', failing_save)
+        r = runner.invoke(app, ['team', 'remove', 'RmErr', alice_slug])
+        assert r.exit_code == 2
+
+    def test_team_evaluate_decided_level(self, tmp_path):
+        """team evaluate with decided verdict prints level."""
+        profile = tmp_path / 'decided.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'decided',
+                    'traces': {
+                        'pr_sizes': ['M', 'M', 'M'],
+                        'context_versioned': True,
+                        'retries_after_fact': 0.2,
+                        'retries_triangulated': True,
+                        'parallel_projects': 1,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        r_create = runner.invoke(
+            app, ['team', 'create', 'Decided', 'alice'], catch_exceptions=False
+        )
+        import re
+
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+        r = runner.invoke(
+            app,
+            [
+                'team',
+                'evaluate',
+                'Decided',
+                alice_slug,
+                str(profile),
+                '--out',
+                str(tmp_path / 'out'),
+            ],
+        )
+        assert r.exit_code == 0
+        assert 'Niveau' in r.output or 'NIVEAU' in r.output
+
+
+# --- data_errors box (contradictory profile) -------------------------------
+
+
+class TestDataErrors:
+    def test_invalid_pr_sizes(self, tmp_path):
+        """Schema rejects invalid pr_sizes values — exit 2."""
+        profile = tmp_path / 'bad_sizes.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'bad',
+                    'traces': {'pr_sizes': ['INVALID_SIZE']},
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--no-html'])
+        assert r.exit_code == 2
+
+    def test_retries_not_number(self, tmp_path):
+        """Schema rejects bool retries_after_fact — exit 2."""
+        profile = tmp_path / 'bad_retries.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'bad',
+                    'traces': {'retries_after_fact': True},
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--no-html'])
+        assert r.exit_code == 2
+
+
+# --- red flags (declared vs observed) --------------------------------------
+
+
+class TestFailOnWarningTTY:
+    """Sous TTY reel (--fail-on non-json), le message d'avertissement/FAIL s'affiche.
+
+    Note : sous CliRunner, sys.stdout.isatty() vaut False, donc `cli.TTY` est
+    False et use_json est toujours True (auto-detection JSON en environnement
+    non-interactif). Pour tester la branche non-JSON, on force cli.TTY=True.
+    """
+
+    def test_fail_on_warning_printed_when_verdict_none(self, monkeypatch, tmp_path):
+        from laivelup import cli
+
+        monkeypatch.setattr(cli, 'TTY', True)
+        profile = tmp_path / 'minimal.json'
+        profile.write_text(json.dumps({'name': 'minimal'}), encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(profile), '--fail-on', 'RED', '--no-html'])
+        assert r.exit_code == 0
+        assert 'Avertissement' in r.output
+
+    def test_fail_on_message_printed_when_level_too_low(self, monkeypatch, tmp_path):
+        from laivelup import cli
+
+        monkeypatch.setattr(cli, 'TTY', True)
+        profile = tmp_path / 'blue.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'blue',
+                    'traces': {
+                        'pr_sizes': ['M', 'M', 'M'],
+                        'context_versioned': True,
+                        'retries_after_fact': 0.3,
+                        'retries_triangulated': True,
+                        'parallel_projects': 1,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--fail-on', 'GOLD', '--no-html'])
+        assert r.exit_code == 1
+        assert 'FAIL' in r.output
+
+
+# --- team commands : load_team leve ValueError (fichier corrompu) ----------
+
+
+class TestTeamCommandsLoadTeamValueError:
+    """Un fichier d'equipe corrompu (JSON invalide) fait remonter une
+    ValueError (json.JSONDecodeError en est une sous-classe) via load_team,
+    interceptee par chaque commande team.* -> exit_code == 2.
+
+    Note : le fixture autouse `_isolate_team_dir` de conftest.py redirige deja
+    `_DEFAULT_TEAM_DIR` vers `tmp_path / '.laivelup' / 'teams'` pour ce test.
+    """
+
+    def _write_corrupt_team(self, tmp_path, team_name):
+        team_dir = tmp_path / '.laivelup' / 'teams'
+        team_dir.mkdir(parents=True, exist_ok=True)
+        (team_dir / f'{team_name}.json').write_text('NOT VALID JSON {{{', encoding='utf-8')
+
+    def test_team_evaluate_corrupted_file_exits_2(self, tmp_path):
+        self._write_corrupt_team(tmp_path, 'Corrupt1')
+        profile = tmp_path / 'p.json'
+        profile.write_text(json.dumps({'name': 'x'}), encoding='utf-8')
+        r = runner.invoke(app, ['team', 'evaluate', 'Corrupt1', 'slug', str(profile)])
+        assert r.exit_code == 2
+
+    def test_team_export_corrupted_file_exits_2(self, tmp_path):
+        self._write_corrupt_team(tmp_path, 'Corrupt2')
+        r = runner.invoke(app, ['team', 'export', 'Corrupt2'])
+        assert r.exit_code == 2
+
+    def test_team_optout_corrupted_file_exits_2(self, tmp_path):
+        self._write_corrupt_team(tmp_path, 'Corrupt3')
+        r = runner.invoke(app, ['team', 'opt-out', 'Corrupt3', 'slug'])
+        assert r.exit_code == 2
+
+    def test_team_remove_corrupted_file_exits_2(self, tmp_path):
+        self._write_corrupt_team(tmp_path, 'Corrupt4')
+        r = runner.invoke(app, ['team', 'remove', 'Corrupt4', 'slug'])
+        assert r.exit_code == 2
+
+
+# --- calibrate --show-proof : branche errors > 0 ---------------------------
+
+
+class TestCalibrateShowProofErrors:
+    def test_show_proof_with_errors(self, tmp_path):
+        profiles_dir = tmp_path / 'profils'
+        profiles_dir.mkdir()
+        profile = profiles_dir / 'alice.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'alice',
+                    'traces': {
+                        'pr_sizes': ['S'],
+                        'retries_after_fact': 0.8,
+                        'retries_triangulated': True,
+                        'parallel_projects': 1,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        expected = tmp_path / 'expected.json'
+        expected.write_text(json.dumps({'levels': {'alice': 'GOLD'}}), encoding='utf-8')
+
+        r = runner.invoke(
+            app,
+            [
+                'calibrate',
+                '--expected',
+                str(expected),
+                '--profiles-dir',
+                str(profiles_dir),
+                '--show-proof',
+                '--out',
+                str(tmp_path / 'out'),
+            ],
+        )
+        assert r.exit_code == 0
+        assert 'erreurs' in r.output
+
+
+class TestRedFlags:
+    def test_high_retry_ratio_triggers_flag(self, tmp_path):
+        """Déclaré BLUE avec reprise > 50% → red flag 'reprise élevée'."""
+        profile = tmp_path / 'redflag.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'suspicious',
+                    'declared_level': 'BLUE',
+                    'traces': {
+                        'pr_sizes': ['M', 'M', 'M'],
+                        'context_versioned': True,
+                        'agent_rules_versioned': True,
+                        'retries_after_fact': 0.8,
+                        'retries_triangulated': True,
+                        'parallel_projects': 1,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--json', '--no-html'])
+        assert r.exit_code == 0
+        data = json.loads(r.output)
+        assert len(data.get('red_flags', [])) > 0
+
+    def test_blue_without_context_triggers_flag(self, tmp_path):
+        """Déclaré BLUE sans contexte versionné → red flag 'Blue déclaré sans contexte'."""
+        profile = tmp_path / 'noctx.json'
+        profile.write_text(
+            json.dumps(
+                {
+                    'name': 'no-context',
+                    'declared_level': 'BLUE',
+                    'traces': {
+                        'pr_sizes': ['M', 'M', 'M'],
+                        'context_versioned': False,
+                        'agent_rules_versioned': True,
+                        'retries_after_fact': 0.2,
+                        'retries_triangulated': True,
+                        'parallel_projects': 1,
+                    },
+                }
+            ),
+            encoding='utf-8',
+        )
+        r = runner.invoke(app, ['evaluate', str(profile), '--json', '--no-html'])
+        assert r.exit_code == 0
+        data = json.loads(r.output)
+        assert len(data.get('red_flags', [])) > 0

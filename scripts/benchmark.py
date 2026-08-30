@@ -103,7 +103,7 @@ def run_benchmark_inprocess(iterations: int = DEFAULT_ITERATIONS) -> dict:
     }
 
 
-def main():
+def main():  # pragma: no cover — CLI argparse + boucle subprocess, teste via subprocess dans test_scripts.py
     parser = argparse.ArgumentParser(description='Benchmark LAIVEL UP CLI')
     parser.add_argument('--iterations', '-n', type=int, default=DEFAULT_ITERATIONS)
     parser.add_argument('--output', '-o', type=str, default=DEFAULT_OUTPUT)

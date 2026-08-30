@@ -98,3 +98,42 @@ class TestApplyCalibrationFix:
         result = apply_scenario_a(diag, dry_run=True, thresholds_path=thresholds)
         assert result.applied is False
         assert any('CONFIDENCE_THRESHOLD' in c for c in result.changes)
+
+    def test_total_mismatch_above_2_refuses(self, sample_diagnostic: Path) -> None:
+        """Scenario A refuse d'agir si total_mismatch > 2 (garde-fou)."""
+        from scripts.apply_calibration_fix import apply_scenario_a
+
+        diag = json.loads(sample_diagnostic.read_text(encoding='utf-8'))
+        diag['summary']['total_mismatch'] = 3
+        result = apply_scenario_a(diag, dry_run=True)
+        assert result.applied is False
+        assert any('total_mismatch' in e for e in result.errors)
+
+    def test_no_thresholds_found_returns_error(self) -> None:
+        """Scenario A signale une erreur si aucun seuil n'est trouve (ni fichier, ni diagnostic)."""
+        from scripts.apply_calibration_fix import apply_scenario_a
+
+        diag = {'summary': {'total_mismatch': 0}}
+        result = apply_scenario_a(diag, dry_run=True)
+        assert result.applied is False
+        assert any('No thresholds found' in e for e in result.errors)
+
+
+class TestLoadDiagnostic:
+    """_load_diagnostic : erreurs de chargement (JSON malforme, fichier absent)."""
+
+    def test_malformed_json_exits_1(self, tmp_path: Path) -> None:
+        from scripts.apply_calibration_fix import _load_diagnostic
+
+        bad = tmp_path / 'bad.json'
+        bad.write_text('NOT VALID JSON {{{', encoding='utf-8')
+        with pytest.raises(SystemExit) as exc_info:
+            _load_diagnostic(bad)
+        assert exc_info.value.code == 1
+
+    def test_missing_file_exits_1(self, tmp_path: Path) -> None:
+        from scripts.apply_calibration_fix import _load_diagnostic
+
+        with pytest.raises(SystemExit) as exc_info:
+            _load_diagnostic(tmp_path / 'nope.json')
+        assert exc_info.value.code == 1

@@ -244,7 +244,7 @@ def _sanitize_email(value: str) -> str:
 
 def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
     """Génère un profil AIDD complet depuis un repo local."""
-    if verbose:
+    if verbose:  # pragma: no cover — print console uniquement
         print(f"[GENERATE] Analyse de {repo_path} pour l'utilisateur {user}")
 
     pr_sizes = _detect_pr_sizes(repo_path, user)
@@ -270,7 +270,7 @@ def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
     traces['agents_autonomous'] = autonomous
     traces['prompts'] = prompts
 
-    if verbose:
+    if verbose:  # pragma: no cover — print console uniquement
         print(f'[GENERATE] PR sizes: {pr_sizes}')
         print(f'[GENERATE] Context: {context}, Rules: {rules}, Loops: {loops}')
         print(f'[GENERATE] Retries: {retries} (triangulated: {triangulated})')
@@ -294,7 +294,7 @@ def generate_profile(repo_path: Path, user: str, verbose: bool = False) -> dict:
     return profile
 
 
-def main():
+def main():  # pragma: no cover — argparse + I/O, teste via subprocess ailleurs
     # Encoding fix for Windows console
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')

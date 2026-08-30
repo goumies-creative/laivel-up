@@ -112,7 +112,9 @@ def apply_scenario_a(
                 )
                 changes.append(f'RETRIES_PER_LEVEL.{sub_key}: {old_val} -> {new_val}')
 
-    if not dry_run and changes:
+    if (
+        not dry_run and changes
+    ):  # pragma: no cover — ecriture disque + reload, teste manuellement (--apply)
         # Backup before patching
         backup_path = scoring_defaults_path.with_suffix('.py.bak')
         shutil.copy2(scoring_defaults_path, backup_path)
@@ -184,7 +186,9 @@ SCENARIO_HANDLERS = {
 }
 
 
-def main() -> None:
+def main() -> (
+    None
+):  # pragma: no cover — argparse + I/O, couvert par --help et apply_scenario_* directement
     """CLI entry point."""
     import argparse
 

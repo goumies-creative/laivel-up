@@ -15,7 +15,6 @@ from html import escape
 from .calibrate_core import CalibrationResult
 from .model import Level, axis_label, level_label
 
-
 LEVEL_COLORS: dict[Level, dict[str, str]] = {
     Level.WHITE: {'bg': '#e8e8e8', 'fg': '#666', 'accent': '#999', 'icon': '❖'},
     Level.RED: {'bg': '#fde8e8', 'fg': '#c0392b', 'accent': '#e74c3c', 'icon': '🔺'},
@@ -26,26 +25,29 @@ LEVEL_COLORS: dict[Level, dict[str, str]] = {
     Level.GOLD: {'bg': '#fdf8e8', 'fg': '#b7950b', 'accent': '#f1c40f', 'icon': '🥇'},
 }
 
-LEVEL_BY_NAME: dict[str, Level] = {l.name: l for l in Level}
+LEVEL_BY_NAME: dict[str, Level] = {lvl.name: lvl for lvl in Level}
 
 
 def _render_profile_node(name: str, obtained: str | None, expected: str | None, status: str) -> str:
     """Nœud Patapon pour un profil."""
     is_ok = status == 'OK'
-    color = '#3fb950' if is_ok else '#f85149'
     icon = '✅' if is_ok else '❌'
 
     obtained_level = LEVEL_BY_NAME.get(obtained) if obtained and obtained != 'UNDECIDED' else None
-    expected_level = LEVEL_BY_NAME.get(expected) if expected and expected != 'UNDECIDED' else None
 
-    node_color = LEVEL_COLORS.get(obtained_level, LEVEL_COLORS[Level.WHITE])['accent'] if obtained_level else '#ccc'
+    node_color = (
+        LEVEL_COLORS.get(obtained_level, LEVEL_COLORS[Level.WHITE])['accent']
+        if obtained_level
+        else '#ccc'
+    )
 
     return (
         f'<div class="cal-node {"ok" if is_ok else "fail"}">'
         f'<div class="cal-node-icon" style="border-color:{node_color};">'
         f'{icon}</div>'
         f'<div class="cal-node-name">{escape(name)}</div>'
-        f'<div class="cal-node-obtained" style="color:{node_color};">{escape(obtained or "UNDECIDED")}</div>'
+        f'<div class="cal-node-obtained" style="color:{node_color};">'
+        f'{escape(obtained or "UNDECIDED")}</div>'
         f'<div class="cal-node-expected">→ {escape(expected or "—")}</div>'
         f'</div>'
     )
@@ -57,11 +59,14 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
     is_perfect = result.errors == 0
 
     badge_cls = 'cal-badge ok' if is_perfect else 'cal-badge ko'
-    badge_text = f'{result.total}/{result.total} · CALIBRÉ ✅' if is_perfect else f'{result.total - result.errors}/{result.total} · {result.errors} erreur(s)'
+    badge_text = (
+        f'{result.total}/{result.total} · CALIBRÉ ✅'
+        if is_perfect
+        else f'{result.total - result.errors}/{result.total} · {result.errors} erreur(s)'
+    )
 
     profile_nodes = ''.join(
-        _render_profile_node(r.name, r.obtained, r.expected, r.status)
-        for r in result.rows
+        _render_profile_node(r.name, r.obtained, r.expected, r.status) for r in result.rows
     )
 
     # Table rows
@@ -71,9 +76,11 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
         table_rows.append(
             f'<tr>'
             f'<td>{escape(r.name)}</td>'
-            f'<td><span class="level-pill" style="background:{_level_bg(r.obtained)};color:{_level_fg(r.obtained)};">'
+            f'<td><span class="level-pill" style="background:{_level_bg(r.obtained)};'
+            f'color:{_level_fg(r.obtained)};">'
             f'{escape(r.obtained or "—")}</span></td>'
-            f'<td><span class="level-pill" style="background:{_level_bg(r.expected)};color:{_level_fg(r.expected)};">'
+            f'<td><span class="level-pill" style="background:{_level_bg(r.expected)};'
+            f'color:{_level_fg(r.expected)};">'
             f'{escape(r.expected or "—")}</span></td>'
             f'<td>{icon} {escape(r.detail)}</td>'
             f'</tr>'
@@ -88,15 +95,13 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
                 label = axis_label(a.axe)
                 lvl = level_label(a.level)
                 conf = f'{a.confidence:.0%}' if a.level is not None else '—'
-                ax_rows.append(
-                    f'<tr><td>{escape(label)}</td><td>{lvl}</td><td>{conf}</td></tr>'
-                )
+                ax_rows.append(f'<tr><td>{escape(label)}</td><td>{lvl}</td><td>{conf}</td></tr>')
             axis_cards.append(
                 f'<div class="axis-card">'
                 f'<h4>{escape(r.name)}</h4>'
                 f'<table><tr><th>Axe</th><th>Niveau</th><th>Confiance</th></tr>'
-                + ''.join(ax_rows) +
-                f'</table></div>'
+                + ''.join(ax_rows)
+                + '</table></div>'
             )
 
     return f"""<!doctype html>
@@ -140,8 +145,14 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
     font-size: 1.1rem;
     margin: 1rem 0;
   }}
-  .cal-badge.ok {{ background: rgba(63,185,80,0.15); color: var(--success); border: 1px solid var(--success); }}
-  .cal-badge.ko {{ background: rgba(248,81,73,0.15); color: var(--danger); border: 1px solid var(--danger); }}
+  .cal-badge.ok {{
+    background: rgba(63,185,80,0.15); color: var(--success);
+    border: 1px solid var(--success);
+  }}
+  .cal-badge.ko {{
+    background: rgba(248,81,73,0.15); color: var(--danger);
+    border: 1px solid var(--danger);
+  }}
 
   .success-bar {{
     height: 8px;
@@ -293,7 +304,8 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
 
   <div class="report-footer">
     Généré par <strong>LAIVEL UP</strong> · Calibration
-    <a href="https://github.com/ai-driven-dev/laivel-up" target="_blank" rel="noopener">référentiel AIDD</a>
+    <a href="https://github.com/ai-driven-dev/laivel-up" target="_blank"
+       rel="noopener">référentiel AIDD</a>
   </div>
 </main>
 </body>

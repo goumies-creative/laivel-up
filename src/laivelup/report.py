@@ -562,12 +562,12 @@ def render_html(verdict: Verdict) -> str:
      dépasser celle du h1 (1rem) plutôt que rivaliser avec lui (10.1.e). */
   .badge {{
     display: inline-block;
-    padding: 0.9rem 1.6rem;
+    padding: 1.1rem 2rem;
     font-family: 'Press Start 2P', monospace;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
     line-height: 1.5;
     font-weight: 400;
-    margin: 1.2rem 0;
+    margin: 1.5rem 0;
     border: 3px solid;
     image-rendering: pixelated;
     text-shadow: 1px 1px 0px rgba(0,0,0,0.5);

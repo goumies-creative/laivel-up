@@ -141,3 +141,28 @@ class TestExtractProfileIntegration:
         assert profile.declared_level is not None
         assert 'declared_level' not in profile.traces
         assert 'declaratif' not in profile.traces
+
+
+class TestSessionMdAgentsAutonomous:
+    """session.md, quand present, alimente traces['agents_autonomous']."""
+
+    def test_session_md_with_autonomous_keyword_sets_true(self, tmp_path):
+        profile_dir = tmp_path / 'autonomous-profile'
+        profile_dir.mkdir()
+        (profile_dir / 'profile.json').write_text(
+            json.dumps({'profile_id': 'autonomous-profile'}), encoding='utf-8'
+        )
+        (profile_dir / 'session.md').write_text(
+            'Le pipeline CI/CD tourne de manière autonome.', encoding='utf-8'
+        )
+        profile = extract_profile(profile_dir)
+        assert profile.traces['agents_autonomous'] is True
+
+    def test_no_session_md_leaves_key_absent(self, tmp_path):
+        profile_dir = tmp_path / 'no-session'
+        profile_dir.mkdir()
+        (profile_dir / 'profile.json').write_text(
+            json.dumps({'profile_id': 'no-session'}), encoding='utf-8'
+        )
+        profile = extract_profile(profile_dir)
+        assert 'agents_autonomous' not in profile.traces

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from laivelup.model import AxisScore, Level, ProfileData, RedFlag, Verdict
 from laivelup.report import render_html, render_markdown, write_reports
 
@@ -209,3 +211,32 @@ class TestWriteReports:
         v = _make_verdict(name='Mon Profil')
         md, _ = write_reports(v, tmp_path)
         assert 'mon-profil' in md.name.lower()
+
+    def test_slug_escape_raises_value_error(self, tmp_path, monkeypatch):
+        """Sécurité : un slug malicieux qui s'échappe du dossier de sortie est refusé."""
+        from laivelup import report as report_mod
+
+        monkeypatch.setattr(report_mod, 'slug', lambda _name: '../evil')
+        v = _make_verdict()
+        with pytest.raises(ValueError, match='escapes output directory'):
+            report_mod.write_reports(v, tmp_path)
+
+
+# --- _glossary_tooltip --------------------------------------------------
+
+
+class TestGlossaryTooltip:
+    def test_known_term_returns_tooltip_span(self):
+        from laivelup.report import _glossary_tooltip
+
+        html = _glossary_tooltip('Harness')
+        assert 'glossary-term' in html
+        assert 'data-tooltip' in html
+        assert 'Harness' in html
+
+    def test_unknown_term_returns_escaped_text_only(self):
+        from laivelup.report import _glossary_tooltip
+
+        html = _glossary_tooltip('Terme Inconnu XYZ')
+        assert 'glossary-term' not in html
+        assert 'Terme Inconnu XYZ' in html
