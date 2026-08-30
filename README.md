@@ -146,6 +146,15 @@ MIT. AI-Driven Dev pourra réutiliser le projet en attribuant le travail à l'au
 pip install laivelup
 ```
 
+### Complétion shell (bash/zsh/fish/PowerShell)
+
+```bash
+laivelup --install-completion
+```
+
+Active l'auto-complétion des commandes et options au premier `Tab`,
+cross-shell (fournie nativement par Typer).
+
 ### Évaluation d'un profil
 
 ```bash

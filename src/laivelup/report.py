@@ -11,7 +11,7 @@ from __future__ import annotations
 from html import escape
 from pathlib import Path
 
-from .model import AXES, Level, Verdict, axis_label, level_label
+from .model import Level, Verdict, axis_label, level_label
 from .utils import slug
 
 # --- Glossaire pédagogique (termes AIDD → définitions accessibles) --------
@@ -41,7 +41,7 @@ GLOSSARY: dict[str, str] = {
         "L (multi-étapes), XL (multi-modules). Pas la plus grosse jamais faite, l'habituel."
     ),
     'En parallèle': (
-        "Combien de chantiers avancent en même temps, habituellement. "
+        'Combien de chantiers avancent en même temps, habituellement. '
         "Un pic isolé ne compte pas — c'est la pratique régulière."
     ),
     'Règle AND': (
@@ -50,7 +50,7 @@ GLOSSARY: dict[str, str] = {
     ),
     'Refus de deviner': (
         "Quand les données manquent ou se contredisent, l'outil refuse de trancher "
-        "et pose des questions ciblées plutôt que de deviner. Équité structurelle."
+        'et pose des questions ciblées plutôt que de deviner. Équité structurelle.'
     ),
 }
 
@@ -59,12 +59,12 @@ REFERENCES: list[dict[str, str]] = [
     {
         'url': 'https://ai-driven-development.org',
         'title': 'Manifesto for AI-Driven Development',
-        'desc': 'Le manifeste fondateur — principes et niveaux d\'adoption AIDD.',
+        'desc': "Le manifeste fondateur — principes et niveaux d'adoption AIDD.",
     },
     {
         'url': 'https://github.com/ai-driven-dev/laivel-up/blob/main/levels/aidd.md',
         'title': 'Référentiel AIDD officiel',
-        'desc': 'La grille complète : 4 axes × 7 niveaux, règles et examples.',
+        'desc': 'La grille complète : 4 axes x 7 niveaux, règles et examples.',
     },
     {
         'url': 'https://github.com/EveryInc/compound-engineering',
@@ -153,7 +153,6 @@ def _render_world_map(verdict: Verdict) -> str:
         color = LEVEL_COLORS[lvl]
         is_current = current is not None and lvl == current
         is_unlocked = current is not None and lvl.value <= current.value
-        is_future = current is not None and lvl.value > current.value
 
         state = 'locked'
         if is_unlocked:
@@ -173,7 +172,11 @@ def _render_world_map(verdict: Verdict) -> str:
         if is_unlocked or is_current:
             for a in verdict.axis_scores:
                 if a.axe:
-                    ax_color = color['accent'] if a.level is not None and a.level.value >= lvl.value else '#ddd'
+                    ax_color = (
+                        color['accent']
+                        if a.level is not None and a.level.value >= lvl.value
+                        else '#ddd'
+                    )
                     ax_label = axis_label(a.axe)
                     ax_check = '✓' if a.level is not None and a.level.value >= lvl.value else '○'
                     axis_stages += (
@@ -200,7 +203,7 @@ def _render_world_map(verdict: Verdict) -> str:
     return (
         '<div class="patapon-world">'
         '<h2 class="world-title">Carte de progression AIDD</h2>'
-        f'<div class="world-map">'
+        '<div class="world-map">'
         + f'<div class="connector">{connectors}</div>'.join(nodes)  # simplify: join with empty
         + '</div>'
         '</div>'
@@ -237,9 +240,7 @@ def _render_progress_bar(verdict: Verdict) -> str:
         '<div class="progress-track">'
         f'<div class="progress-fill" style="width:{pct}%;"></div>'
         '</div>'
-        '<div class="progress-steps">'
-        + ''.join(steps) +
-        '</div>'
+        '<div class="progress-steps">' + ''.join(steps) + '</div>'
         '</div>'
     )
 
@@ -261,8 +262,15 @@ def _render_axis_detail(verdict: Verdict) -> str:
         # Encadré "Pourquoi ce niveau ?" pour chaque axe
         why = _why_this_level(a.axe, a.level, a.evidence)
 
+        # 10.1.b (adapté) : la demande initiale visait une <table> avec
+        # <caption>/scope="col", mais ce rendu n'utilise plus de table —
+        # remplacée par ces cartes par axe. L'équivalent d'accessibilité pour
+        # une carte est un rôle ARIA list/listitem + un aria-label résumant
+        # la carte entière, plutôt que des en-têtes de colonnes qui n'existent
+        # plus.
+        card_label = escape(f'{label} : {lvl}, confiance {conf}')
         rows.append(
-            f'<div class="axis-card">'
+            f'<div class="axis-card" role="listitem" aria-label="{card_label}">'
             f'<div class="axis-card-header">'
             f'<span class="axis-name">{label}</span>'
             f'<span class="axis-level" style="color:{_level_color(a.level)};">{lvl}</span>'
@@ -274,51 +282,49 @@ def _render_axis_detail(verdict: Verdict) -> str:
         )
 
     return (
-        '<div class="axis-details">'
-        '<h2>Détail par axe</h2>'
-        + ''.join(rows) +
-        '</div>'
+        '<div class="axis-details" role="list" aria-label="D\u00e9tail par axe d\u0027\u00e9valuation">'
+        '<h2>Détail par axe</h2>' + ''.join(rows) + '</div>'
     )
 
 
-def _why_this_level(axe: str, level: Level | None, evidence: list[str]) -> str:
+def _why_this_level(axe: str, level: Level | None, _evidence: list[str]) -> str:
     """Génère une explication pédagogique du niveau pour un axe donné."""
     if level is None:
         return 'Données insuffisantes pour trancher sur cet axe.'
 
     explanations = {
         'size': {
-            Level.RED: 'Les PR observées sont de taille S. C\'est le niveau d\'entrée : l\'IA aide sur des features simples.',
-            Level.BLUE: 'Les PR sont de taille M : l\'IA gère des features de complexité moyenne. Bonne base.',
-            Level.GREEN: 'Les PR sont de taille L : l\'IA enchaîne plusieurs étapes dans une même feature.',
-            Level.COPPER: 'Les PR alternent L et XL. L\'IA produit des features multi-modules régulièrement.',
-            Level.SILVER: 'L\'IA livre des features L-XL sans intervention humaine sur le contenu.',
-            Level.GOLD: 'L\'IA livre des features XL autonomement, plusieurs fois par jour.',
+            Level.RED: "Les PR observées sont de taille S. C'est le niveau d'entrée : l'IA aide sur des features simples.",
+            Level.BLUE: "Les PR sont de taille M : l'IA gère des features de complexité moyenne. Bonne base.",
+            Level.GREEN: "Les PR sont de taille L : l'IA enchaîne plusieurs étapes dans une même feature.",
+            Level.COPPER: "Les PR alternent L et XL. L'IA produit des features multi-modules régulièrement.",
+            Level.SILVER: "L'IA livre des features L-XL sans intervention humaine sur le contenu.",
+            Level.GOLD: "L'IA livre des features XL autonomement, plusieurs fois par jour.",
         },
         'harness': {
-            Level.RED: 'Pas de contexte versionné. L\'IA repart de zéro à chaque session.',
-            Level.BLUE: 'Une mémoire projet existe et est maintenue. L\'IA lit le contexte avant de coder.',
-            Level.GREEN: 'Règles et agents sont versionnés. L\'IA suit des conventions explicites.',
-            Level.COPPER: 'Le harnais est complet : contexte + behavior. L\'IA est encadrée.',
-            Level.SILVER: 'Des retry loops relancent l\'IA automatiquement en cas d\'échec.',
-            Level.GOLD: 'Le harnais maximal : contexte + behavior + retry loops. L\'IA est autonome.',
+            Level.RED: "Pas de contexte versionné. L'IA repart de zéro à chaque session.",
+            Level.BLUE: "Une mémoire projet existe et est maintenue. L'IA lit le contexte avant de coder.",
+            Level.GREEN: "Règles et agents sont versionnés. L'IA suit des conventions explicites.",
+            Level.COPPER: "Le harnais est complet : contexte + behavior. L'IA est encadrée.",
+            Level.SILVER: "Des retry loops relancent l'IA automatiquement en cas d'échec.",
+            Level.GOLD: "Le harnais maximal : contexte + behavior + retry loops. L'IA est autonome.",
         },
         'intervention': {
-            Level.RED: 'Reprise sur la majorité des PR. L\'humain corrige beaucoup après l\'IA.',
-            Level.BLUE: 'Reprise sur une partie des PR. L\'humain intervient moins souvent.',
-            Level.GREEN: 'Intervention aux étapes clés seulement. L\'humain cadrage, l\'IA exécute.',
-            Level.COPPER: 'Intervention ponctuelle. L\'humain ne reprend presque jamais.',
-            Level.SILVER: 'Aucune intervention une fois la tâche cadrée. L\'IA gère tout.',
+            Level.RED: "Reprise sur la majorité des PR. L'humain corrige beaucoup après l'IA.",
+            Level.BLUE: "Reprise sur une partie des PR. L'humain intervient moins souvent.",
+            Level.GREEN: "Intervention aux étapes clés seulement. L'humain cadrage, l'IA exécute.",
+            Level.COPPER: "Intervention ponctuelle. L'humain ne reprend presque jamais.",
+            Level.SILVER: "Aucune intervention une fois la tâche cadrée. L'IA gère tout.",
             Level.GOLD: 'Même le cadrage est compris. Les agents prennent les tâches en autonomie.',
         },
         'parallel': {
-            Level.WHITE: 'Aucun projet en parallèle. Pas d\'activité AIDD observée.',
-            Level.RED: 'Un seul projet. L\'IA aide sur un chantier à la fois.',
+            Level.WHITE: "Aucun projet en parallèle. Pas d'activité AIDD observée.",
+            Level.RED: "Un seul projet. L'IA aide sur un chantier à la fois.",
             Level.BLUE: 'Un seul projet, mais avec plus de complexité.',
-            Level.GREEN: 'Deux à trois chantiers en parallèle. L\'IA suit plusieurs lignes.',
-            Level.COPPER: 'Trois chantiers ou plus, tous menés au bout. L\'IA gère la charge.',
-            Level.SILVER: 'Trois chantiers ou plus, tous menés au bout. L\'IA gère la charge.',
-            Level.GOLD: 'Trois chantiers ou plus, tous menés au bout. L\'IA gère la charge.',
+            Level.GREEN: "Deux à trois chantiers en parallèle. L'IA suit plusieurs lignes.",
+            Level.COPPER: "Trois chantiers ou plus, tous menés au bout. L'IA gère la charge.",
+            Level.SILVER: "Trois chantiers ou plus, tous menés au bout. L'IA gère la charge.",
+            Level.GOLD: "Trois chantiers ou plus, tous menés au bout. L'IA gère la charge.",
         },
     }
 
@@ -364,7 +370,7 @@ def _render_pedagogical_section(verdict: Verdict) -> str:
                     Level.SILVER: 'Confirme que les agents prennent les tâches en autonomie.',
                 },
                 'parallel': {
-                    Level.RED: 'Mène 2 chantiers de front et les mène jusqu\'au bout.',
+                    Level.RED: "Mène 2 chantiers de front et les mène jusqu'au bout.",
                     Level.BLUE: 'Mène 3 chantiers en parallèle, menés au bout.',
                     Level.GREEN: 'Confirme la complétude des 3 chantiers.',
                     Level.COPPER: 'Maintiens 3 chantiers en parallèle, tous menés au bout.',
@@ -383,9 +389,7 @@ def _render_pedagogical_section(verdict: Verdict) -> str:
     if guide_items:
         guide_html = (
             '<div class="guide-section">'
-            '<h3>Comment progresser vers le niveau suivant</h3>'
-            + ''.join(guide_items) +
-            '</div>'
+            '<h3>Comment progresser vers le niveau suivant</h3>' + ''.join(guide_items) + '</div>'
         )
 
     # Glossaire
@@ -411,16 +415,10 @@ def _render_pedagogical_section(verdict: Verdict) -> str:
 
     return (
         '<div class="pedagogy">'
-        '<h2>Pour aller plus loin</h2>'
-        + guide_html +
-        '<h3>Glossaire AIDD</h3>'
-        '<div class="glossary-grid">'
-        + ''.join(glossary_items) +
-        '</div>'
+        '<h2>Pour aller plus loin</h2>' + guide_html + '<h3>Glossaire AIDD</h3>'
+        '<div class="glossary-grid">' + ''.join(glossary_items) + '</div>'
         '<h3>Références curatées</h3>'
-        '<div class="ref-grid">'
-        + ''.join(ref_items) +
-        '</div>'
+        '<div class="ref-grid">' + ''.join(ref_items) + '</div>'
         '</div>'
     )
 
@@ -446,7 +444,7 @@ def render_html(verdict: Verdict) -> str:
     errors_section = f'<h2>Données invalides</h2>{errors_html}' if verdict.data_errors else ''
 
     flags_html = ''.join(
-        f'<div class="flag"><strong>{escape(f.titre)}</strong> · {escape(f.constat)} '
+        f'<div class="flag">⚠ Vigilance · <strong>{escape(f.titre)}</strong> · {escape(f.constat)} '
         f'<em>({escape(f.source)})</em>'
         + (f'<div><em>Question : {escape(f.question)}</em></div>' if f.question else '')
         + '</div>'
@@ -456,8 +454,11 @@ def render_html(verdict: Verdict) -> str:
         f'<h2>Red flags (hypothèses à vérifier)</h2>{flags_html}' if verdict.red_flags else ''
     )
 
-    # Next steps section
-    next_html = ''.join(f'<div class="next">{escape(n)}</div>' for n in verdict.next_steps)
+    # Next steps section. Préfixe textuel — pas seulement la couleur de bordure
+    # — pour rester lisible pour un daltonien ou un lecteur d'écran (10.1.c).
+    next_html = ''.join(
+        f'<div class="next">→ Piste · {escape(n)}</div>' for n in verdict.next_steps
+    )
     next_section = (
         f"<h2>Monter d'un cran / levée d'incertitude</h2>{next_html}" if verdict.next_steps else ''
     )
@@ -472,6 +473,9 @@ def render_html(verdict: Verdict) -> str:
         '&rarr; refus de trancher.</p>'
         '<p><strong>Limites :</strong> séniorité, qualité de code et neurotype non mesurés. '
         'Un niveau reflète une adoption, jamais une valeur humaine.</p>'
+        '<p><strong>Sources :</strong> référentiel AIDD officiel '
+        '(<a href="https://github.com/ai-driven-dev/laivel-up" target="_blank" '
+        'rel="noopener">github.com/ai-driven-dev/laivel-up</a>).</p>'
         '</div>'
     )
 
@@ -553,14 +557,17 @@ def render_html(verdict: Verdict) -> str:
     color: var(--text);
   }}
 
-  /* Badge verdict — pixel art style */
+  /* Badge verdict — pixel art style. Le verdict est ce que le jury doit
+     comprendre « en un coup d'œil » (critère n°1) : sa taille doit largement
+     dépasser celle du h1 (1rem) plutôt que rivaliser avec lui (10.1.e). */
   .badge {{
     display: inline-block;
-    padding: 0.5rem 1rem;
+    padding: 0.9rem 1.6rem;
     font-family: 'Press Start 2P', monospace;
-    font-size: 0.7rem;
+    font-size: 1.3rem;
+    line-height: 1.5;
     font-weight: 400;
-    margin: 1rem 0;
+    margin: 1.2rem 0;
     border: 3px solid;
     image-rendering: pixelated;
     text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
@@ -574,9 +581,13 @@ def render_html(verdict: Verdict) -> str:
       inset 2px 2px 0px rgba(0,204,68,0.3),
       inset -2px -2px 0px rgba(0,0,0,0.3);
   }}
+  /* Contraste WCAG vérifié le 30/08 (10.1.d) : #cc3333 (--danger) sur fond
+     #330011 ne donne que 3.56:1, sous le seuil AA texte normal (4.5:1).
+     #ff6b6b sur le même fond donne 6.59:1 — le bordé/box-shadow décoratifs
+     restent en --danger (pas soumis à la contrainte de contraste texte). */
   .badge.ko {{
     background: #330011;
-    color: var(--danger);
+    color: #ff6b6b;
     border-color: var(--danger);
     box-shadow:
       inset 2px 2px 0px rgba(204,51,51,0.3),

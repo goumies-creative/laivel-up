@@ -68,7 +68,7 @@ error_console = Console(stderr=True, no_color=NO_COLOR)
 
 # ─── App ─────────────────────────────────────────────────────────────
 app = typer.Typer(
-    add_completion=False,
+    add_completion=True,
     help="Évaluation du niveau d'adoption de l'AIDD des développeurs.",
     no_args_is_help=True,
 )
@@ -166,8 +166,21 @@ def main(
         is_eager=True,
         help='Affiche la version',
     ),
+    color: bool | None = typer.Option(
+        None,
+        '--color/--no-color',
+        help='Force ou désactive la couleur (surcharge NO_COLOR/FORCE_COLOR).',
+    ),
 ) -> None:
     """Évaluation du niveau d'adoption de l'AIDD des développeurs."""
+    if color is not None:
+        # Le flag explicite surcharge NO_COLOR/FORCE_COLOR (lus une seule fois
+        # à l'import). console/error_console sont recréés ici plutôt que
+        # mutés en place : Console n'expose pas de setter fiable post-construction
+        # pour son système de couleurs.
+        global console, error_console
+        console = make_console(no_color=not color)
+        error_console = Console(stderr=True, no_color=not color)
 
 
 # ─── schema command (P0.3) ──────────────────────────────────────────
@@ -231,6 +244,19 @@ NES_SUCCESS = '#00cc44'
 NES_WARNING = '#ccaa00'
 NES_DANGER = '#cc3333'
 
+# Couleur Rich par niveau, partagée entre la barre de progression
+# (_nes_level_bar) et le tableau d'axes (_print_verdict) : un axe RED doit
+# se voir en rouge partout, pas seulement dans l'un des deux rendus (9.1.c).
+LEVEL_RICH_COLORS: dict[Level, str] = {
+    Level.WHITE: 'dim',
+    Level.RED: 'red',
+    Level.BLUE: 'blue',
+    Level.GREEN: 'green',
+    Level.COPPER: 'yellow',
+    Level.SILVER: 'bright_white',
+    Level.GOLD: 'bright_yellow',
+}
+
 PIXEL_H = '\u2580'  # ▀ upper half block
 PIXEL_L = '\u2584'  # ▄ lower half block
 PIXEL_F = '\u2588'  # █ full block
@@ -273,16 +299,7 @@ def _nes_level_bar(level: Level | None, max_level: Level = Level.GOLD) -> str:
         return f'[dim]{PIXEL_D * 7}[/dim]'
     filled = level.value + 1
     empty = max_level.value + 1 - filled
-    colors = {
-        Level.WHITE: 'dim',
-        Level.RED: 'red',
-        Level.BLUE: 'blue',
-        Level.GREEN: 'green',
-        Level.COPPER: 'yellow',
-        Level.SILVER: 'bright_white',
-        Level.GOLD: 'bright_yellow',
-    }
-    c = colors.get(level, 'dim')
+    c = LEVEL_RICH_COLORS.get(level, 'dim')
     return f'[{c}]{PIXEL_F * filled}[/{c}][dim]{PIXEL_D * empty}[/dim]'
 
 
@@ -301,24 +318,15 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
     )
     table.add_column('AXE', style='bold')
     table.add_column('NIVEAU')
-    table.add_column('BARRE')
     table.add_column('CONFIANCE')
 
     for a in verdict.axis_scores:
         lvl_str = level_label(a.level)
-        bar = _nes_level_bar(a.level)
         conf = f'{a.confidence:.0%}' if a.level is not None else '--'
-        color = (
-            'green'
-            if a.level is not None and a.level.value >= 3
-            else 'yellow'
-            if a.level is not None
-            else 'dim'
-        )
+        color = LEVEL_RICH_COLORS.get(a.level, 'dim')
         table.add_row(
             axis_label(a.axe),
             f'[{color}]{lvl_str}[/{color}]',
-            bar,
             conf,
         )
     console.print(table)
@@ -400,7 +408,18 @@ def _filter_fields(data: dict[str, Any], fields_str: str) -> dict[str, Any]:
 
 
 # ─── evaluate command (P0.1 + P1.3 + P2.2) ─────────────────────────
-@app.command(name='evaluate')
+EVALUATE_EPILOG = """
+Exemples :
+
+  laivelup evaluate profil.json                 Verdict + rapports md/html
+  laivelup evaluate profil.json --json          Sortie JSON (CI/agent)
+  laivelup evaluate profil.json --fail-on RED   Exit 1 si niveau < RED
+  laivelup evaluate profil.json --out rapports  Choisir le dossier de sortie
+  laivelup evaluate profil.json --no-html       Rapport Markdown seul
+"""
+
+
+@app.command(name='evaluate', epilog=EVALUATE_EPILOG)
 def evaluate_profile(
     profil: Path = typer.Argument(..., help='Profil JSON à évaluer.'),
     out: Path = typer.Option(Path('rapports'), '--out', help='Dossier des rapports.'),
@@ -466,7 +485,16 @@ def evaluate_profile(
 
 
 # ─── interrogate command ────────────────────────────────────────────
-@app.command()
+INTERROGATE_EPILOG = """
+Exemples :
+
+  laivelup interrogate                          Démarre un entretien à vide
+  laivelup interrogate profil.json              Repart d'un profil existant
+  laivelup interrogate profil.json --max-turns 3
+"""
+
+
+@app.command(epilog=INTERROGATE_EPILOG)
 def interrogate(
     profil: Path | None = typer.Argument(None, help='Profil JSON de départ (optionnel).'),
     out: Path = typer.Option(Path('rapports'), '--out', help='Dossier des rapports.'),

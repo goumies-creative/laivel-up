@@ -96,15 +96,15 @@
 +------------------------------------------+
 
 
-               VERDICT : entretien               
-┏━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━┓
-┃ AXE          ┃ NIVEAU   ┃ BARRE   ┃ CONFIANCE ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━┩
-│ Taille       │ 🔹 Blue  │ ███░░░░ │ 60%       │
-│ Harness      │ 🔹 Blue  │ ███░░░░ │ 90%       │
-│ Intervention │ 🔹 Blue  │ ███░░░░ │ 80%       │
-│ En parallèle │ 🟢 Green │ ████░░░ │ 80%       │
-└──────────────┴──────────┴─────────┴───────────┘
+          VERDICT : entretien          
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ AXE          ┃ NIVEAU   ┃ CONFIANCE ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━┩
+│ Taille       │ 🔹 Blue  │ 60%       │
+│ Harness      │ 🔹 Blue  │ 90%       │
+│ Intervention │ 🔹 Blue  │ 80%       │
+│ En parallèle │ 🟢 Green │ 80%       │
+└──────────────┴──────────┴───────────┘
 
   > NIVEAU : 🔹 Blue
   > Axe plancher : size
