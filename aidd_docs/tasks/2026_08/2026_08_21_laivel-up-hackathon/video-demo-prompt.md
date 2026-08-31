@@ -57,7 +57,7 @@ Usage:
 - Durée totale : ~50s de commandes + pauses = ~75s au total (marge pour narration sous-titres)
 - `subprocess.run(cmd, check=True)` + gestion erreurs propre
 - Compatible Windows (`sys.executable` ou `python` direct)
-- Commentaires每行 en français (docstrings)
+- Commentaires ligne par ligne en français (docstrings)
 - **Pas de franglais** : français pur avec féminisation technique (la CLI, la PR)
 
 ### Fichier 2 : `docs/VIDEO_PRODUCTION.md`

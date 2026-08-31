@@ -134,7 +134,7 @@ Appelé une seule fois (`team.py:163`). La couche d'indirection n'ajoute aucune 
 
 **report.py** concentre : rendu Markdown, rendu HTML (563l template inline), sérialisation JSON, glossaire, références, couleurs. Le template HTML domine le fichier.
 
-**Confiance:** 65 — les fichiers sont gros mais la structure interne est cohérente. Le vrai coût est la lisibilité d'un新developpeur face à 1000+ lignes.
+**Confiance:** 65 — les fichiers sont gros mais la structure interne est cohérente. Le vrai coût est la lisibilité pour un nouveau développeur face à 1000+ lignes.
 
 ---
 

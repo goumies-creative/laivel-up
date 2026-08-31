@@ -152,7 +152,7 @@ Aucun hot path n'a de complexité > O(n) avec n significatif. Le scoring tourne 
 |--------|-------|
 | Findings total | 4 |
 | Confirmés (AIDD) | 2 (F1 cold-start, F2 subprocess) |
-| Nouveaux | 2 (F3 CSS rebuild, F4 ascii_fallback —后者 suppress) |
+| Nouveaux | 2 (F3 CSS rebuild, F4 ascii_fallback — ce dernier à supprimer) |
 | Réfutés | 1 (N+1 test_team_rgpd) |
 | P0 | 0 |
 | P1 | 1 (cold-start CLI) |

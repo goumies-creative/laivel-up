@@ -32,7 +32,7 @@ schema.py      → 80%+  (validation)
 
 - **Un test = une assertion** : chaque test vérifie UNE chose
 - **Isolation** : pas de dépendance entre tests
-- **Reproductibilité** : mêmes entrées → mêmes sorties (seed hypothesis固定的)
+- **Reproductibilité** : mêmes entrées → mêmes sorties (seed hypothesis fixée)
 - **Nommage** : `test_<ce_qu'on_teste>_<ce_qu'on_s attend>`
 
 ### Exemples de tests critiques
