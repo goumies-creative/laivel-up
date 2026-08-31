@@ -720,7 +720,9 @@ def team_evaluate(
         console.print('[bold yellow]Refus de trancher.[/bold yellow]')
 
     md, html_path = write_reports(verdict, out, with_html=html)
-    console.print(f'[dim]Rapport : {md}[/dim]')
+    console.print(f'[dim]Rapport Markdown : {md}[/dim]')
+    if html_path:
+        console.print(f'[dim]Rapport HTML     : {html_path}[/dim]')
 
 
 @team_app.command(name='export')

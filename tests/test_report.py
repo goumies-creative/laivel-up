@@ -212,6 +212,25 @@ class TestWriteReports:
         md, _ = write_reports(v, tmp_path)
         assert 'mon-profil' in md.name.lower()
 
+    def test_timestamped_filename(self, tmp_path):
+        """Les rapports de verdict sont horodatés : jamais écrasés."""
+        v = _make_verdict()
+        md1, html1 = write_reports(v, tmp_path, stamp='20260831-060000')
+        md2, html2 = write_reports(v, tmp_path, stamp='20260831-060100')
+        assert md1.name.endswith('-20260831-060000.md')
+        assert md2.name.endswith('-20260831-060100.md')
+        assert md1.name != md2.name
+        assert html1 is not None and html2 is not None
+        assert md1.exists() and md2.exists()
+
+    def test_default_stamp_format(self, tmp_path):
+        """Sans stamp injecté : suffixe horodaté YYYYMMDD-HHMMSS (slug + sel hex)."""
+        import re
+
+        v = _make_verdict()
+        md, _ = write_reports(v, tmp_path)
+        assert re.fullmatch(r'test-profile-[0-9a-f]{8}-\d{8}-\d{6}\.md', md.name), md.name
+
     def test_slug_escape_raises_value_error(self, tmp_path, monkeypatch):
         """Sécurité : un slug malicieux qui s'échappe du dossier de sortie est refusé."""
         from laivelup import report as report_mod

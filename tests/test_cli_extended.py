@@ -1316,3 +1316,85 @@ class TestInstallCompletion:
         assert r.exit_code == 0, r.output
         assert (tmp_path / '.bashrc').exists()
         assert (tmp_path / '.bash_completions' / 'laivelup.sh').exists()
+
+
+# --- rapports horodatés : une évaluation n'écrase plus la précédente ------
+
+
+class TestTimestampedReports:
+    def test_evaluate_twice_keeps_both_reports(self, tmp_path, monkeypatch):
+        """2 évaluations du même profil -> 2 rapports distincts."""
+        from datetime import datetime
+
+        from laivelup import report as report_mod
+
+        times = iter([datetime(2026, 8, 31, 6, 0, 0), datetime(2026, 8, 31, 6, 1, 0)])
+
+        class FakeDT(datetime):
+            @classmethod
+            def now(cls, tz=None):  # noqa: ARG003 — signature datetime.now
+                return next(times)
+
+        monkeypatch.setattr(report_mod, 'datetime', FakeDT)
+        profile = tmp_path / 'p.json'
+        profile.write_text(
+            json.dumps({'name': 'dup', 'traces': {'pr_sizes': ['M'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        out = tmp_path / 'out'
+        r1 = runner.invoke(app, ['evaluate', str(profile), '--out', str(out), '--no-html'])
+        r2 = runner.invoke(app, ['evaluate', str(profile), '--out', str(out), '--no-html'])
+        assert r1.exit_code == 0 and r2.exit_code == 0
+        mds = sorted(out.glob('dup-*.md'))
+        assert len(mds) == 2
+        assert mds[0].name.endswith('-20260831-060000.md')
+        assert mds[1].name.endswith('-20260831-060100.md')
+
+
+# --- exports équipe : Undécis lisible + chemin HTML affiché ---------------
+
+
+class TestTeamDisplayFixes:
+    def test_team_evaluate_shows_html_path(self, tmp_path):
+        """team evaluate affiche les 2 chemins quand le HTML est généré."""
+        import re
+
+        good = tmp_path / 'p.json'
+        good.write_text(
+            json.dumps({'name': 'x', 'traces': {'pr_sizes': ['M'], 'parallel_projects': 1}}),
+            encoding='utf-8',
+        )
+        r_create = runner.invoke(
+            app, ['team', 'create', 'HtmlShow', 'alice'], catch_exceptions=False
+        )
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+        out = tmp_path / 'out'
+        r = runner.invoke(
+            app, ['team', 'evaluate', 'HtmlShow', alice_slug, str(good), '--out', str(out)]
+        )
+        assert r.exit_code == 0
+        assert 'Rapport Markdown' in r.output
+        assert 'Rapport HTML' in r.output
+        assert any(out.glob('x-*.html'))
+
+    def test_undecided_export_shows_dash_not_zero_percent(self, tmp_path):
+        """Un membre non décidé affiche « — » en confiance, pas « 0% »."""
+        import re
+
+        vide = tmp_path / 'vide.json'
+        vide.write_text(json.dumps({'name': 'vide'}), encoding='utf-8')
+        r_create = runner.invoke(app, ['team', 'create', 'Dash', 'alice'], catch_exceptions=False)
+        ansi_re = re.compile(r'\x1b\[[0-9;]*m')
+        slug_line = next(line for line in r_create.output.splitlines() if 'alice' in line)
+        alice_slug = re.search(r'([a-z0-9]+-[a-f0-9]{8})', ansi_re.sub('', slug_line)).group(1)
+        r_eval = runner.invoke(
+            app, ['team', 'evaluate', 'Dash', alice_slug, str(vide), '--out', str(tmp_path / 'o')]
+        )
+        assert r_eval.exit_code == 0
+        r_export = runner.invoke(app, ['team', 'export', 'Dash', '--out', str(tmp_path)])
+        assert r_export.exit_code == 0
+        content = (tmp_path / 'equipe-Dash.md').read_text(encoding='utf-8')
+        assert '| — |' in content
+        assert '0%' not in content

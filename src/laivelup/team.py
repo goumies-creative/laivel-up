@@ -287,7 +287,7 @@ def export_markdown(team: Team, path: Path) -> Path:
             continue
         level = m.level.name if m.level else '—'
         axis = axis_label(m.limiting_axis) if m.limiting_axis else '—'
-        conf = f'{m.confidence:.0%}'
+        conf = '—' if m.level is None else f'{m.confidence:.0%}'
         lines.append(f'| {m.name} | `{m_slug}` | {level} | {axis} | {conf} |')
 
     opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
@@ -302,8 +302,7 @@ def export_markdown(team: Team, path: Path) -> Path:
         for entry in history_filtered[-20:]:
             ts = entry['timestamp'][:10]
             level = entry['level'] or '—'
-            axis = axis_label(entry['limiting_axis']) if entry['limiting_axis'] else '—'
-            conf = f'{entry["confidence"]:.0%}'
+            conf = '—' if not entry['level'] else f'{entry["confidence"]:.0%}'
             slug_short = entry['slug'][:16] + '...'
             lines.append(f'| {ts} | {slug_short} | {level} | {axis} | {conf} |')
 
@@ -346,7 +345,7 @@ def export_html(team: Team, path: Path) -> Path:
         if m.opt_out:
             continue
         level = m.level.name if m.level else '—'
-        conf = f'{m.confidence:.0%}'
+        conf = '—' if m.level is None else f'{m.confidence:.0%}'
         kelas = 'ok' if m.level and m.level >= Level.BLUE else 'ko'
         rows.append(
             f'<tr><td>{html_escape(m.name)}</td><td><code>{html_escape(team_slug)}</code></td>'

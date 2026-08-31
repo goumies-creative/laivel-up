@@ -8,6 +8,7 @@ Aucun neurotype n'est mesuré, demandé ni inféré.
 
 from __future__ import annotations
 
+from datetime import datetime
 from html import escape
 from pathlib import Path
 
@@ -996,19 +997,23 @@ def render_html(verdict: Verdict) -> str:
 
 
 def write_reports(
-    verdict: Verdict, out_dir: Path, with_html: bool = True
+    verdict: Verdict, out_dir: Path, with_html: bool = True, stamp: str | None = None
 ) -> tuple[Path, Path | None]:
     out_dir.mkdir(parents=True, exist_ok=True)
     out_dir_resolved = out_dir.resolve()
     safe = slug(verdict.name)
-    md = out_dir / f'{safe}.md'
+    # Horodatage systématique : chaque évaluation produit des artefacts datés,
+    # jamais écrasés (stamp injectable pour la reproductibilité des tests).
+    if stamp is None:
+        stamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    md = out_dir / f'{safe}-{stamp}.md'
     # Security: ensure the generated path stays within out_dir
     if not md.resolve().is_relative_to(out_dir_resolved):
         raise ValueError(f'Generated path escapes output directory: {md}')
     md.write_text(render_markdown(verdict), encoding='utf-8')
     html = None
     if with_html:
-        html = out_dir / f'{safe}.html'
+        html = out_dir / f'{safe}-{stamp}.html'
         if not html.resolve().is_relative_to(out_dir_resolved):
             raise ValueError(f'Generated path escapes output directory: {html}')
         html.write_text(render_html(verdict), encoding='utf-8')
