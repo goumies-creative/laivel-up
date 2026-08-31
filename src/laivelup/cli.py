@@ -368,7 +368,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
     for f in verdict.red_flags:  # pragma: no cover — rendu Rich uniquement
         console.print()
         console.print(f'  [bold red]!! ALERTE : {f.titre}[/bold red]')
-        console.print(f'     {f.constat}')
+        console.print(f'     {f.constat} ({f.source})')
         if f.question:
             console.print(f'     [cyan]> {f.question}[/cyan]')
 
@@ -567,7 +567,7 @@ def interrogate(
 
         # ── Feedback 8-bit ──
         console.print()
-        console.print('[green]> OK[/green] [dim]Réponse enregistrée.[/dim]')
+        console.print(f'[green]> OK[/green] [dim]{_feedback_for(profile, q, answer)}[/dim]')
     else:
         verdict = evaluate(profile)
 
@@ -892,6 +892,25 @@ _LEVELS_BY_KEYWORD = (
     ('vert', 'GREEN'),
     ('cuivre', 'COPPER'),
 )
+
+
+def _feedback_for(profile: ProfileData, question: str, answer: str) -> str:
+    """Feedback après fusion : nomme ce qui a été enregistré, pour que la
+    réponse ne soit jamais confondue avec la création d'une donnée. La valeur
+    d'une trace vient du profil ou du chiffre donné ; une confirmation ne fait
+    que la corroborer."""
+    t = profile.traces
+    if question == QUESTION_IDS['RETRIES_RATIO'] and t.get('retries_after_fact') is not None:
+        return f'Proportion de reprise : {t["retries_after_fact"]:.0%}.'
+    if question == QUESTION_IDS['RETRIES_TRIANGULATED'] and t.get('retries_triangulated') is True:
+        return 'Reprise corroborée · la valeur des traces reste celle-ci.'
+    if (
+        question == QUESTION_IDS['ADOPTION_SIGNALS']
+        and answer.strip().lower().startswith(('oui', 'yes'))
+        and t.get('context_versioned') is True
+    ):
+        return 'Contexte marqué comme versionné.'
+    return 'Réponse enregistrée.'
 
 
 def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileData:

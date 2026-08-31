@@ -44,7 +44,7 @@
 > QUESTION 3/6 ██████████
 
 
-> OK Réponse enregistrée.
+> OK Proportion de reprise : 40%.
 
   ÉTAPE 4/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
   Taille: ███░░░░
@@ -57,7 +57,7 @@
 > QUESTION 4/6 ██████████
 
 
-> OK Réponse enregistrée.
+> OK Reprise corroborée · la valeur des traces reste celle-ci.
 
   ÉTAPE 5/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
   Taille: ███░░░░
@@ -70,7 +70,7 @@
 > QUESTION 5/6 ██████████
 
 
-> OK Réponse enregistrée.
+> OK Contexte marqué comme versionné.
 
   ÉTAPE 6/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
   Taille: ███░░░░

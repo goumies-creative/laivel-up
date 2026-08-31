@@ -1215,3 +1215,54 @@ class TestCompletion:
         )
         assert r.exit_code == 0
         assert 'Register-ArgumentCompleter' in r.output
+
+
+# --- feedback interrogate : nomme ce qui a été enregistré ----------------
+
+
+class TestFeedbackFor:
+    def test_ratio_shows_value(self):
+        from laivelup.cli import _feedback_for, _merge_answer
+        from laivelup.questions import QUESTION_IDS
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['RETRIES_RATIO'], '40 %')
+        fb = _feedback_for(p, QUESTION_IDS['RETRIES_RATIO'], '40 %')
+        assert 'Proportion de reprise : 40%' in fb
+
+    def test_ratio_without_number_stays_generic(self):
+        from laivelup.cli import _feedback_for, _merge_answer
+        from laivelup.questions import QUESTION_IDS
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['RETRIES_RATIO'], 'je ne sais pas')
+        assert _feedback_for(p, QUESTION_IDS['RETRIES_RATIO'], 'je ne sais pas') == (
+            'Réponse enregistrée.'
+        )
+
+    def test_triangulated_names_the_confirmation(self):
+        from laivelup.cli import _feedback_for, _merge_answer
+        from laivelup.questions import QUESTION_IDS
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['RETRIES_TRIANGULATED'], 'oui voici 3 PR')
+        fb = _feedback_for(p, QUESTION_IDS['RETRIES_TRIANGULATED'], 'oui voici 3 PR')
+        assert 'corroborée' in fb
+        assert 'traces' in fb
+
+    def test_context_versioned_named(self):
+        from laivelup.cli import _feedback_for, _merge_answer
+        from laivelup.questions import QUESTION_IDS
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['ADOPTION_SIGNALS'], "oui j'ai un contexte")
+        fb = _feedback_for(p, QUESTION_IDS['ADOPTION_SIGNALS'], "oui j'ai un contexte")
+        assert 'versionné' in fb
+
+    def test_generic_default(self):
+        from laivelup.cli import _feedback_for, _merge_answer
+        from laivelup.questions import QUESTION_IDS
+
+        p = ProfileData(name='x')
+        _merge_answer(p, QUESTION_IDS['PR_SIZES'], 'souvent des M')
+        assert _feedback_for(p, QUESTION_IDS['PR_SIZES'], 'souvent des M') == 'Réponse enregistrée.'
