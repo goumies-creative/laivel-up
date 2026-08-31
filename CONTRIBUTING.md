@@ -98,7 +98,7 @@ Format conventionnel :
 
 Types : `feat`, `fix`, `docs`, `test`, `refactor`, `ci`, `chore`
 
-## Pull Requests
+## Pull requests (PR)
 
 1. Fork et branche depuis `main`
 2. Ajouter des tests pour toute nouvelle fonctionnalité
@@ -106,7 +106,7 @@ Types : `feat`, `fix`, `docs`, `test`, `refactor`, `ci`, `chore`
 4. Mettre à jour la documentation si nécessaire
 5. Demander une review
 
-## Release Process
+## Processus de release
 
 ### Prérequis
 

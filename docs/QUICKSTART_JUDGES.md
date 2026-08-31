@@ -16,37 +16,37 @@ pip install .
 laivelup --help
 ```
 
-### Evaluer un profil
+### Évaluer un profil
 
 ```bash
 laivelup evaluate exemples/profil-maison-1.json --no-html
 ```
 
-### Evaluer avec rapport HTML
+### Évaluer avec rapport HTML
 
 ```bash
 laivelup evaluate exemples/profil-maison-1.json --out rapports
 ```
 
-### Mode entretien guide
+### Mode entretien guidé
 
 ```bash
 laivelup interrogate --max-turns 6
 ```
 
-### Creer une equipe
+### Créer une équipe
 
 ```bash
 laivelup team create Equipe-Alpha "Alice,Bob,Charlie"
 ```
 
-### Evaluer un membre
+### Évaluer un membre
 
 ```bash
 laivelup team evaluate Equipe-Alpha alice exemples/profil-maison-1.json
 ```
 
-### Exporter les resultats
+### Exporter les résultats
 
 ```bash
 laivelup team export Equipe-Alpha --format md --out rapports
@@ -59,7 +59,7 @@ python scripts/calibrate.py --template
 python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff --fix
 ```
 
-## Verification de qualite
+## Vérification de qualité
 
 ```bash
 pytest -q                    # 85+ tests

@@ -49,7 +49,7 @@ documentée dans la sortie, et reproductible.
   que les données prouvent : l'erreur par défaut est le refus + la question, pas
   la note arbitraire.
 
-## Argument pitche-able (CNIL / AI Act)
+## Argument clé (CNIL / AI Act)
 
 > Un outil qui évite trois pièges réglementaires : pas de données sensibles
 > traitées (aucun neurotype, aucune donnée personnelle exploitable — les slugs
