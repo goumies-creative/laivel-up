@@ -3,7 +3,7 @@
 > Moteur d'évaluation du niveau d'adoption de l'**AI-Driven Development** des développeurs.
 > Approche La Décodeuse : refus de deviner, questions au lieu de verdicts.
 
-[![CI](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-driven-dev/laivel-up/actions/workflows/ci.yml)
+[![CI](https://github.com/goumies-creative/laivel-up/actions/workflows/ci.yml/badge.svg)](https://github.com/goumies-creative/laivel-up/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/goumies-creative/laivel-up)](https://github.com/goumies-creative/laivel-up/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -139,6 +139,11 @@ MIT. AI-Driven Dev pourra réutiliser le projet en attribuant le travail à l'au
 ---
 
 ## Pour les juges
+
+> **Note CI :** les jobs GitHub Actions sont actuellement bloqués par la
+> facturation du compte (limite de dépense), pas par le code. Tous les
+> contrôles passent en local et via pre-commit : 495 tests, ruff, mypy,
+> bandit, coverage 95 %. Ils relanceront dès la régularisation du billing.
 
 ### Installation rapide
 

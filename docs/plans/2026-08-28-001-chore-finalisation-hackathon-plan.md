@@ -742,6 +742,15 @@ via le prompt [`docs/prompts/revue-copy-francaise.md`](docs/prompts/revue-copy-f
 > (effort XS-S, valeur directe pour le rendu) ; tout le reste est
 > post-soumission.
 
+> **État CI (31/08) :** les jobs GitHub Actions échouent sur la facturation
+> du compte (« recent account payments have failed or your spending limit
+> needs to be increased »), pas sur le code. Fixes déjà poussés et verts en
+> local : snapshots portables cross-OS, bandit B110 skippé (exit 0), 481
+> tests · ruff · mypy. Re-vérifier sur GitHub après régularisation du
+> billing ; note de transparence ajoutée au README (Pour les juges).
+> Suite au passage : complétion shell documentée (contournement Windows),
+> glossaire « Reprise », feedbacks interrogate nommés (495 tests).
+
 ### ☐ 11.1 — Mutation testing avec `mutmut`
 **Effort : M-L (config + run, mutmut est lent sur une suite de 481 tests) · Timing : après soumission**
 
