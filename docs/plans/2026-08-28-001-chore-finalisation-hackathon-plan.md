@@ -730,3 +730,73 @@ pas de franglais.
 
 **Méthode :** passage en revue avec Claude Desktop (compte gratuit)
 via le prompt [`docs/prompts/revue-copy-francaise.md`](docs/prompts/revue-copy-francaise.md).
+
+---
+
+## 11. Chantiers proposés (31/08, priorités posées par Romy) · à ne pas démarrer avant 1.6/2.2/2.4
+
+> **Rappel de la règle posée en section 9, encore plus vraie à quelques
+> heures du rendu :** aucun des chantiers ci-dessous ne démarre avant que
+> 1.6, 2.2 et 2.4 soient clos : non confirmé clos à ce jour (cf. journal).
+> Seuls **11.4** et **11.6** sont potentiellement éligibles *avant* midi
+> (effort XS-S, valeur directe pour le rendu) ; tout le reste est
+> post-soumission.
+
+### ☐ 11.1 — Mutation testing avec `mutmut`
+**Effort : M-L (config + run, mutmut est lent sur une suite de 481 tests) · Timing : après soumission**
+
+**Pourquoi :** mesure la robustesse réelle des tests (pas juste leur couverture) en mutant le code et vérifiant que les tests échouent. Valeur réelle, mais aucun impact sur les critères jury directs · pas de raison de le lancer avant le rendu.
+
+- ☐ Mobiliser les skills/agents AIDD et compound engineering pertinents (à identifier)
+- ☐ Configurer `mutmut` sur `src/laivelup/`
+- ☐ Lancer, analyser les mutants survivants
+- ☐ Renforcer les tests sur les zones faibles identifiées
+
+### ☐ 11.2 — Sorties « agréables + ludiques, inspirées jeu vidéo »
+**Effort : M · Timing : après soumission (recoupe §9 et §10 déjà posés le 29/08)**
+
+**Pourquoi :** le jury insiste sur les sorties. Constat réel : le HTML (`report.py`) a déjà une direction 8-bit/Patapon (world map, badges pixel, palette néon) ; c'est le **CLI** qui reste une table Rich neutre sans identité · l'écart est bien réel côté CLI, moins côté HTML.
+
+- ☐ Reprendre §9.1.c (couleurs par niveau dans la table Rich) et §10.2 (direction artistique brutaliste complète) comme base
+- ☐ Étendre l'identité pixel/jeu vidéo au CLI (pas seulement le HTML)
+
+### ☐ 11.3 — Bonus TUI 8 bits (branche dédiée)
+**Effort : L · Timing : bonus conditionnel post-soumission, sur branche isolée**
+
+**Pourquoi :** posé par Romy elle-même comme conditionnel (« si j'ai le temps »). Bon réflexe de l'isoler sur une branche dédiée : aucun risque sur `main`/le rendu si le temps manque.
+
+- ☐ Créer la branche dédiée
+- ☐ Scoper le MVP du TUI (bibliothèque à choisir, ex. Textual)
+
+### ☐ 11.4 — Tests manuels via la doc juges + amélioration au passage
+**Effort : S · Timing : éligible avant midi si marge, sinon juste après**
+
+**Pourquoi :** dogfooding direct de l'expérience jury (`QUICKSTART_JUDGES.md`) · recoupe la vérification de 1.6 (`pip install laivelup` fonctionne réellement) et 2.4 (la commande de lancement annoncée est la bonne). Valeur directe pour le rendu, pas du pur polish.
+
+- ☐ Suivre `docs/QUICKSTART_JUDGES.md` pas à pas, en conditions réelles
+- ☐ Noter tout point de friction et corriger le doc au passage
+
+### ☐ 11.5 — Audits AIDD + compound engineering complets
+**Effort : L · Timing : après soumission**
+
+**Pourquoi :** le dernier audit 7-piliers (28/08) a produit 69 findings sur du code qui passait déjà tous les checks · relancer un audit complet à quelques heures du rendu risque d'ouvrir des chantiers qu'il n'y aura pas le temps de fermer proprement.
+
+### ☐ 11.6 — Ne pas écraser l'évaluation précédente d'un membre lors d'une réévaluation
+**Effort : XS pour vérifier, S si correctif réel · Timing : éligible avant midi (vérification rapide d'abord)**
+
+**Pourquoi :** intégrité des données d'équipe. `team.history` semble déjà accumuler un enregistrement par évaluation (cf. tests RGPD droit à l'oubli · `test_remove_member_purge_historique` vérifie `len(team.history) == 1` après un seul `evaluate_member`), mais ça reste à confirmer sur le code réel de `team.py`, pas à supposer depuis les tests seuls.
+
+- ☐ Lire `team.py::evaluate_member` en entier avant toute conclusion
+- ☐ Confirmer si l'historique est bien préservé pour une mise à jour partielle des traces (pas seulement une évaluation complète)
+- ☐ Corriger si un écrasement réel est trouvé
+
+### ☐ 11.7 — Nouvel axe « Professionnalisation / Industrialisation » (optionnel, hors règle AND)
+**Effort : L · Timing : après soumission · décision de conception actée (31/08)**
+
+**Décision actée (31/08, Romy) :** l'axe sera **optionnel**, affiché à part, **hors de la règle AND** qui détermine le verdict principal (`min()` sur les 4 axes officiels). Ça lève le risque identifié précédemment : les 4 profils officiels restent calibrés COPPER/BLUE/GREEN/RED sans dépendre de données d'industrialisation qu'ils n'ont pas · la preuve « 4/4, zéro écart » du pitch n'est plus menacée. Reste un chantier volumineux (L) : barème à concevoir, intégration CLI/rapports MD/HTML sans polluer le verdict principal, nouvelles fixtures · toujours hors scope du 31/08, mais sans risque structurel sur le rendu.
+
+- ☐ Challenger la pertinence de l'axe face aux 4 axes officiels, avec les skills/agents AIDD et compound engineering pertinents
+- ☐ Concevoir l'affichage « bonus » (CLI + rapports MD/HTML) : visuellement distinct du verdict AND, jamais mélangé aux 4 axes qui déterminent le niveau
+- ☐ Vérifier si les données brutes des profils officiels (`profiles/*/git-activity.json`, `repo-context/`, `sonar-measures.json`, etc.) permettent réellement de répondre à cet axe
+- ☐ Créer, dans un dossier dédié, un profil officiel réaliste complet couvrant ce nouvel axe (basé sur l'existant officiel)
+- ☐ Créer un second profil avec 2 « trous » de données sur ce nouvel axe (cas refus de deviner)
