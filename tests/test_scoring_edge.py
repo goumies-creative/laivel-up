@@ -52,12 +52,12 @@ class TestNormalizeProfileErrors:
     def test_traces_not_dict(self):
         p = ProfileData(name='x', traces='not a dict')
         errors = normalize_profile(p)
-        assert any('must be an object' in e for e in errors)
+        assert any('doit être un objet' in e for e in errors)
 
     def test_pr_sizes_not_list(self):
         p = ProfileData(name='x', traces={'pr_sizes': 'S'})
         errors = normalize_profile(p)
-        assert any('pr_sizes must be a list' in e for e in errors)
+        assert any('pr_sizes' in e and 'doit être une liste' in e for e in errors)
 
     def test_pr_sizes_invalid_value(self):
         p = ProfileData(name='x', traces={'pr_sizes': ['S', 'XXL']})
@@ -67,72 +67,72 @@ class TestNormalizeProfileErrors:
     def test_retries_bool_is_error(self):
         p = ProfileData(name='x', traces={'retries_after_fact': True})
         errors = normalize_profile(p)
-        assert any('retries_after_fact must be a number' in e for e in errors)
+        assert any('retries_after_fact' in e and 'doit être un nombre' in e for e in errors)
 
     def test_retries_out_of_range(self):
         p = ProfileData(name='x', traces={'retries_after_fact': 1.5})
         errors = normalize_profile(p)
-        assert any('ratio between 0 and 1' in e for e in errors)
+        assert any('doit être entre 0 et 1' in e for e in errors)
 
     def test_retries_non_numeric(self):
         p = ProfileData(name='x', traces={'retries_after_fact': 'abc'})
         errors = normalize_profile(p)
-        assert any('must be a number' in e for e in errors)
+        assert any('doit être un nombre' in e for e in errors)
 
     def test_parallel_projects_bool(self):
         p = ProfileData(name='x', traces={'parallel_projects': True})
         errors = normalize_profile(p)
-        assert any('parallel_projects' in e and 'integer' in e for e in errors)
+        assert any('parallel_projects' in e and 'entier' in e for e in errors)
 
     def test_parallel_projects_negative(self):
         p = ProfileData(name='x', traces={'parallel_projects': -1})
         errors = normalize_profile(p)
-        assert any('non-negative' in e for e in errors)
+        assert any('>= 0' in e for e in errors)
 
     def test_parallel_projects_not_int(self):
         p = ProfileData(name='x', traces={'parallel_projects': 'abc'})
         errors = normalize_profile(p)
-        assert any('parallel_projects' in e and 'integer' in e for e in errors)
+        assert any('parallel_projects' in e and 'entier' in e for e in errors)
 
     def test_projects_completed_bool(self):
         p = ProfileData(name='x', traces={'projects_completed': False})
         errors = normalize_profile(p)
-        assert any('projects_completed' in e and 'integer' in e for e in errors)
+        assert any('projects_completed' in e and 'entier' in e for e in errors)
 
     def test_declared_level_unknown(self):
         p = ProfileData(name='x', declared_level='PLATINUM')  # type: ignore[arg-type]
         errors = normalize_profile(p)
-        assert any('unknown level' in e for e in errors)
+        assert any('niveau inconnu' in e for e in errors)
 
     def test_adoption_signal_not_bool(self):
         p = ProfileData(name='x', traces={'context_versioned': 'yes'})
         errors = normalize_profile(p)
-        assert any('context_versioned must be a boolean' in e for e in errors)
+        assert any('context_versioned' in e and 'booléen' in e for e in errors)
 
     def test_agent_rules_not_bool(self):
         p = ProfileData(name='x', traces={'agent_rules_versioned': 1})
         errors = normalize_profile(p)
-        assert any('agent_rules_versioned must be a boolean' in e for e in errors)
+        assert any('agent_rules_versioned' in e and 'booléen' in e for e in errors)
 
     def test_retry_loops_not_bool(self):
         p = ProfileData(name='x', traces={'retry_loops': 'true'})
         errors = normalize_profile(p)
-        assert any('retry_loops must be a boolean' in e for e in errors)
+        assert any('retry_loops' in e and 'booléen' in e for e in errors)
 
     def test_prompts_not_bool(self):
         p = ProfileData(name='x', traces={'prompts': []})
         errors = normalize_profile(p)
-        assert any('prompts must be a boolean' in e for e in errors)
+        assert any('prompts' in e and 'booléen' in e for e in errors)
 
     def test_agents_autonomous_not_bool(self):
         p = ProfileData(name='x', traces={'agents_autonomous': 1})
         errors = normalize_profile(p)
-        assert any('agents_autonomous must be a boolean' in e for e in errors)
+        assert any('agents_autonomous' in e and 'booléen' in e for e in errors)
 
     def test_retries_triangulated_not_bool(self):
         p = ProfileData(name='x', traces={'retries_triangulated': 'yes'})
         errors = normalize_profile(p)
-        assert any('retries_triangulated must be a boolean' in e for e in errors)
+        assert any('retries_triangulated' in e and 'booléen' in e for e in errors)
 
     def test_no_errors_on_valid_profile(self):
         p = ProfileData(
@@ -178,14 +178,14 @@ class TestParallelMaxEdgeCases:
         level, conf, ev = parallel_max(p.traces)
         assert level == Level.GREEN
         assert conf < 0.5
-        assert any('completion to confirm' in e for e in ev)
+        assert any('complétude à confirmer' in e for e in ev)
 
     def test_completed_less_than_n(self):
         p = ProfileData(name='x', traces={'parallel_projects': 5, 'projects_completed': 2})
         level, conf, ev = parallel_max(p.traces)
         assert level == Level.GREEN
         assert conf < 0.5
-        assert any('completed' in e for e in ev)
+        assert any('menés au bout' in e for e in ev)
 
     def test_completed_ge_3(self):
         p = ProfileData(name='x', traces={'parallel_projects': 5, 'projects_completed': 3})

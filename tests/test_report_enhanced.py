@@ -78,7 +78,7 @@ class TestProgressBar:
         v = Verdict(name='t', level=None, axis_scores=[], limiting_axis=None)
         html = render_html(v)
         assert 'width:0%' in html
-        assert 'UNDECIDED' in html
+        assert 'Undécis' in html
 
 
 class TestAxisDetail:
@@ -140,7 +140,7 @@ class TestFlagsHtml:
         html = render_html(v)
         assert 'Flag' in html
         assert 'Q?' in html
-        assert 'Red flags' in html
+        assert 'Alertes' in html
 
     def test_no_flags(self):
         v = _make_verdict(red_flags=[])

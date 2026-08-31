@@ -8,6 +8,7 @@ Le schema est aligné sur la grille officielle (4 axes, 7 niveaux).
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 _SCHEMA_PATH = Path(__file__).parent / 'schemas' / 'profile.schema.json'
@@ -26,6 +27,60 @@ def _load_schema() -> dict:
                 "Installez le package en mode dev : pip install -e '.[dev]'"
             )
     return _schema
+
+
+_TYPE_LABELS_FR: dict[str, str] = {
+    'string': 'une chaîne',
+    'integer': 'un entier',
+    'number': 'un nombre',
+    'boolean': 'un booléen',
+    'array': 'une liste',
+    'object': 'un objet',
+    'null': 'nul',
+}
+
+
+def _translate_jsonschema_error(error: object) -> str:
+    """Traduit les erreurs jsonschema courantes vers le style FR de
+    `_validate_minimal` (type/enum/required/minLength/minimum/maximum/
+    additionalProperties). Message brut jsonschema (EN) en repli si le
+    validateur n'est pas mappé : un message anglais exploitable vaut mieux
+    qu'un texte tronqué ou une erreur de traduction.
+    """
+    validator = error.validator  # type: ignore[attr-defined]
+
+    if validator == 'type':
+        expected = error.validator_value  # type: ignore[attr-defined]
+        if isinstance(expected, list):
+            labels = ' ou '.join(_TYPE_LABELS_FR.get(str(t), str(t)) for t in expected)
+        else:
+            labels = _TYPE_LABELS_FR.get(expected, str(expected))
+        return f'doit être {labels}'
+
+    if validator == 'enum':
+        return f'valeur invalide : attendu parmi {error.validator_value}'  # type: ignore[attr-defined]
+
+    if validator == 'required':
+        match = re.search(r"'(\w+)' is a required property", error.message)  # type: ignore[attr-defined]
+        prop = match.group(1) if match else '?'
+        return f'{prop} : propriété requise manquante'
+
+    if validator == 'minLength':
+        return 'trop court'
+
+    if validator == 'maxLength':
+        return 'trop long'
+
+    if validator == 'minimum':
+        return f'doit être >= {error.validator_value}'  # type: ignore[attr-defined]
+
+    if validator == 'maximum':
+        return f'doit être <= {error.validator_value}'  # type: ignore[attr-defined]
+
+    if validator == 'additionalProperties':
+        return 'propriété supplémentaire non autorisée'
+
+    return str(error.message)  # type: ignore[attr-defined]  # fallback brut (EN), non mappé
 
 
 def validate_profile(data: dict) -> list[str]:
@@ -47,7 +102,7 @@ def validate_profile(data: dict) -> list[str]:
     messages: list[str] = []
     for error in errors:
         path = '.'.join(str(p) for p in error.absolute_path) or 'profil'
-        messages.append(f'{path}: {error.message}')
+        messages.append(f'{path} : {_translate_jsonschema_error(error)}')
     return messages
 
 

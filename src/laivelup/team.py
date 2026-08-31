@@ -36,7 +36,7 @@ def _validate_team_name(name: str) -> None:
     if not name or not re.fullmatch(r'[a-zA-Z0-9_-]{1,64}', name):
         raise ValueError(
             f"Nom d'équipe invalide : '{name}'. "
-            'Seuls les caractères alphanumériques, tirets et underscores sont autorisés (1-64 chars).'
+            'Seuls les caractères alphanumériques, tirets et underscores sont autorisés (de 1 à 64 caractères).'
         )
 
 
@@ -53,7 +53,9 @@ def save_team(team: Team, path: Path | None = None) -> Path:
     target.parent.mkdir(parents=True, exist_ok=True)
     # Security: reject if parent is a symlink (G01)
     if target.parent.exists() and target.parent.is_symlink():
-        raise ValueError(f'Refus : le répertoire parent est un symlink : {target.parent}')
+        raise ValueError(
+            f'Refus : le répertoire parent est un lien symbolique (symlink) : {target.parent}'
+        )
     data = {
         'name': team.name,
         'salt': team.salt,
@@ -176,7 +178,7 @@ def evaluate_member(team: Team, member_slug: str, profile: ProfileData) -> Verdi
 
     member = team.members[member_slug]
     if member.opt_out:
-        raise ValueError(f"Membre '{member.name}' a activé l'opt-out RGPD — évaluation refusée.")
+        raise ValueError(f"Membre '{member.name}' a activé l'opt-out RGPD : évaluation refusée.")
 
     verdict = evaluate(profile)
 
@@ -275,10 +277,10 @@ def export_json(team: Team, path: Path) -> Path:
 def export_markdown(team: Team, path: Path) -> Path:
     """Exporte un rapport Markdown de l'équipe (exclut les membres en opt-out)."""
     lines = [f'# Équipe · {team.name}']
-    lines.append(f'\n*Exporté le {datetime.now().strftime("%Y-%m-%d %H:%M")}*\n')
+    lines.append(f'\n*Exporté le {datetime.now().strftime("%Y-%m-%d %H:%M")}.*\n')
 
     lines.append('\n## Membres\n')
-    lines.append('| Membre | Slug | Niveau | Axe plancher | Confiance |')
+    lines.append('| Membre | Pseudo (slug) | Niveau | Axe plancher | Confiance |')
     lines.append('|--------|------|--------|--------------|-----------|')
     for m_slug, m in team.members.items():
         if m.opt_out:
@@ -390,7 +392,7 @@ def export_html(team: Team, path: Path) -> Path:
 
 <h2>Membres</h2>
 <table>
-  <tr><th>Nom</th><th>Slug</th><th>Niveau</th><th>Axe</th><th>Confiance</th></tr>
+  <tr><th>Nom</th><th>Pseudo (slug)</th><th>Niveau</th><th>Axe</th><th>Confiance</th></tr>
   {''.join(rows)}
 </table>
 

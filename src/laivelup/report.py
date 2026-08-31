@@ -42,7 +42,7 @@ GLOSSARY: dict[str, str] = {
     ),
     'En parallèle': (
         'Combien de chantiers avancent en même temps, habituellement. '
-        "Un pic isolé ne compte pas — c'est la pratique régulière."
+        "Un pic isolé ne compte pas : c'est la pratique régulière."
     ),
     'Règle AND': (
         "Un niveau n'est atteint que si TOUTES ses cellules sont satisfaites. "
@@ -64,7 +64,7 @@ REFERENCES: list[dict[str, str]] = [
     {
         'url': 'https://github.com/ai-driven-dev/laivel-up/blob/main/levels/aidd.md',
         'title': 'Référentiel AIDD officiel',
-        'desc': 'La grille complète : 4 axes x 7 niveaux, règles et examples.',
+        'desc': 'La grille complète : 4 axes × 7 niveaux, règles et exemples.',  # noqa: RUF001
     },
     {
         'url': 'https://github.com/EveryInc/compound-engineering',
@@ -120,7 +120,7 @@ def render_markdown(verdict: Verdict) -> str:
                 ev = f'{ev} · variance : {a.variance}'
             lines.append(f'| {axis_label(a.axe)} | {label} | {conf} | {ev} |')
     if verdict.red_flags:
-        lines.append('\n## Red flags (hypothèses à vérifier)')
+        lines.append('\n## Alertes (hypothèses à vérifier)')
         for f in verdict.red_flags:
             lines.append(f'\n- **{f.titre}** ({"⚠" * f.severite}) · {f.constat} _({f.source})_')
             if f.question:
@@ -215,7 +215,7 @@ def _render_progress_bar(verdict: Verdict) -> str:
     current = verdict.level
     if current is None:
         pct = 0
-        current_name = 'UNDECIDED'
+        current_name = 'Undécis'
     else:
         pct = int((current.value / 6) * 100)
         current_name = current.name
@@ -312,7 +312,7 @@ def _why_this_level(axe: str, level: Level | None, _evidence: list[str]) -> str:
         'intervention': {
             Level.RED: "Reprise sur la majorité des PR. L'humain corrige beaucoup après l'IA.",
             Level.BLUE: "Reprise sur une partie des PR. L'humain intervient moins souvent.",
-            Level.GREEN: "Intervention aux étapes clés seulement. L'humain cadrage, l'IA exécute.",
+            Level.GREEN: "Intervention aux étapes clés seulement. L'humain cadre, l'IA exécute.",
             Level.COPPER: "Intervention ponctuelle. L'humain ne reprend presque jamais.",
             Level.SILVER: "Aucune intervention une fois la tâche cadrée. L'IA gère tout.",
             Level.GOLD: 'Même le cadrage est compris. Les agents prennent les tâches en autonomie.',
@@ -451,7 +451,7 @@ def render_html(verdict: Verdict) -> str:
         for f in verdict.red_flags
     )
     flags_section = (
-        f'<h2>Red flags (hypothèses à vérifier)</h2>{flags_html}' if verdict.red_flags else ''
+        f'<h2>Alertes (hypothèses à vérifier)</h2>{flags_html}' if verdict.red_flags else ''
     )
 
     # Next steps section. Préfixe textuel — pas seulement la couleur de bordure

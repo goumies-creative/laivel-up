@@ -3,7 +3,7 @@
 | LAIVEL UP         |
 | Mode Entretien              |
 |                                          |
-| Questions ouvertes > Réponses > Re-score |
+| Questions ouvertes · Réponses · Nouvelle évaluation |
 +------------------------------------------+
 
 
@@ -96,7 +96,7 @@
 +------------------------------------------+
 
 
-          VERDICT : entretien          
+          VERDICT · entretien          
 ┏━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┓
 ┃ AXE          ┃ NIVEAU   ┃ CONFIANCE ┃
 ┡━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━┩

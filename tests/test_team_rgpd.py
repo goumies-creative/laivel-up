@@ -309,8 +309,8 @@ class TestReviewFixes:
             name='test', traces={'parallel_projects': 3.7, 'projects_completed': 2.3}
         )
         errors = normalize_profile(profile)
-        assert any('parallel_projects' in e and 'integer' in e.lower() for e in errors)
-        assert any('projects_completed' in e and 'integer' in e.lower() for e in errors)
+        assert any('parallel_projects' in e and 'entier' in e.lower() for e in errors)
+        assert any('projects_completed' in e and 'entier' in e.lower() for e in errors)
 
     def test_confidence_matches_limiting_axis(self):
         """Fix #5: confidence du snapshot = axe plancher (pas le max)."""

@@ -1,7 +1,7 @@
                                                                                
  Usage: root interrogate [OPTIONS] [PROFIL]                                    
                                                                                
- Mode entretien guidé : pose les questions, fusionne les réponses, re-score.   
+ Mode entretien guidé : pose les questions, fusionne les réponses, ré-évalue.  
                                                                                
 ┌─ Arguments ─────────────────────────────────────────────────────────────────┐
 │   profil      [PROFIL]  Profil JSON de départ (optionnel).                  │

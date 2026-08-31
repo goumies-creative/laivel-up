@@ -79,60 +79,60 @@ def normalize_profile(profile: ProfileData) -> list[str]:
     traces = profile.traces
 
     if not isinstance(traces, dict):
-        return ['traces must be an object (dict).']
+        return ['traces : doit être un objet.']
 
     pr_sizes = traces.get('pr_sizes')
     if pr_sizes is not None:
         if not isinstance(pr_sizes, list):
-            errors.append('traces.pr_sizes must be a list.')
+            errors.append('traces.pr_sizes : doit être une liste.')
         else:
             for s in pr_sizes:
                 if s not in SIZE_VALUES:
                     errors.append(
-                        f"traces.pr_sizes contains '{s}': allowed values {sorted(SIZE_VALUES)}."
+                        f"traces.pr_sizes contient '{s}' : valeurs = {sorted(SIZE_VALUES)}."
                     )
 
     retries = traces.get('retries_after_fact')
     if retries is not None:
         if isinstance(retries, bool):
-            errors.append('traces.retries_after_fact must be a number (ratio 0-1).')
+            errors.append('traces.retries_after_fact : doit être un nombre (0-1).')
         else:
             try:
                 r = float(retries)
                 if not 0.0 <= r <= 1.0:
-                    errors.append('traces.retries_after_fact must be a ratio between 0 and 1.')
+                    errors.append('traces.retries_after_fact : doit être entre 0 et 1.')
             except (TypeError, ValueError):
-                errors.append('traces.retries_after_fact must be a number (ratio 0-1).')
+                errors.append('traces.retries_after_fact : doit être un nombre (0-1).')
 
     for key in ('parallel_projects', 'projects_completed'):
         value = traces.get(key)
         if value is not None:
             if isinstance(value, bool):
-                errors.append(f'traces.{key} must be a non-negative integer.')
+                errors.append(f'traces.{key} : entier >= 0 requis.')
             else:
                 try:
                     # B2: Rejeter les floats non-entiers (3.7 → erreur, 3.0 → OK)
                     if isinstance(value, float):
                         if not value.is_integer():
                             errors.append(
-                                f'traces.{key} must be an integer, not {value}. '
-                                f'Use int({value}) = {int(value)} if truncation is intended.'
+                                f'traces.{key} : entier requis, pas {value}. '
+                                f'Utilisez int({value}) = {int(value)} si la troncature est voulue.'
                             )
                         else:
                             value = int(value)
                     else:
                         value = int(value)
                     if value < 0:
-                        errors.append(f'traces.{key} must be a non-negative integer.')
+                        errors.append(f'traces.{key} : entier >= 0 requis.')
                 except (TypeError, ValueError):
-                    errors.append(f'traces.{key} must be an integer.')
+                    errors.append(f'traces.{key} : entier requis.')
 
     if profile.declared_level is not None and not isinstance(profile.declared_level, Level):
-        errors.append(f"declared_level '{profile.declared_level}': unknown level.")
+        errors.append(f"declared_level '{profile.declared_level}' : niveau inconnu.")
 
     for key in ADOPTION_SIGNALS + ('agents_autonomous', 'retries_triangulated'):
         if key in traces and not isinstance(traces[key], bool):
-            errors.append(f'traces.{key} must be a boolean.')
+            errors.append(f'traces.{key} : booléen requis.')
     return errors
 
 
@@ -203,12 +203,12 @@ def harness_max(traces: dict) -> tuple[Level | None, float, list[str]]:
     loops = bool(traces.get('retry_loops'))
 
     if ctx and rules and loops:
-        return Level.GOLD, CONFIDENCE_PEAK, ['context + behavior + retry loops']
+        return Level.GOLD, CONFIDENCE_PEAK, ['contexte + behavior + boucles de relance']
     if ctx and rules:
-        return Level.COPPER, CONFIDENCE_PEAK, ['context + versioned agent rules']
+        return Level.COPPER, CONFIDENCE_PEAK, ['contexte + règles agent versionnées']
     if ctx:
-        return Level.BLUE, CONFIDENCE_PEAK, ['project memory present and maintained']
-    return Level.RED, CONFIDENCE_HARNESS_ONLY, ['direct prompts, no context']
+        return Level.BLUE, CONFIDENCE_PEAK, ['mémoire projet présente et maintenue']
+    return Level.RED, CONFIDENCE_HARNESS_ONLY, ['prompts directs, pas de contexte']
 
 
 def intervention_max(traces: dict) -> tuple[Level | None, float, list[str]]:
@@ -224,15 +224,15 @@ def intervention_max(traces: dict) -> tuple[Level | None, float, list[str]]:
 
     if retries <= RETRIES_PER_LEVEL['gold']:
         if agents:
-            level, evidence = Level.GOLD, ['never, framing included (autonomous agents)']
+            level, evidence = Level.GOLD, ['jamais, cadrage compris (agents autonomes)']
         else:
-            level, evidence = Level.SILVER, ['never, once task is framed']
+            level, evidence = Level.SILVER, ['jamais, une fois la tâche cadrée']
     elif retries <= RETRIES_PER_LEVEL['copper_or_green']:
-        level, evidence = Level.COPPER, ['intervention at key steps']
+        level, evidence = Level.COPPER, ['intervention aux étapes clés']
     elif retries <= RETRIES_PER_LEVEL['blue']:
-        level, evidence = Level.BLUE, ['retry after the fact, on a portion']
+        level, evidence = Level.BLUE, ['reprise après coup, sur une partie']
     else:
-        level, evidence = Level.RED, ['retry after the fact, on majority']
+        level, evidence = Level.RED, ['reprise après coup, sur la majorité']
 
     if not triangulated:
         # Auto-déclaration seule : signal faible => confiance sous le seuil => refus.
@@ -250,14 +250,18 @@ def parallel_max(traces: dict) -> tuple[Level | None, float, list[str]]:
     completed_int = _as_int(traces.get('projects_completed'))
 
     if n == 0:
-        return Level.WHITE, CONFIDENCE_MEDIUM, ['no parallel projects']
+        return Level.WHITE, CONFIDENCE_MEDIUM, ['aucun chantier en parallèle']
     if n < 3:
-        return Level.GREEN, CONFIDENCE_MEDIUM, [f'{n} parallel projects']
+        return Level.GREEN, CONFIDENCE_MEDIUM, [f'{n} chantiers en parallèle']
     if completed_int is not None and completed_int >= 3:
-        return Level.GOLD, CONFIDENCE_MEDIUM, [f'{n} parallel projects, all completed']
+        return Level.GOLD, CONFIDENCE_MEDIUM, [f'{n} chantiers en parallèle, tous menés au bout']
     if completed_int is None:
-        return Level.GREEN, CONFIDENCE_LOW, [f'{n} parallel projects (completion to confirm)']
-    return Level.GREEN, CONFIDENCE_LOW, [f'{n} open projects but {completed_int} completed']
+        return Level.GREEN, CONFIDENCE_LOW, [f'{n} chantiers en parallèle (complétude à confirmer)']
+    return (
+        Level.GREEN,
+        CONFIDENCE_LOW,
+        [f'{n} chantiers ouverts mais {completed_int} menés au bout'],
+    )
 
 
 # --- Diagnostics d'équité ---------------------------------------------------------
@@ -274,7 +278,9 @@ def detect_red_flags(profile: ProfileData) -> list[RedFlag]:
             RedFlag(
                 severite=2,
                 titre='Déclaré vs observé : reprise élevée',
-                constat=(f'Déclare {declared.name} avec un ratio de reprise de {retries:.0%}.'),
+                constat=(
+                    f'Déclare {declared.name} avec une proportion de reprise de {retries:.0%}.'
+                ),
                 source='traces / auto-déclaration',
                 question=(
                     "La reprise vient-elle d'erreurs de l'IA, de raffinement, "
@@ -388,7 +394,7 @@ def evaluate(profile: ProfileData) -> Verdict:
             max_present, ratio = _peak_info(pr_sizes)
             if ratio < 0.5:
                 tails.variance = (
-                    f"pic {max_present} intervenant, habituel plus bas (niveau sur l'habituel)"
+                    f"pic {max_present} isolé, habituel plus bas (niveau sur l'habituel)"
                 )
 
     undecided_axes = [a for a in axes if a.level is None]
@@ -421,7 +427,7 @@ def evaluate(profile: ProfileData) -> Verdict:
     if global_level == Level.SILVER and not t.get('agents_autonomous'):
         extra.append(
             'Niveau Silver prouvé : les agents prennent-ils les tâches en autonomie '
-            'plusieurs fois par jour (ping pour Gold) ?'
+            'plusieurs fois par jour (signal pour Gold) ?'
         )
 
     next_steps = progress_for_axis(limiting, global_level) + extra

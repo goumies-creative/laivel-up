@@ -1056,7 +1056,7 @@ class TestFailOnWarningTTY:
         )
         r = runner.invoke(app, ['evaluate', str(profile), '--fail-on', 'GOLD', '--no-html'])
         assert r.exit_code == 1
-        assert 'FAIL' in r.output
+        assert 'ÉCHEC' in r.output
 
 
 # --- team commands : load_team leve ValueError (fichier corrompu) ----------

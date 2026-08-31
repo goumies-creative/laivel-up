@@ -28,6 +28,14 @@ LEVEL_COLORS: dict[Level, dict[str, str]] = {
 LEVEL_BY_NAME: dict[str, Level] = {lvl.name: lvl for lvl in Level}
 
 
+def _display_level(name: str | None) -> str:
+    """Libellé FR pour l'affichage humain (la convention data 'UNDECIDED'
+    de calibrate_core.py reste inchangée, seul l'affichage est traduit)."""
+    if not name:
+        return '—'
+    return 'Undécis' if name == 'UNDECIDED' else name
+
+
 def _render_profile_node(name: str, obtained: str | None, expected: str | None, status: str) -> str:
     """Nœud Patapon pour un profil."""
     is_ok = status == 'OK'
@@ -47,7 +55,7 @@ def _render_profile_node(name: str, obtained: str | None, expected: str | None, 
         f'{icon}</div>'
         f'<div class="cal-node-name">{escape(name)}</div>'
         f'<div class="cal-node-obtained" style="color:{node_color};">'
-        f'{escape(obtained or "UNDECIDED")}</div>'
+        f'{escape(_display_level(obtained))}</div>'
         f'<div class="cal-node-expected">→ {escape(expected or "—")}</div>'
         f'</div>'
     )
@@ -78,10 +86,10 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
             f'<td>{escape(r.name)}</td>'
             f'<td><span class="level-pill" style="background:{_level_bg(r.obtained)};'
             f'color:{_level_fg(r.obtained)};">'
-            f'{escape(r.obtained or "—")}</span></td>'
+            f'{escape(_display_level(r.obtained))}</span></td>'
             f'<td><span class="level-pill" style="background:{_level_bg(r.expected)};'
             f'color:{_level_fg(r.expected)};">'
-            f'{escape(r.expected or "—")}</span></td>'
+            f'{escape(_display_level(r.expected))}</span></td>'
             f'<td>{icon} {escape(r.detail)}</td>'
             f'</tr>'
         )

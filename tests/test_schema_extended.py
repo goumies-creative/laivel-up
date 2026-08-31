@@ -143,3 +143,34 @@ class TestValidateProfileImportFallback:
         monkeypatch.setitem(sys.modules, 'jsonschema', None)
         errors = schema_mod.validate_profile({'traces': {}})
         assert any('name' in e for e in errors)
+
+
+# --- Mapping jsonschema -> FR (coverage-90-closing-gaps / copy-francaise) --
+
+
+class TestJsonschemaErrorTranslation:
+    def test_missing_required_property_is_translated(self):
+        errors = validate_profile({'traces': {'pr_sizes': ['S']}})
+        assert any('propriété requise manquante' in e for e in errors)
+        assert not any('required property' in e for e in errors)
+
+    def test_wrong_type_is_translated(self):
+        errors = validate_profile({'name': 123})
+        assert any('doit être une chaîne' in e for e in errors)
+
+    def test_enum_violation_is_translated(self):
+        errors = validate_profile({'name': 'x', 'traces': {'pr_sizes': ['XXL']}})
+        assert any('valeur invalide' in e for e in errors)
+
+    def test_maximum_violation_is_translated(self):
+        errors = validate_profile({'name': 'x', 'traces': {'retries_after_fact': 1.5}})
+        assert any('doit être <=' in e for e in errors)
+
+    def test_additional_properties_is_translated(self):
+        errors = validate_profile({'name': 'x', 'traces': {'inconnu_xyz': True}})
+        assert any('supplémentaire non autorisée' in e for e in errors)
+
+    def test_path_separator_uses_space_colon_space(self):
+        """Convention typographique AGENTS.md : ' : ' pas ':'."""
+        errors = validate_profile({'traces': {}})
+        assert any(' : ' in e for e in errors)

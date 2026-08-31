@@ -100,7 +100,7 @@ COMMAND_SCHEMA = {
                 '--json': {'type': 'boolean', 'default': False, 'description': 'Sortie JSON'},
                 '--fail-on': {
                     'type': 'string',
-                    'description': 'Fail si niveau inférieur (ex: RED)',
+                    'description': 'Échoue si le niveau est inférieur (ex. : RED)',
                 },
                 '--fields': {'type': 'string', 'description': 'Filtrer champs JSON'},
                 '--verbose': {
@@ -312,7 +312,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
 
     # Tableau des axes
     table = Table(
-        title=f'VERDICT : {verdict.name}',
+        title=f'VERDICT · {verdict.name}',
         border_style=NES_BORDER,
         header_style='bold cyan',
     )
@@ -390,11 +390,11 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
             console.print(f'  [dim]> {label}: {lvl} ({conf})[/dim]')
             if a.evidence:
                 for ev in a.evidence:
-                    console.print(f'     [dim]  source: {ev}[/dim]')
+                    console.print(f'     [dim]  source · {ev}[/dim]')
             if a.variance:
-                console.print(f'     [dim]  variance: {a.variance}[/dim]')
+                console.print(f'     [dim]  variance · {a.variance}[/dim]')
         if verdict.data_errors:
-            console.print('[dim]  > donnees invalides:[/dim]')
+            console.print('[dim]  > données invalides :[/dim]')
             for e in verdict.data_errors:
                 console.print(f'     [dim]  > {e}[/dim]')
 
@@ -413,7 +413,7 @@ Exemples :
 
   laivelup evaluate profil.json                 Verdict + rapports md/html
   laivelup evaluate profil.json --json          Sortie JSON (CI/agent)
-  laivelup evaluate profil.json --fail-on RED   Exit 1 si niveau < RED
+  laivelup evaluate profil.json --fail-on RED   Code 1 si niveau < RED
   laivelup evaluate profil.json --out rapports  Choisir le dossier de sortie
   laivelup evaluate profil.json --no-html       Rapport Markdown seul
 """
@@ -429,7 +429,7 @@ def evaluate_profile(
     fail_on: str | None = typer.Option(
         None,
         '--fail-on',
-        help='Fail si niveau inférieur (valeurs : RED, BLUE, GREEN, COPPER, SILVER, GOLD).',
+        help='Échoue si le niveau est inférieur (valeurs : RED, BLUE, GREEN, COPPER, SILVER, GOLD).',
     ),
     fields: str | None = typer.Option(None, '--fields', help='Filtrer champs JSON.'),
 ) -> None:
@@ -479,7 +479,7 @@ def evaluate_profile(
             if verdict.level.value < fail_level.value:
                 if not use_json:
                     error_console.print(
-                        f'\n[red]FAIL: niveau {LEVEL_LABELS[verdict.level]} < {LEVEL_LABELS[fail_level]}[/red]'
+                        f'\n[red]ÉCHEC : niveau {LEVEL_LABELS[verdict.level]} < {LEVEL_LABELS[fail_level]}[/red]'
                     )
                 raise typer.Exit(1)
 
@@ -501,7 +501,7 @@ def interrogate(
     max_turns: int = typer.Option(6, '--max-turns', help='Nombre max de questions posées.'),
     verbose: bool = typer.Option(False, '--verbose', '-v', help='Sortie détaillée technique.'),
 ) -> None:
-    """Mode entretien guidé : pose les questions, fusionne les réponses, re-score."""
+    """Mode entretien guidé : pose les questions, fusionne les réponses, ré-évalue."""
     if profil is not None:
         profile = _load_profile(profil)
     else:
@@ -514,7 +514,7 @@ def interrogate(
             '[bold cyan]LAIVEL UP[/bold cyan]',
             '[cyan]Mode Entretien[/cyan]',
             '',
-            '[dim]Questions ouvertes > Réponses > Re-score[/dim]',
+            '[dim]Questions ouvertes · Réponses · Nouvelle évaluation[/dim]',
         ],
         color='cyan',
         width=44,
@@ -545,7 +545,7 @@ def interrogate(
                     'reprise',
                     'contexte',
                     'chantiers',
-                    'verifier',
+                    'vérifier',
                 )
             )
         ]
@@ -676,7 +676,7 @@ def team_create(
 @team_app.command(name='evaluate')
 def team_evaluate(
     team_name: str = typer.Argument(..., help="Nom de l'équipe."),
-    member_slug: str = typer.Argument(..., help='Slug du membre à évaluer.'),
+    member_slug: str = typer.Argument(..., help='Pseudo anonymisé (slug) du membre à évaluer.'),
     profil: Path = typer.Argument(..., help='Profil JSON du membre.'),
     out: Path = typer.Option(Path('rapports'), '--out', help='Dossier des rapports.'),
     verbose: bool = typer.Option(False, '--verbose', '-v', help='Sortie détaillée.'),
@@ -756,9 +756,9 @@ def team_export(
 @team_app.command(name='opt-out')
 def team_opt_out(
     team_name: str = typer.Argument(..., help="Nom de l'équipe."),
-    member_slug: str = typer.Argument(..., help='Slug du membre.'),
+    member_slug: str = typer.Argument(..., help='Pseudo anonymisé (slug) du membre.'),
     enable: bool = typer.Option(
-        True, '--enable/--disable', help="Activer ou désactiver l'opt-out."
+        True, '--enable/--disable', help="Activer ou désactiver l'opt-out (droit d'opposition)."
     ),
 ) -> None:
     """Active ou désactive l'opt-out RGPD pour un membre."""
@@ -785,7 +785,7 @@ def team_opt_out(
 @team_app.command(name='remove')
 def team_remove(
     team_name: str = typer.Argument(..., help="Nom de l'équipe."),
-    member_slug: str = typer.Argument(..., help='Slug du membre à supprimer.'),
+    member_slug: str = typer.Argument(..., help='Pseudo anonymisé (slug) du membre à supprimer.'),
     purge: bool = typer.Option(
         False, '--purge', help="Supprimer aussi l'historique du membre (RGPD)."
     ),
@@ -825,7 +825,7 @@ def calibrate_cmd(
         False, '--show-proof', help='Affiche le tableau de preuve en CLI.'
     ),
 ) -> None:
-    """Compare les verdicts aux niveaux attendus et génère un dashboard HTML."""
+    """Compare les verdicts aux niveaux attendus et génère un tableau de bord HTML."""
     from .calibrate_core import run_calibration
 
     result = run_calibration(expected=expected, profiles_dir=profiles_dir)
@@ -839,9 +839,10 @@ def calibrate_cmd(
         table.add_column('Statut')
         for r in result.rows:
             status_icon = '✅' if r.status == 'OK' else '❌' if r.status == 'FAIL' else '⏭️'
+            obtained = 'Undécis' if r.obtained in (None, 'UNDECIDED') else r.obtained
             table.add_row(
                 r.name,
-                r.obtained or 'UNDECIDED',
+                obtained,
                 r.expected or '—',
                 f'{status_icon} {r.detail}',
             )
@@ -856,7 +857,7 @@ def calibrate_cmd(
     out.mkdir(parents=True, exist_ok=True)
     html_content = generate_calibrate_html(result)
     html_path.write_text(html_content, encoding='utf-8')
-    console.print(f'[dim]Dashboard calibration : {html_path}[/dim]')
+    console.print(f'[dim]Tableau de bord calibration : {html_path}[/dim]')
 
 
 # --- Retry ratio parsing ---------------------------------------------------------

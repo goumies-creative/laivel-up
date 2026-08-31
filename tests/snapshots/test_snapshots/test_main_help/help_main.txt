@@ -18,9 +18,9 @@
 │ schema       Retourne le schema JSON de ce tool (auto-découverte agent).    │
 │ evaluate     Évalue un profil et écrit les rapports Markdown (+ HTML).      │
 │ interrogate  Mode entretien guidé : pose les questions, fusionne les        │
-│              réponses, re-score.                                            │
-│ calibrate    Compare les verdicts aux niveaux attendus et génère un         │
-│              dashboard HTML.                                                │
+│              réponses, ré-évalue.                                           │
+│ calibrate    Compare les verdicts aux niveaux attendus et génère un tableau │
+│              de bord HTML.                                                  │
 │ team         Gestion d'équipes et suivi multi-membres.                      │
 └─────────────────────────────────────────────────────────────────────────────┘
 

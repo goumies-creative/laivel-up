@@ -17,8 +17,8 @@ QUESTION_IDS: dict[str, str] = {
         " (Et vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)"
     ),
     'RETRIES_TRIANGULATED': (
-        'Ratio de reprise indiqué sans métadonnées de PR : peux-tu fournir '
-        'quelques PR typiques pour le corroborer ?'
+        "Proportion de reprise indiquée sans PR à l'appui : peux-tu fournir "
+        'quelques PR typiques pour la corroborer ?'
     ),
     'ADOPTION_SIGNALS': ('As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?'),
     'PARALLEL_PROJECTS': (
