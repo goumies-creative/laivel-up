@@ -290,7 +290,7 @@ def detect_red_flags(profile: ProfileData) -> list[RedFlag]:
                 ),
             )
         )
-    if declared >= Level.BLUE and not profile.traces.get('context_versioned'):
+    if declared >= Level.BLUE and not profile.traces.get('XXcontext_versionedXX'):
         flags.append(
             RedFlag(
                 severite=2,

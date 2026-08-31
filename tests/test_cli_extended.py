@@ -839,18 +839,18 @@ class TestInterrogateEdgeCases:
 class TestTeamErrorPaths:
     def test_team_create_save_error(self, monkeypatch):
         """team create when save_team raises ValueError."""
-        from laivelup import cli
+        from laivelup import team_cli
 
         def failing_save(*_args, **_kwargs):
             raise ValueError('Permission refusée')
 
-        monkeypatch.setattr(cli, 'save_team', failing_save)
+        monkeypatch.setattr(team_cli, 'save_team', failing_save)
         r = runner.invoke(app, ['team', 'create', 'FailTeam', 'alice,bob'])
         assert r.exit_code == 2
 
     def test_team_evaluate_save_error(self, tmp_path, monkeypatch):
         """team evaluate when save_team raises ValueError."""
-        from laivelup import cli
+        from laivelup import team_cli
 
         r_create = runner.invoke(
             app, ['team', 'create', 'SaveErr2', 'alice'], catch_exceptions=False
@@ -870,7 +870,7 @@ class TestTeamErrorPaths:
         def failing_save(*_args, **_kwargs):
             raise ValueError('Disque plein')
 
-        monkeypatch.setattr(cli, 'save_team', failing_save)
+        monkeypatch.setattr(team_cli, 'save_team', failing_save)
         r = runner.invoke(
             app,
             [
@@ -887,14 +887,14 @@ class TestTeamErrorPaths:
 
     def test_team_export_save_error(self, tmp_path, monkeypatch):
         """team export when export function raises ValueError."""
-        from laivelup import cli
+        from laivelup import team_cli
 
         runner.invoke(app, ['team', 'create', 'ExportErr', 'alice'], catch_exceptions=False)
 
         def failing_export(*_args, **_kwargs):
             raise ValueError('Export impossible')
 
-        monkeypatch.setattr(cli, 'export_markdown', failing_export)
+        monkeypatch.setattr(team_cli, 'export_markdown', failing_export)
         r = runner.invoke(
             app, ['team', 'export', 'ExportErr', '--format', 'md', '--out', str(tmp_path)]
         )
@@ -902,7 +902,7 @@ class TestTeamErrorPaths:
 
     def test_team_optout_save_error(self, monkeypatch):
         """team opt-out when save_team raises ValueError."""
-        from laivelup import cli
+        from laivelup import team_cli
 
         r_create = runner.invoke(app, ['team', 'create', 'OptErr', 'alice'], catch_exceptions=False)
         import re
@@ -914,13 +914,13 @@ class TestTeamErrorPaths:
         def failing_save(*_args, **_kwargs):
             raise ValueError('Permission refusée')
 
-        monkeypatch.setattr(cli, 'save_team', failing_save)
+        monkeypatch.setattr(team_cli, 'save_team', failing_save)
         r = runner.invoke(app, ['team', 'opt-out', 'OptErr', alice_slug])
         assert r.exit_code == 2
 
     def test_team_remove_save_error(self, monkeypatch):
         """team remove when save_team raises ValueError."""
-        from laivelup import cli
+        from laivelup import team_cli
 
         r_create = runner.invoke(app, ['team', 'create', 'RmErr', 'alice'], catch_exceptions=False)
         import re
@@ -932,7 +932,7 @@ class TestTeamErrorPaths:
         def failing_save(*_args, **_kwargs):
             raise ValueError('Permission refusée')
 
-        monkeypatch.setattr(cli, 'save_team', failing_save)
+        monkeypatch.setattr(team_cli, 'save_team', failing_save)
         r = runner.invoke(app, ['team', 'remove', 'RmErr', alice_slug])
         assert r.exit_code == 2
 

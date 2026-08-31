@@ -24,6 +24,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
 from laivelup.model import AXES, Level, ProfileData
 from laivelup.scoring import evaluate
+from laivelup.utils import load_profile_data
+
+# Re-export pour compatibilité tests (test_calibrate.py importe _load_profile)
+_load_profile = load_profile_data
 
 PROFILES_DIR = Path(__file__).parent.parent / 'grille' / 'profils-officiels'
 EXPECTED_FILE = PROFILES_DIR / 'expected.json'
@@ -56,23 +60,6 @@ def _profile_files(expected_path: Path | None = None) -> list[Path]:
     return sorted(p for p in PROFILES_DIR.glob('*.json') if p.name not in excluded)
 
 
-def _load_profile(path: Path) -> ProfileData:
-    """Charge un profil JSON en ProfileData."""
-    data = json.loads(path.read_text(encoding='utf-8'))
-    declared = data.get('declared_level')
-    if isinstance(declared, str) and declared:
-        declared = Level[declared.upper()]
-    else:
-        declared = None
-    return ProfileData(
-        name=data.get('name', path.stem),
-        declared_level=declared,
-        traces=data.get('traces', {}),
-        answers=data.get('answers', {}),
-        meta=data.get('meta', {}),
-    )
-
-
 def _load_expected(path: Path) -> dict[str, str]:
     """Charge les niveaux attendus {profil_name: level_name}."""
     if not path.exists():
@@ -90,7 +77,7 @@ def generate_template() -> None:
 
     levels = {}
     for p in profiles:
-        profile = _load_profile(p)
+        profile = load_profile_data(p)
         verdict = evaluate(profile)
         if verdict.decided and verdict.level is not None:
             levels[p.stem] = verdict.level.name
@@ -154,7 +141,7 @@ def calibrate(expected_path: Path, fix: bool = False, diff: bool = False) -> int
     results = []
 
     for p in profiles:
-        profile = _load_profile(p)
+        profile = load_profile_data(p)
         verdict = evaluate(profile)
         stem = p.stem
 

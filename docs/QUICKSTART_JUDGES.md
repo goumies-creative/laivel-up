@@ -5,8 +5,10 @@
 ## Installation
 
 ```bash
-pip install .
+pip install laivelup
 ```
+
+> Depuis un clone local (sans passer par PyPI) : `pip install .`
 
 ## Commandes essentielles
 
@@ -62,7 +64,7 @@ python scripts/calibrate.py --expected grille/profils-officiels/expected.json --
 ## Vérification de qualité
 
 ```bash
-pytest -q                    # 85+ tests
+pytest -q                    # 495 tests
 ruff check src/ tests/       # 0 errors
 mypy src/                    # 0 errors
 bandit -r src/               # 0 issues
@@ -83,9 +85,11 @@ laivel-up/
 
 ## Critères d'évaluation du jury
 
-| Critère | Score attendu | Vérification |
-|---------|---------------|--------------|
-| Accuracy | 4/5 | `calibrate.py --diff` |
-| Explainability | 4/5 | `--verbose` + rapports MD |
-| Robustness | 4/5 | 344 tests, CI matrix 3OS x 3Py, benchmarks p50/p95 (si disponibles) |
-| Reusability | 4/5 | MIT, `pip install`, hooks |
+Libellés repris tels quels du sujet officiel (`SUJET.md`) — à vous de juger, pas à nous.
+
+| Critère | Preuve à vérifier |
+|---------|-------------------|
+| 🎯 Le bon niveau ? | `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff` — refuse un niveau (`UNDECIDED`) plutôt que d'en deviner un quand les données manquent |
+| 💬 On comprend pourquoi ? | `laivelup evaluate <profil> --verbose` + rapports MD/HTML |
+| 🔧 Comment tu l'as construit ? | `aidd_docs/` (sessions, audits, ADR) |
+| ✨ La qualité est là ? | 495 tests, ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |

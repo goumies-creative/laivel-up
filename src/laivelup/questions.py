@@ -11,7 +11,9 @@ QUESTION_IDS: dict[str, str] = {
     'PR_SIZES': (
         "Quelle est la taille habituelle de tes features livrées avec l'IA (S, M, L, XL) ?"
     ),
-    'DECLARED_LEVEL': ('Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?'),
+    'DECLARED_LEVEL': (
+        "À quel niveau d'adoption de l'AIDD estimes-tu en être actuellement, et sur quoi te bases-tu ?"
+    ),
     'RETRIES_RATIO': (
         'Quelle part de tes PR est reprise ou corrigée par toi après coup ?'
         " (Et vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)"

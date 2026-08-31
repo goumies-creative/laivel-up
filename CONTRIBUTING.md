@@ -49,7 +49,7 @@ Raisons : pas de switching mental à la lecture, convention open-source, signatu
 
 ```bash
 # Cloner
-git clone https://github.com/ai-driven-dev/laivel-up.git
+git clone https://github.com/goumies-creative/laivel-up.git
 cd laivel-up
 
 # Installer en mode dev

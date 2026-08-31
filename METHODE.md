@@ -81,6 +81,15 @@ Ces questions sont reprises en mode `interrogate`.
 Le mode `interrogate` pose les questions du moteur et fusionne les réponses
 libres dans les traces avant de re-scorer.
 
+### Cadre d'entretien
+
+L'entretien est mené par l'évaluateur·rice, en présence de la personne évaluée :
+l'écran est un téléprompteur — l'évaluateur·rice pose la question à voix haute,
+tape la réponse libre et partage le verdict à l'écran. La personne évaluée ne
+manipule pas la CLI. Le déclaratif recueilli est corroboré par les traces
+techniques du profil : jamais source unique (piège officiel : « croire le
+déclaratif »).
+
 ### Ratio de reprise
 
 La trace `retries_after_fact` (nom machine) mesure la **proportion de reprise**

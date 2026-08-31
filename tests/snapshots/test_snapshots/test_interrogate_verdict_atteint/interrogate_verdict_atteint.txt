@@ -1,10 +1,11 @@
 
-+------------------------------------------+
-| LAIVEL UP         |
-| Mode Entretien              |
-|                                          |
++------------------------------------------------------+
+| LAIVEL UP                     |
+| Mode Entretien                          |
+|                                                      |
 | Questions ouvertes · Réponses · Nouvelle évaluation |
-+------------------------------------------+
+| L'évaluateur pose les questions · la personne répond |
++------------------------------------------------------+
 
 
   ÉTAPE 1/6 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
