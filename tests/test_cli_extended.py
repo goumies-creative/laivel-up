@@ -1191,3 +1191,27 @@ class TestRedFlags:
         assert r.exit_code == 0
         data = json.loads(r.output)
         assert len(data.get('red_flags', [])) > 0
+
+
+# --- complétion shell (mécanisme source, sans lire le rc) ----------------
+
+
+class TestCompletion:
+    def test_bash_source_emits_script(self):
+        """`_LAIVELUP_COMPLETE=source_bash` génère le script sans toucher au rc.
+
+        Format click : valeur = action_shell (source_bash), pas shell_action.
+        Sortie sur stdout, exit 0, aucun accès à ~/.bashrc.
+        """
+        r = runner.invoke(app, [], env={'_LAIVELUP_COMPLETE': 'source_bash'}, prog_name='laivelup')
+        assert r.exit_code == 0
+        assert 'complete -o default' in r.output
+        assert '_laivelup_completion' in r.output
+
+    def test_powershell_source_emits_script(self):
+        """`_LAIVELUP_COMPLETE=source_powershell` génère le script sans toucher au profil."""
+        r = runner.invoke(
+            app, [], env={'_LAIVELUP_COMPLETE': 'source_powershell'}, prog_name='laivelup'
+        )
+        assert r.exit_code == 0
+        assert 'Register-ArgumentCompleter' in r.output

@@ -155,6 +155,22 @@ laivelup --install-completion
 Active l'auto-complétion des commandes et options au premier `Tab`,
 cross-shell (fournie nativement par Typer).
 
+**Windows · Git Bash :** si votre `~/.bashrc` contient des caractères hors
+ANSI (accents, émojis), la commande peut échouer avec `UnicodeDecodeError`
+(bug Typer en amont : lecture du rc sans encodage explicite, non corrigé
+sur master). Contournement : ajouter à la main cette ligne dans
+`~/.bashrc` :
+
+```bash
+source <(_LAIVELUP_COMPLETE=source_bash laivelup)
+```
+
+**PowerShell :** même mécanisme, à ajouter dans votre `$PROFILE` :
+
+```powershell
+_LAIVELUP_COMPLETE=source_powershell laivelup | Out-String | Invoke-Expression
+```
+
 ### Évaluation d'un profil
 
 ```bash
