@@ -38,7 +38,7 @@
   ],
   "red_flags": [],
   "next_steps": [
-    "Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?",
+    "À quel niveau d'adoption de l'AIDD estimes-tu en être actuellement, et sur quoi te bases-tu ?",
     "Proportion de reprise indiquée sans PR à l'appui : peux-tu fournir quelques PR typiques pour la corroborer ?",
     "As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?",
     "Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont au bout ?"

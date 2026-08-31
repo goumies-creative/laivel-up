@@ -45,9 +45,9 @@
 
 
          VERDICT · entretien         
-┏━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┓
-┃ AXE          ┃ NIVEAU ┃ CONFIANCE ┃
-┡━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━┩
+┌──────────────┬────────┬───────────┐
+│ AXE          │ NIVEAU │ CONFIANCE │
+├──────────────┼────────┼───────────┤
 │ Taille       │ —      │ --        │
 │ Harness      │ —      │ --        │
 │ Intervention │ —      │ --        │
@@ -61,7 +61,7 @@
 
   Questions à poser :
   > Quelle est la taille habituelle de tes features livrées avec l'IA (S, M, L, XL) ?
-  > Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?
+  > À quel niveau d'adoption de l'AIDD estimes-tu en être actuellement, et sur quoi te bases-tu ?
   > Quelle part de tes PR est reprise ou corrigée par toi après coup ? (Et vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)
   > As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
   > Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont au bout ?
