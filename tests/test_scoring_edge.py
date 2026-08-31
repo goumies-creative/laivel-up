@@ -53,21 +53,31 @@ class TestNormalizeProfileErrors:
         p = ProfileData(name='x', traces='not a dict')
         errors = normalize_profile(p)
         assert any('doit être un objet' in e for e in errors)
+        # Cible le mutant 32 : le message exact ne doit pas etre enveloppe dans XX...XX
+        assert any(e == 'traces : doit être un objet.' for e in errors)
 
     def test_pr_sizes_not_list(self):
         p = ProfileData(name='x', traces={'pr_sizes': 'S'})
         errors = normalize_profile(p)
         assert any('pr_sizes' in e and 'doit être une liste' in e for e in errors)
+        # Cible le mutant 37 : le message exact ne doit pas etre enveloppe
+        assert any(e == 'traces.pr_sizes : doit être une liste.' for e in errors)
 
     def test_pr_sizes_invalid_value(self):
         p = ProfileData(name='x', traces={'pr_sizes': ['S', 'XXL']})
         errors = normalize_profile(p)
         assert any('XXL' in e for e in errors)
+        # Cible le mutant 39 : le f-string exact ne doit pas etre enveloppe
+        assert any(
+            e == "traces.pr_sizes contient 'XXL' : valeurs = ['L', 'M', 'S', 'XL']." for e in errors
+        )
 
     def test_retries_bool_is_error(self):
         p = ProfileData(name='x', traces={'retries_after_fact': True})
         errors = normalize_profile(p)
         assert any('retries_after_fact' in e and 'doit être un nombre' in e for e in errors)
+        # Cible le mutant 43 : le message exact ne doit pas etre enveloppe
+        assert any(e == 'traces.retries_after_fact : doit être un nombre (0-1).' for e in errors)
 
     def test_retries_out_of_range(self):
         p = ProfileData(name='x', traces={'retries_after_fact': 1.5})

@@ -37,3 +37,4 @@ profil-*.json
 .mutmut-cache
 .mutmut-cache.lock
 .venv-lock/
+.mutmut-cache.backup

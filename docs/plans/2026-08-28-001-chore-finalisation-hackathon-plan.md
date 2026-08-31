@@ -186,8 +186,10 @@ avant le jury.
   et l'orchestration OpenCode/compound-engineering (c'est le nouveau critère
   réflexif, cf. section 0)
 
-### ☐ 2.2 — Vidéo de démo : contrainte "muette" non anticipée
+### ☑ 2.2 — Vidéo de démo : contrainte "muette" non anticipée
 **Effort : M (1-2h tournage) · Deadline : 30/08 après-midi**
+
+**Statut : ✅ FAIT (31/08, confirmé par Romy).** Enregistrement réalisé, sous-titres/texte à l'écran en place (conforme à la contrainte "publiée muette"). Reste à faire côté 2.4 : récupérer le lien final (hébergement) pour le formulaire de rendu.
 
 **Pourquoi :** le formulaire de rendu officiel précise que la vidéo *"sera
 publiée muette"* — elle doit être compréhensible **sans le son**, donc avec
@@ -250,16 +252,15 @@ B (à archiver plutôt que supprimer), C (à trancher au cas par cas).
 remote public, **pas** une copie fraîche de fichiers — l'historique est la
 meilleure preuve du critère "Comment tu l'as construit ?".
 
-- ☐ Scan de sécurité/confidentialité sur l'état courant : **fait le 28/08,
+- ☑ Scan de sécurité/confidentialité sur l'état courant : **fait le 28/08,
   rien trouvé** (voir annexe). Scan complet de l'historique git (tous
-  commits) à faire par toi via OpenCode, je n'ai pas d'exécution de commande
-  sur ta machine : `gitleaks detect --source . -v` (ou équivalent trufflehog)
-- ☐ Créer le nouveau repo public sur GitHub (nom à définir)
-- ☐ `git remote add public <url> && git push public main --tags`
+  commits) — **historique nettoyé, confirmé par Romy le 31/08** (pas de contre-vérification possible côté moi pour l'historique, MCP filesystem = état courant seulement)
+- ⚠️ Créer le nouveau repo public sur GitHub — Romy confirme fait, **mais vérification indépendante (curl, 31/08) renvoie 404 sur `github.com/goumies-creative/laivel-up`** — conflit non résolu, cf. détail en 1.6 bis. Ne pas considérer comme acquis avant confirmation navigateur.
+- ⚠️ `git remote add public <url> && git push public main --tags` — Romy confirme fait ; même réserve que ci-dessus tant que la visibilité n'est pas confirmée
 - ☐ Copier `levels/aidd.md` et les 4 dossiers `profiles/` officiels dans le
   repo public (`docs/reference/` et `tests/fixtures/profiles-officiels/`),
-  avec mention d'attribution MIT (ai-driven-dev/laivel-up)
-- ☐ Corriger l'URL de clone dans `CONTRIBUTING.md` une fois le repo public créé (cf. 1.3)
+  avec mention d'attribution MIT (ai-driven-dev/laivel-up) — à confirmer, non couvert par la confirmation « repo public + historique nettoyé »
+- ☑ Corriger l'URL de clone dans `CONTRIBUTING.md` une fois le repo public créé (cf. 1.3) — déjà fait le 31/08 matin (édition de fichier, indépendant de la question de visibilité)
 
 ---
 
@@ -408,15 +409,15 @@ meilleure preuve du critère "Comment tu l'as construit ?".
 
 ### 8.3 — Publication
 - [ ] Repo nettoyé (section 7)
-- [ ] Scan sécurité historique git (`gitleaks detect`)
-- [ ] Repo public créé sur GitHub
-- [ ] Historique poussé vers repo public
-- [ ] Package publié sur PyPI
-- [ ] GitHub Release créée
+- [x] Scan sécurité historique git — historique nettoyé, confirmé par Romy le 31/08
+- [ ] Repo public créé sur GitHub — Romy confirme fait, mais curl indépendant (31/08) renvoie 404 — **conflit non résolu, cf. 1.6 bis**
+- [ ] Historique poussé vers repo public — idem, en attente de confirmation navigateur
+- [ ] Package publié sur PyPI — **toujours en attente, cf. 1.6** (404 constaté en direct)
+- [ ] GitHub Release créée — dépend du tag/push PyPI (1.6)
 
 ### 8.4 — Rendu officiel
-- [ ] Vidéo muette tournée et vérifiée
-- [ ] Formulaire de rendu rempli et déposé avant 31/08 12h
+- [x] Vidéo muette tournée et vérifiée — confirmé par Romy le 31/08 (cf. 2.2)
+- [ ] Formulaire de rendu rempli et déposé avant 31/08 12h — **dernier bloquant, cf. 2.4**
 - [ ] Pitch 3 lignes prêt
 - [ ] Commande de lancement testée
 
@@ -730,8 +731,10 @@ Principes bruts, sans réponse arrêtée sur les valeurs exactes (à itérer) :
 - **11.4 avancé** : lecture de `docs/QUICKSTART_JUDGES.md` — trouvé et corrigé le même chantier que 2.1 avait déjà résolu dans le README, mais oublié ici : ancienne table "Accuracy/Explainability/Robustness/Reusability" avec scores auto-attribués (4/5), et compteur de tests périmé ("85+" puis "344"). Remplacé par la table officielle `SUJET.md` (identique au README) et le compte à jour (495 tests). `pip install .` remplacé par `pip install laivelup` en première commande (cohérent avec la commande de lancement annoncée en 2.4), `pip install .` gardé en option clone local.
 - **README resynchronisé** : même écart trouvé dans la table "Critères d'évaluation" du README (356 tests/88.73% — périmé depuis le 29/08) → aligné sur 495 tests/95% (chiffre que tu avais toi-même noté dans la note CI juste au-dessus, dans le même fichier)
 
-### ☐ 1.6 bis — URGENT : confirmer/forcer la visibilité publique du repo GitHub
+### ⚠️ 1.6 bis — URGENT : confirmer/forcer la visibilité publique du repo GitHub
 **Effort : XS (2 min) · Bloquant absolu pour le formulaire (2.4) et pour 1.6**
+
+**Statut : ⚠️ CONFLIT à résoudre (31/08).** Romy confirme le repo rendu public. Vérification indépendante faite à l'instant (bash_tool, sans auth, avec User-Agent explicite) : `https://github.com/goumies-creative/laivel-up` → **404**, et `https://api.github.com/repos/goumies-creative/laivel-up` → rate-limit (403, non concluant) sur un essai, puis à revalider. Le 404 sur la page web (pas l'API) est le signal le plus fiable ici : GitHub renvoie 404 (pas 403) pour un repo privé à un visiteur non authentifié, exactement le même comportement que « n'existe pas » — **ne pas cocher tant que ce n'est pas confirmé côté navigateur.** Hypothèses à trancher par Romy : (a) mauvais nom d'org/repo (le remote local point vers `goumies-creative/laivel-up`, mais un compte `github.com/Goumies` distinct existe aussi), (b) changement de visibilité pas encore propagé côté GitHub, (c) repo créé sous un autre chemin. **Action immédiate demandée : ouvrir le lien exact dans un navigateur en navigation privée (déconnectée) et confirmer que la page charge, avant de le coller dans le formulaire (2.4).**
 
 **Pourquoi :** un jury qui reçoit un lien de repo privé ne peut rien évaluer. Vérifié en direct (31/08) : `goumies-creative/laivel-up` renvoie 404 sur l'API GitHub publique sans authentification — signe d'un dépôt privé (ou pas encore créé, moins probable vu la note CI déjà présente dans le README qui suppose des runs CI antérieurs).
 
@@ -967,3 +970,9 @@ déterminent le niveau.
 > Rappel : ce chantier reste **après soumission** (règle de section 11, non
 > renégociée ici) — seule la documentation de la vision est faite le 31/08,
 > aucun code n'est touché avant le rendu.
+
+**31/08 (suite) — Session Claude/MCP filesystem, confirmations Romy (vidéo + repo public/historique) :**
+- Romy confirme : vidéo de démo tournée (2.2 → fait), repo rendu public et historique nettoyé (section 5 → fait côté elle)
+- **2.2 coché fait**, sans réserve — rien à vérifier côté moi sur une vidéo (pas d'accès au fichier/lien)
+- **1.6 bis / section 5 (repo public) : conflit détecté, PAS coché.** Vérification indépendante via `bash_tool` (curl, avec et sans User-Agent explicite) : `https://github.com/goumies-creative/laivel-up` → **404** de façon répétée ; `https://api.github.com/repos/goumies-creative/laivel-up` → rate-limit (non concluant). Un 404 sur la page web GitHub pour un visiteur non authentifié est le comportement standard d'un repo **privé** (GitHub masque volontairement l'existence des repos privés en renvoyant 404, pas 403). **Ne pas coller ce lien dans le formulaire (2.4) avant confirmation visuelle par Romy elle-même, en navigation privée/déconnectée.**
+- Sections mises à jour en conséquence : 1.6 bis (statut ⚠️), section 5 (2 items ⚠️ au lieu de ☑), section 8.3/8.4 (checklist resynchronisée)
