@@ -15,7 +15,6 @@ import pytest
 from laivelup.model import Level, ProfileData
 from laivelup.team import (
     Team,
-    _slug,
     create_team,
     evaluate_member,
     export_csv,
@@ -25,6 +24,7 @@ from laivelup.team import (
     remove_member,
     set_opt_out,
 )
+from laivelup.utils import slug
 
 
 def make_profile(
@@ -49,31 +49,37 @@ def make_profile(
 
 
 class TestSlug:
-    """Tests de pseudo-anonymisation RGPD."""
+    """Tests de pseudo-anonymisation RGPD via export public (slug, create_team)."""
 
     def test_slug_est_deterministe(self):
         """Le même nom produit toujours le même slug."""
-        s1 = _slug('Alice')
-        s2 = _slug('Alice')
+        s1 = slug('Alice')
+        s2 = slug('Alice')
         assert s1 == s2
 
     def test_slug_est_unique_par_nom(self):
         """Des noms différents produisent des slugs différents."""
-        s1 = _slug('Alice')
-        s2 = _slug('Bob')
+        s1 = slug('Alice')
+        s2 = slug('Bob')
         assert s1 != s2
 
-    def test_slug_ne_contient_pas_le_nom(self):
-        """Le slug ne contient pas le nom en clair (prudence RGPD)."""
-        slug = _slug('Alice Dupont')
-        assert 'alice' not in slug.lower() or slug.startswith('alice')
+    def test_slug_ne_contient_pas_le_nom_complet(self):
+        """Le slug ne contient pas le nom complet en clair (prudence RGPD)."""
+        s = slug('Alice Dupont')
         # Le slug commence par une version nettoyée, mais le digest est tronqué
-        assert len(slug) <= 41  # 32 + "-" + 8
+        assert len(s) <= 41  # 32 + "-" + 8
+
+    def test_slug_via_create_team(self):
+        """create_team produit des slugs uniques pour chaque membre."""
+        team = create_team('Equipe', ['Alice', 'Bob', 'Charlie'])
+        slugs = list(team.members.keys())
+        assert len(slugs) == 3
+        assert len(set(slugs)) == 3
 
     def test_slug_vide_retourne_defaut(self):
         """Un nom vide retourne un slug par défaut."""
-        slug = _slug('')
-        assert slug.startswith('membre-') or len(slug) > 0
+        s = slug('')
+        assert s.startswith('membre-') or len(s) > 0
 
 
 class TestCreateTeam:

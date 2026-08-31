@@ -1,5 +1,5 @@
 # Copyright 2026 Romy Alula — MIT License
-"""Tests pour le rapport HTML amélioré (Patapon world map, progress bar, pédagogie)."""
+"""Tests pour le rapport HTML (design system console LAIVEL-UP)."""
 
 from __future__ import annotations
 
@@ -36,62 +36,67 @@ def _make_verdict(**kwargs) -> Verdict:
     return Verdict(**defaults)
 
 
-class TestWorldMap:
-    def test_world_map_in_html(self):
+class TestVerdictHero:
+    def test_hero_section_in_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'patapon-world' in html
-        assert 'Carte de progression AIDD' in html
+        assert 'verdict-hero' in html
+        assert 'LAIVEL-UP / VERDICT' in html
 
-    def test_world_nodes_present(self):
-        v = _make_verdict()
-        html = render_html(v)
-        for level in ('WHITE', 'RED', 'BLUE', 'GREEN', 'COPPER', 'SILVER', 'GOLD'):
-            assert f'data-level="{level}"' in html
-
-    def test_current_level_highlighted(self):
+    def test_level_name_in_hero(self):
         v = _make_verdict(level=Level.GREEN)
         html = render_html(v)
-        assert 'world-node current' in html
-        assert 'NIVEAU DÉBLOQUÉ' in html
+        assert 'Green' in html
 
-    def test_locked_node_for_future_level(self):
-        v = _make_verdict(level=Level.RED)
+    def test_limiting_axis_displayed(self):
+        v = _make_verdict(limiting_axis='size')
         html = render_html(v)
-        assert 'data-level="GOLD"' in html
-        assert 'world-node locked' in html
+        assert 'AXE PLANCHER' in html
+        assert 'Taille' in html
+
+    def test_no_limiting_axis(self):
+        v = _make_verdict(limiting_axis=None)
+        html = render_html(v)
+        assert 'class="hero-limiting"' not in html
 
 
-class TestProgressBar:
-    def test_progress_bar_in_html(self):
+class TestConfidence:
+    def test_confidence_bar_in_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'progress-bar-container' in html
-        assert 'Progression' in html
+        assert 'confidence' in html
+        assert 'CONFIANCE' in html
 
-    def test_progress_fill_width(self):
+    def test_confidence_percentage(self):
         v = _make_verdict(level=Level.GREEN)
         html = render_html(v)
-        assert 'width:50%' in html  # GREEN = 3/6 = 50%
+        assert '60%' in html  # min(0.8, 0.9, 0.7, 0.6) = 0.6
 
-    def test_undecided_progress(self):
+    def test_undecided_confidence(self):
         v = Verdict(name='t', level=None, axis_scores=[], limiting_axis=None)
         html = render_html(v)
-        assert 'width:0%' in html
-        assert 'Undécis' in html
+        assert '—' in html
 
 
 class TestAxisDetail:
     def test_axis_cards_in_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'axis-details' in html
-        assert 'Détail par axe' in html
+        assert 'axis-grid' in html
+        assert 'Axes' in html
 
-    def test_axis_why_explanation(self):
+    def test_axis_card_content(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'Pourquoi ce niveau ?' in html
+        assert 'Taille' in html
+        assert 'CONFIANCE' in html
+        assert 'OBSERVATIONS' in html
+
+    def test_limiting_axis_highlighted(self):
+        v = _make_verdict(limiting_axis='size')
+        html = render_html(v)
+        assert 'axis-card-limiting' in html
+        assert 'AXE PLANCHER' in html
 
     def test_variance_in_html(self):
         v = _make_verdict(
@@ -115,7 +120,7 @@ class TestAxisDetail:
             ]
         )
         html = render_html(v)
-        assert 'Données insuffisantes' in html
+        assert 'Aucune trace' in html
 
 
 class TestNextStepsHtml:
@@ -124,12 +129,12 @@ class TestNextStepsHtml:
         html = render_html(v)
         assert 'Étape 1' in html
         assert 'Étape 2' in html
-        assert "Monter d'un cran" in html
+        assert 'Next Steps' in html
 
     def test_no_next_steps(self):
         v = _make_verdict(next_steps=[])
         html = render_html(v)
-        assert "Monter d'un cran" not in html
+        assert 'class="section next-steps-section"' not in html
 
 
 class TestFlagsHtml:
@@ -140,24 +145,23 @@ class TestFlagsHtml:
         html = render_html(v)
         assert 'Flag' in html
         assert 'Q?' in html
-        assert 'Alertes' in html
+        assert 'Red Flags' in html
 
     def test_no_flags(self):
         v = _make_verdict(red_flags=[])
         html = render_html(v)
-        assert 'Red flags' not in html
+        assert 'AUCUNE ALERTE' in html
 
 
 class TestPedagogySection:
     def test_glossary_in_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'Glossaire AIDD' in html
+        assert 'Glossaire' in html
         for term in GLOSSARY:
             assert term in html
 
     def test_glossary_reprise_definition(self):
-        """« Reprise » : définie avec sa mesure (traces), son lien grille, 70 % -> Red."""
         v = _make_verdict()
         html = render_html(v)
         assert 'Reprise (proportion de)' in html
@@ -168,14 +172,14 @@ class TestPedagogySection:
     def test_references_in_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'Références curatées' in html
+        assert 'RÉFÉRENCES CURATÉES' in html
         for ref in REFERENCES:
             assert ref['title'] in html
 
     def test_progression_guide(self):
         v = _make_verdict(limiting_axis='harness', level=Level.RED)
         html = render_html(v)
-        assert 'Comment progresser vers le niveau suivant' in html
+        assert 'Comment monter' in html
         assert 'Harness' in html
 
 
@@ -186,18 +190,27 @@ class TestTransparency:
         assert 'Transparence' in html
         assert 'neurotype' in html
 
-    def test_no_limiting_axis(self):
-        v = _make_verdict(limiting_axis=None)
-        html = render_html(v)
-        assert 'Axe plancher' not in html
-
 
 class TestFooter:
     def test_footer_in_html(self):
         v = _make_verdict()
         html = render_html(v)
-        assert 'report-footer' in html
-        assert 'LAIVEL UP' in html
+        assert 'system-footer' in html
+        assert 'LAIVEL-UP' in html
+
+
+class TestRefusal:
+    def test_refusal_screen(self):
+        v = Verdict(name='t', level=None, axis_scores=[], limiting_axis=None)
+        html = render_html(v)
+        assert 'refusal-screen' in html
+        assert 'REFUS' in html
+
+    def test_refusal_with_errors(self):
+        v = Verdict(name='t', level=None, axis_scores=[], limiting_axis=None, data_errors=['err'])
+        html = render_html(v)
+        assert 'refusal-errors' in html
+        assert 'err' in html
 
 
 class TestMarkdown:

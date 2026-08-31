@@ -235,7 +235,7 @@ class TestRGPDSanitizeGenerateProfile:
         )
         subprocess.run(['git', 'config', 'user.name', 'Alice'], cwd=repo_dir, capture_output=True)
 
-        (repo_dir / 'README.md').write_text('# Test')
+        (repo_dir / 'README.md').write_text('# Test', encoding='utf-8')
         subprocess.run(['git', 'add', '.'], cwd=repo_dir, capture_output=True)
         subprocess.run(['git', 'commit', '-m', 'init'], cwd=repo_dir, capture_output=True)
 

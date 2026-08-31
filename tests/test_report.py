@@ -131,7 +131,7 @@ class TestRenderHtml:
         v = _make_verdict(level=None, data_errors=['erreur test'])
         html = render_html(v)
         assert 'ko' in html
-        assert 'Données invalides' in html
+        assert 'refusal' in html
 
     def test_axis_table(self):
         v = _make_verdict(

@@ -87,7 +87,33 @@
     "meta": {
       "type": "object",
       "description": "Métadonnées additionnelles (horodatage, source, etc.).",
-      "additionalProperties": true
+      "properties": {
+        "note": {
+          "type": "string",
+          "description": "Note libre sur le profil."
+        },
+        "source_dir": {
+          "type": "string",
+          "description": "Répertoire source du profil."
+        },
+        "source": {
+          "type": "string",
+          "description": "Source du profil (ex: 'local_repo')."
+        },
+        "repo_path": {
+          "type": "string",
+          "description": "Nom du répertoire du repo analysé."
+        },
+        "user": {
+          "type": "string",
+          "description": "Identifiant utilisateur ayant généré le profil."
+        },
+        "generated_by": {
+          "type": "string",
+          "description": "Nom du script qui a généré le profil."
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

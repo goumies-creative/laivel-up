@@ -51,7 +51,7 @@ jobs:
       - name: Bandit security scan
         run: bandit -r src/ -c pyproject.toml
       - name: pip-audit dependency scan
-        run: pip-audit --skip-editable
+        run: pip-audit -r requirements.lock
       - name: Install project
         run: pip install -e .
       - name: Security tests

@@ -40,17 +40,16 @@ from . import __version__
 from ._completion_patch import patch_completion_encodings
 from .console import NO_COLOR, TTY, console, error_console, make_console
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
-from .questions import QUESTION_IDS, QUESTION_TRACE_KEYS
-from .report import verdict_to_dict, write_reports
-from .schema import validate_profile
-from .scoring import evaluate
-from .team import (
-    Team,
-    create_team,
-    evaluate_member,
-    load_team,
-    save_team,
+from .nes_rendering import (
+    LEVEL_RICH_COLORS,
+    PIXEL_D,
+    PIXEL_F,
+    PIXEL_H,
+    _nes_box,
+    _nes_level_bar,
+    _nes_progress_bar,
 )
+from .report import verdict_to_dict, write_reports
 from .team_cli import register_team_commands
 
 # Bug Typer amont : install_bash/install_zsh lisent ~/.bashrc sans encoding ->
@@ -185,6 +184,8 @@ def schema_cmd() -> None:
 # ─── Helpers ─────────────────────────────────────────────────────────
 def _load_profile(path: Path) -> ProfileData:
     """Charge un profil JSON avec une erreur amicale et une borne de taille."""
+    from .schema import validate_profile
+
     try:
         size = path.stat().st_size
     except OSError:
@@ -235,64 +236,6 @@ NES_ACCENT = '#00aaff'
 NES_SUCCESS = '#00cc44'
 NES_WARNING = '#ccaa00'
 NES_DANGER = '#cc3333'
-
-# Couleur Rich par niveau, partagée entre la barre de progression
-# (_nes_level_bar) et le tableau d'axes (_print_verdict) : un axe RED doit
-# se voir en rouge partout, pas seulement dans l'un des deux rendus (9.1.c).
-LEVEL_RICH_COLORS: dict[Level, str] = {
-    Level.WHITE: 'dim',
-    Level.RED: 'red',
-    Level.BLUE: 'blue',
-    Level.GREEN: 'green',
-    Level.COPPER: 'yellow',
-    Level.SILVER: 'bright_white',
-    Level.GOLD: 'bright_yellow',
-}
-
-PIXEL_H = '\u2580'  # ▀ upper half block
-PIXEL_L = '\u2584'  # ▄ lower half block
-PIXEL_F = '\u2588'  # █ full block
-PIXEL_M = '\u2592'  # ▒ medium shade
-PIXEL_D = '\u2591'  # ░ light shade
-
-# ASCII art borders for NES-style boxes
-BOX_TL = '+'
-BOX_TR = '+'
-BOX_BL = '+'
-BOX_BR = '+'
-BOX_H = '-'
-BOX_V = '|'
-
-
-def _nes_box(lines: list[str], color: str = 'cyan', width: int = 40) -> None:
-    """Affiche un cadre NES-style en ASCII art."""
-    border = BOX_H * (width - 2)
-    open_tag = f'[bold {color}]'
-    close_tag = '[/' + f'bold {color}]'
-    console.print(open_tag + BOX_TL + border + BOX_TR + close_tag)
-    for line in lines:
-        padded = line.ljust(width - 4)
-        console.print(
-            open_tag + BOX_V + close_tag + ' ' + padded + ' ' + open_tag + BOX_V + close_tag
-        )
-    console.print(open_tag + BOX_BL + border + BOX_BR + close_tag)
-
-
-def _nes_progress_bar(current: int, total: int, width: int = 20, color: str = 'green') -> str:
-    """Barre de progression NES en blocs pixel."""
-    filled = int((current / total) * width) if total > 0 else 0
-    empty = width - filled
-    return f'[{color}]{PIXEL_F * filled}[/{color}][dim]{PIXEL_D * empty}[/dim]'
-
-
-def _nes_level_bar(level: Level | None, max_level: Level = Level.GOLD) -> str:
-    """Barre de niveau pixel pour un axe."""
-    if level is None:
-        return f'[dim]{PIXEL_D * 7}[/dim]'
-    filled = level.value + 1
-    empty = max_level.value + 1 - filled
-    c = LEVEL_RICH_COLORS.get(level, 'dim')
-    return f'[{c}]{PIXEL_F * filled}[/{c}][dim]{PIXEL_D * empty}[/dim]'
 
 
 def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = False) -> Verdict:
@@ -426,6 +369,8 @@ def evaluate_profile(
     fields: str | None = typer.Option(None, '--fields', help='Filtrer champs JSON.'),
 ) -> None:
     """Évalue un profil et écrit les rapports Markdown (+ HTML)."""
+    from .scoring import evaluate
+
     profile = _load_profile(profil)
 
     use_json = json_output or not TTY
@@ -494,6 +439,9 @@ def interrogate(
     verbose: bool = typer.Option(False, '--verbose', '-v', help='Sortie détaillée technique.'),
 ) -> None:
     """Mode entretien guidé : pose les questions, fusionne les réponses, ré-évalue."""
+    from .questions import QUESTION_IDS
+    from .scoring import evaluate
+
     if profil is not None:
         profile = _load_profile(profil)
     else:
@@ -644,6 +592,7 @@ def calibrate_cmd(
 ) -> None:
     """Compare les verdicts aux niveaux attendus et génère un tableau de bord HTML."""
     from .calibrate_core import run_calibration
+    from .calibrate_dashboard import generate_calibrate_html
 
     result = run_calibration(expected=expected, profiles_dir=profiles_dir)
 
@@ -716,6 +665,8 @@ def _feedback_for(profile: ProfileData, question: str, answer: str) -> str:
     réponse ne soit jamais confondue avec la création d'une donnée. La valeur
     d'une trace vient du profil ou du chiffre donné ; une confirmation ne fait
     que la corroborer."""
+    from .questions import QUESTION_IDS
+
     t = profile.traces
     if question == QUESTION_IDS['RETRIES_RATIO'] and t.get('retries_after_fact') is not None:
         return f'Proportion de reprise : {t["retries_after_fact"]:.0%}.'
@@ -732,6 +683,8 @@ def _feedback_for(profile: ProfileData, question: str, answer: str) -> str:
 
 def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileData:
     """Fusionne la réponse dans les traces pour le rescore."""
+    from .questions import QUESTION_IDS
+
     low = answer.strip().lower()
 
     if question == QUESTION_IDS['PR_SIZES']:

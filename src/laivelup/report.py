@@ -1,51 +1,93 @@
 # Copyright 2026 Romy Alula — MIT License
-"""Rapport de verdict : Markdown (source de vérité) + HTML (relecture humaine).
+"""Rapports LAIVEL-UP : Markdown (source de vérité) + HTML (relecture humaine).
 
-Transparence : chaque rapport documente les données utilisées, la méthode
-(min() sur 4 axes), les sources des preuves et les limites de l'évaluation.
-Aucun neurotype n'est mesuré, demandé ni inféré.
+Le moteur de scoring n'est jamais dupliqué ici.
+
+Ce module est uniquement responsable de :
+- sérialiser un Verdict en Markdown ;
+- présenter un Verdict en HTML ;
+- écrire les artefacts de rapport ;
+- fournir une sérialisation JSON-compatible.
+
+Principes de rendu :
+- pas de progression artificielle ;
+- un niveau n'est jamais transformé en score ou pourcentage ;
+- seule la confiance réelle peut être affichée en pourcentage ;
+- Refus est un état distinct d'un niveau ;
+- les quatre axes et leur vocabulaire métier restent inchangés ;
+- les Red Flags et Next Steps sont présentés tels que fournis par le moteur ;
+- aucune donnée personnelle ou donnée de neurotype n'est introduite.
 """
 
 from __future__ import annotations
 
+import os
+import tempfile
 from datetime import datetime
 from html import escape
 from pathlib import Path
 
-from .model import LEVEL_COLORS, Level, Verdict, axis_label, level_label
+from .model import Level, Verdict, axis_label, level_label
+from .report_css import CSS_STYLES
 from .utils import slug
 
-# --- Glossaire pédagogique (termes AIDD → définitions accessibles) --------
+# ---------------------------------------------------------------------------
+# ÉCRITURE ATOMIQUE
+# ---------------------------------------------------------------------------
+
+
+def _atomic_write(path: Path, content: str) -> None:
+    """Écriture atomique via tempfile + os.replace."""
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix='.tmp')
+    try:
+        os.write(fd, content.encode('utf-8'))
+        os.close(fd)
+        os.replace(tmp, path)
+    except BaseException:
+        os.close(fd) if not os.get_inheritable(fd) else None
+        os.unlink(tmp)
+        raise
+
+
+# ---------------------------------------------------------------------------
+# GLOSSAIRE LAIVEL-UP
+# ---------------------------------------------------------------------------
+
 GLOSSARY: dict[str, str] = {
     'Context Engineering': (
         "La mémoire que l'IA lit avant de coder : conventions, architecture, "
-        "décisions passées. C'est le minimum syndical pour que l'IA produise du code cohérent."
+        "décisions passées. C'est le minimum syndical pour que l'IA produise "
+        'du code cohérent.'
     ),
     'Behavior': (
-        "Les règles et agents qui contrôlent comment l'IA agit : "
-        "code review, hooks, guardrails. C'est le 'comment' au lieu du 'quoi'."
+        "Les règles et agents qui contrôlent comment l'IA agit : code review, "
+        "hooks, guardrails. C'est le « comment » au lieu du « quoi »."
     ),
     'Retry Loops': (
         "Un script relance l'IA tant qu'une commande du projet échoue. "
         "L'IA corrige elle-même ses erreurs sans intervention humaine."
     ),
     'Harness': (
-        "L'ensemble du harnais autour du modèle : Context Engineering + Behavior + Retry Loops. "
-        "Plus le harnais est complet, moins l'humain doit intervenir."
+        "L'ensemble du harnais autour du modèle : Context Engineering + "
+        "Behavior + Retry Loops. Plus le harnais est complet, moins l'humain "
+        'doit intervenir.'
     ),
     'Intervention': (
-        "Quand l'humain intervient dans le travail de l'IA. Cadrer = choisir la tâche et "
-        "dire ce qui est attendu. Monter d'un niveau = reprendre moins pour atteindre la qualité."
+        "Quand l'humain intervient dans le travail de l'IA. Cadrer = choisir "
+        "la tâche et dire ce qui est attendu. Monter d'un niveau = reprendre "
+        'moins pour atteindre la qualité.'
     ),
     'Reprise (proportion de)': (
         "La part de PR livrées avec l'IA que l'humain a dû reprendre après coup : "
-        'corriger, retoucher, refaire. La grille officielle dit « commits correctifs ». '
-        "70 % : sur 10 PR, 7 reprises · cellule Red de l'axe Intervention. "
-        "La valeur vient des traces du profil, jamais d'une réponse au questionnaire seule."
+        'corriger, retoucher, refaire. La grille officielle dit « commits '
+        "correctifs ». 70 % : sur 10 PR, 7 reprises · cellule Red de l'axe "
+        "Intervention. La valeur vient des traces du profil, jamais d'une "
+        'réponse au questionnaire seule.'
     ),
     'Taille (Size)': (
-        "La taille habituelle des features livrées avec l'IA : S (petite), M (moyenne), "
-        "L (multi-étapes), XL (multi-modules). Pas la plus grosse jamais faite, l'habituel."
+        "La taille habituelle des features livrées avec l'IA : S (petite), "
+        'M (moyenne), L (multi-étapes), XL (multi-modules). Pas la plus grosse '
+        "jamais faite, l'habituel."
     ),
     'En parallèle': (
         'Combien de chantiers avancent en même temps, habituellement. '
@@ -53,987 +95,1351 @@ GLOSSARY: dict[str, str] = {
     ),
     'Règle AND': (
         "Un niveau n'est atteint que si TOUTES ses cellules sont satisfaites. "
-        "L'axe le plus faible ('axe plancher') détermine le niveau global."
+        "L'axe le plus faible (« axe plancher ») détermine le niveau global."
     ),
     'Refus de deviner': (
-        "Quand les données manquent ou se contredisent, l'outil refuse de trancher "
-        'et pose des questions ciblées plutôt que de deviner. Équité structurelle.'
+        "Quand les données manquent ou se contredisent, l'outil refuse de "
+        'trancher et pose des questions ciblées plutôt que de deviner. '
+        'Équité structurelle.'
     ),
 }
 
-# --- Références curatées (articles AIDD, manifesto, ressources) ----------
+
+# ---------------------------------------------------------------------------
+# RÉFÉRENCES
+# ---------------------------------------------------------------------------
+
 REFERENCES: list[dict[str, str]] = [
     {
         'url': 'https://ai-driven-development.org',
         'title': 'Manifesto for AI-Driven Development',
-        'desc': "Le manifeste fondateur — principes et niveaux d'adoption AIDD.",
+        'desc': ("Le manifeste fondateur — principes et niveaux d'adoption AIDD."),
     },
     {
-        'url': 'https://github.com/ai-driven-dev/laivel-up/blob/main/levels/aidd.md',
+        'url': ('https://github.com/ai-driven-dev/laivel-up/blob/main/levels/aidd.md'),
         'title': 'Référentiel AIDD officiel',
-        'desc': 'La grille complète : 4 axes × 7 niveaux, règles et exemples.',  # noqa: RUF001
+        'desc': ('La grille complète : 4 axes × 7 niveaux, règles et exemples.'),
     },
     {
         'url': 'https://github.com/EveryInc/compound-engineering',
         'title': 'Compound Engineering',
-        'desc': 'Le framework de skills qui structure le développement assisté par IA.',
+        'desc': ('Le framework de skills qui structure le développement assisté par IA.'),
     },
 ]
 
 
+# ---------------------------------------------------------------------------
+# PALETTE SÉMANTIQUE LAIVEL-UP
+# ---------------------------------------------------------------------------
+
+SYSTEM_COLORS: dict[str, str] = {
+    'background': '#0b0d12',
+    'surface': '#11151d',
+    'surface_2': '#171c25',
+    'border': '#2b3442',
+    'border_active': '#56657a',
+    'text': '#e7ebf0',
+    'text_secondary': '#a7b0bd',
+    'muted': '#697586',
+    'info': '#4db8ff',
+    'ok': '#39d98a',
+    'warn': '#e3b341',
+    'danger': '#ef6262',
+    'white': '#d9dee7',
+    'red': '#ef6262',
+    'blue': '#4d8dff',
+    'green': '#39c879',
+    'copper': '#c58b52',
+    'silver': '#aeb7c4',
+    'gold': '#f0c75e',
+}
+
+
+LEVEL_COLORS_HTML: dict[Level, dict[str, str]] = {
+    Level.WHITE: {
+        'fg': SYSTEM_COLORS['white'],
+        'accent': SYSTEM_COLORS['white'],
+    },
+    Level.RED: {
+        'fg': SYSTEM_COLORS['red'],
+        'accent': SYSTEM_COLORS['red'],
+    },
+    Level.BLUE: {
+        'fg': SYSTEM_COLORS['blue'],
+        'accent': SYSTEM_COLORS['blue'],
+    },
+    Level.GREEN: {
+        'fg': SYSTEM_COLORS['green'],
+        'accent': SYSTEM_COLORS['green'],
+    },
+    Level.COPPER: {
+        'fg': SYSTEM_COLORS['copper'],
+        'accent': SYSTEM_COLORS['copper'],
+    },
+    Level.SILVER: {
+        'fg': SYSTEM_COLORS['silver'],
+        'accent': SYSTEM_COLORS['silver'],
+    },
+    Level.GOLD: {
+        'fg': SYSTEM_COLORS['gold'],
+        'accent': SYSTEM_COLORS['gold'],
+    },
+}
+
+
+# ---------------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------------
+
+
+def _level_name(level: Level | None) -> str:
+    """Nom textuel du niveau, sans emoji.
+
+    model.level_label() reste la source de vérité pour le vocabulaire.
+    Le HTML utilise toutefois une représentation sans emoji afin de garder
+    une identité visuelle sobre et compatible terminal.
+    """
+    if level is None:
+        return 'Refus'
+
+    label = level_label(level)
+
+    # LEVEL_LABELS du modèle contiennent actuellement des symboles.
+    # On conserve uniquement le nom final.
+    return label.split()[-1]
+
+
+def _level_color(level: Level | None) -> str:
+    """Retourne la couleur sémantique associée à un niveau."""
+    if level is None:
+        return SYSTEM_COLORS['muted']
+
+    return LEVEL_COLORS_HTML[level]['accent']
+
+
+def _confidence_text(confidence: float | None) -> str:
+    """Formate une confiance réelle sans créer de métrique dérivée."""
+    if confidence is None:
+        return '—'
+
+    return f'{confidence:.0%}'
+
+
 def _glossary_tooltip(term: str) -> str:
-    """Renvoie un <span> avec tooltip pour un terme du glossaire."""
-    defn = GLOSSARY.get(term)
-    if not defn:
+    """Retourne un span HTML avec le terme et sa définition."""
+    definition = GLOSSARY.get(term)
+
+    if not definition:
         return escape(term)
+
     return (
-        f'<span class="glossary-term" data-tooltip="{escape(defn)}">'
-        f'{escape(term)}<span class="glossary-icon">?</span></span>'
+        f'<span class="glossary-term" '
+        f'data-tooltip="{escape(definition)}">'
+        f'{escape(term)}'
+        f'<span class="glossary-icon">?</span>'
+        '</span>'
     )
 
 
+# ---------------------------------------------------------------------------
+# MARKDOWN — SOURCE DE VÉRITÉ
+# ---------------------------------------------------------------------------
+
+
 def render_markdown(verdict: Verdict) -> str:
+    """Rend un Verdict en Markdown.
+
+    Le Markdown reste volontairement factuel et indépendant du design HTML.
+    """
+
     lines = [f'# Verdict AIDD · {verdict.name}']
+
     if verdict.data_errors:
         lines.append("\n**Données invalides :** l'évaluation refuse de trancher.")
-        for e in verdict.data_errors:
-            lines.append(f'\n- {e}')
+
+        for error in verdict.data_errors:
+            lines.append(f'\n- {error}')
+
     elif verdict.decided:
         lines.append(f'\n**Niveau :** {level_label(verdict.level)}')
+
     else:
         lines.append('\n**Niveau :** non déterminable · données insuffisantes ou contradictoires')
+
     if verdict.limiting_axis:
         lines.append(f'\n**Axe plancher / faible :** {axis_label(verdict.limiting_axis)}')
+
     if verdict.axis_scores:
         lines.append('\n## Axes')
         lines.append('\n| Axe | Niveau | Confiance | Éléments observés |')
         lines.append('|---|---|---|---|')
-        for a in verdict.axis_scores:
-            label = level_label(a.level)
-            conf = f'{a.confidence:.0%}' if a.level is not None else '—'
-            ev = ', '.join(a.evidence)
-            if a.variance:
-                ev = f'{ev} · variance : {a.variance}'
-            lines.append(f'| {axis_label(a.axe)} | {label} | {conf} | {ev} |')
+
+        for axis_score in verdict.axis_scores:
+            label = level_label(axis_score.level)
+            confidence = _confidence_text(
+                axis_score.confidence if axis_score.level is not None else None
+            )
+
+            evidence = ', '.join(axis_score.evidence)
+
+            if axis_score.variance:
+                evidence = f'{evidence} · variance : {axis_score.variance}'
+
+            lines.append(f'| {axis_label(axis_score.axe)} | {label} | {confidence} | {evidence} |')
+
     if verdict.red_flags:
         lines.append('\n## Alertes (hypothèses à vérifier)')
-        for f in verdict.red_flags:
-            lines.append(f'\n- **{f.titre}** ({"⚠" * f.severite}) · {f.constat} _({f.source})_')
-            if f.question:
-                lines.append(f'  → Question : {f.question}')
+
+        for flag in verdict.red_flags:
+            severity = '⚠' * max(0, flag.severite)
+
+            lines.append(f'\n- **{flag.titre}** ({severity}) · {flag.constat} _({flag.source})_')
+
+            if flag.question:
+                lines.append(f'  → Question : {flag.question}')
+
     if verdict.next_steps:
         lines.append("\n## Comment monter d'un cran / point de levée d'incertitude")
-        for n in verdict.next_steps:
-            lines.append(f'\n- {n}')
+
+        for next_step in verdict.next_steps:
+            lines.append(f'\n- {next_step}')
+
     lines.append(
         '\n## Transparence\n'
-        '\n- **Données utilisées :** traces techniques déclarées seulement (commits, PR, '
-        'contexte). Aucune donnée personnelle, aucun neurotype demandé ni inféré.\n'
-        '- **Méthode :** score discret par axe puis règle officielle « tous les axes le '
-        'sont » (`min()`), avec une confiance par axe. Une confiance faible ou des '
-        "données contradictoires conduisent au refus de trancher plutôt qu'à un verdict "
-        'arbitraire.\n'
-        '- **Limites :** la séniorité, la qualité de code et le neurotype ne sont pas '
-        'mesurés. Un niveau reflète une adoption observée, pas une valeur humaine.\n'
+        '\n- **Données utilisées :** traces techniques déclarées seulement '
+        '(commits, PR, contexte). Aucune donnée personnelle, aucun neurotype '
+        'demandé ni inféré.\n'
+        '- **Méthode :** score discret par axe puis règle officielle '
+        '« tous les axes le sont » (`min()`), avec une confiance par axe. '
+        'Une confiance faible ou des données contradictoires conduisent au '
+        "refus de trancher plutôt qu'à un verdict arbitraire.\n"
+        '- **Limites :** la séniorité, la qualité de code et le neurotype ne '
+        'sont pas mesurés. Un niveau reflète une adoption observée, pas une '
+        'valeur humaine.\n'
         '- **Sources :** référentiel AIDD officiel '
         '(https://github.com/ai-driven-dev/laivel-up).'
     )
+
     return '\n'.join(lines) + '\n'
 
 
-def _render_world_map(verdict: Verdict) -> str:
-    """Carte du monde Patapon-style : chaque niveau = un nœud, axes = étapes internes."""
-    current = verdict.level
-    nodes = []
-    for lvl in Level:
-        color = LEVEL_COLORS[lvl]
-        is_current = current is not None and lvl == current
-        is_unlocked = current is not None and lvl.value <= current.value
+# ---------------------------------------------------------------------------
+# AVATAR MONITEUR
+# ---------------------------------------------------------------------------
 
-        state = 'locked'
-        if is_unlocked:
-            state = 'unlocked'
-        if is_current:
-            state = 'current'
 
-        badge_html = ''
-        if is_current:
-            badge_html = (
-                f'<span class="achievement-badge" style="background:{color["accent"]};'
-                f'color:#fff;">NIVEAU DÉBLOQUÉ</span>'
-            )
+def _render_monitor_avatar(
+    state: str = 'idle',
+    level: Level | None = None,
+) -> str:
+    """Avatar LAIVEL-UP : uniquement un moniteur.
 
-        # Sous-nœuds : les 4 axes comme étapes internes du monde
-        axis_stages = ''
-        if is_unlocked or is_current:
-            for a in verdict.axis_scores:
-                if a.axe:
-                    ax_color = (
-                        color['accent']
-                        if a.level is not None and a.level.value >= lvl.value
-                        else '#ddd'
-                    )
-                    ax_label = axis_label(a.axe)
-                    ax_check = '✓' if a.level is not None and a.level.value >= lvl.value else '○'
-                    axis_stages += (
-                        f'<span class="axis-stage" style="border-color:{ax_color};'
-                        f'color:{ax_color};">{ax_check} {ax_label}</span>'
-                    )
+    Aucun corps, aucune antenne, aucun personnage.
+    Les expressions sont rendues par les éléments internes de l'écran.
+    """
 
-        nodes.append(
-            f'<div class="world-node {state}" data-level="{lvl.name}">'
-            f'<div class="node-icon" style="background:{color["bg"]};'
-            f'border-color:{color["accent"]};color:{color["fg"]};">'
-            f'{color["icon"]}</div>'
-            f'<div class="node-label">{lvl.name}</div>'
-            f'{axis_stages}'
-            f'{badge_html}'
-            f'</div>'
-        )
+    expressions: dict[str, tuple[str, str, str]] = {
+        'idle': ('·', '·', 'idle'),
+        'analyzing': ('◉', '◉', 'analyzing'),
+        'questioning': ('?', '?', 'questioning'),
+        'success': ('•', '•', 'success'),
+        'warning': ('!', '!', 'warning'),
+        'error': ('×', '×', 'error'),
+        'refusal': ('—', '—', 'refusal'),
+    }
 
-    # Connexions entre les nœuds
-    connectors = '<div class="world-connector"></div>'.join(
-        ['<div class="world-connector-line"></div>' for _ in range(len(Level) - 1)]
+    left_eye, right_eye, expression_class = expressions.get(
+        state.lower(),
+        expressions['idle'],
     )
 
-    return (
-        '<div class="patapon-world">'
-        '<h2 class="world-title">Carte de progression AIDD</h2>'
-        '<div class="world-map">'
-        + f'<div class="connector">{connectors}</div>'.join(nodes)  # simplify: join with empty
-        + '</div>'
-        '</div>'
-    )
+    accent = _level_color(level) if level is not None else SYSTEM_COLORS['info']
+
+    return f"""
+<div class="monitor-avatar {expression_class}"
+     style="--avatar-accent:{accent};"
+     role="img"
+     aria-label="Avatar moniteur LAIVEL-UP, état {escape(state)}">
+
+    <div class="monitor-shell">
+
+        <div class="monitor-screen">
+
+            <div class="monitor-eyes"
+                 aria-hidden="true">
+                <span>{escape(left_eye)}</span>
+                <span>{escape(right_eye)}</span>
+            </div>
+
+            <div class="monitor-mouth"
+                 aria-hidden="true">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+"""
 
 
-def _render_progress_bar(verdict: Verdict) -> str:
-    """Barre de progression stylisée avec paliers White→Gold."""
-    current = verdict.level
-    if current is None:
-        pct = 0
-        current_name = 'Undécis'
-    else:
-        pct = int((current.value / 6) * 100)
-        current_name = current.name
-
-    steps = []
-    for lvl in Level:
-        color = LEVEL_COLORS[lvl]
-        is_unlocked = current is not None and lvl.value <= current.value
-        cls = 'step unlocked' if is_unlocked else 'step locked'
-        steps.append(
-            f'<div class="{cls}" style="flex:1; text-align:center;">'
-            f'<div class="step-dot" style="background:{color["accent"] if is_unlocked else "#ccc"};'
-            f'width:12px;height:12px;border-radius:50%;margin:0 auto;"></div>'
-            f'<div class="step-label" style="font-size:.7rem;color:{color["fg"] if is_unlocked else "#999"};">'
-            f'{color["icon"]} {lvl.name}</div>'
-            f'</div>'
-        )
-
-    return (
-        '<div class="progress-bar-container">'
-        f'<h2 class="progress-title">Progression · {current_name}</h2>'
-        '<div class="progress-track">'
-        f'<div class="progress-fill" style="width:{pct}%;"></div>'
-        '</div>'
-        '<div class="progress-steps">' + ''.join(steps) + '</div>'
-        '</div>'
-    )
+# ---------------------------------------------------------------------------
+# AXES
+# ---------------------------------------------------------------------------
 
 
 def _render_axis_detail(verdict: Verdict) -> str:
-    """Détail par axe avec encadré pédagogique 'Pourquoi ce niveau ?'."""
+    """Rend les quatre axes sous forme de cartes.
+
+    Les données affichées sont directement issues du Verdict.
+    Aucune valeur qualitative n'est recalculée.
+    """
+
     if not verdict.axis_scores:
         return ''
 
-    rows = []
-    for a in verdict.axis_scores:
-        label = axis_label(a.axe)
-        lvl = level_label(a.level)
-        conf = f'{a.confidence:.0%}' if a.level is not None else '—'
-        ev = ', '.join(a.evidence) if a.evidence else 'Aucune trace'
-        if a.variance:
-            ev = f'{ev} · variance : {escape(a.variance)}'
+    cards: list[str] = []
 
-        # Encadré "Pourquoi ce niveau ?" pour chaque axe
-        why = _why_this_level(a.axe, a.level, a.evidence)
-
-        # 10.1.b (adapté) : la demande initiale visait une <table> avec
-        # <caption>/scope="col", mais ce rendu n'utilise plus de table —
-        # remplacée par ces cartes par axe. L'équivalent d'accessibilité pour
-        # une carte est un rôle ARIA list/listitem + un aria-label résumant
-        # la carte entière, plutôt que des en-têtes de colonnes qui n'existent
-        # plus.
-        card_label = escape(f'{label} : {lvl}, confiance {conf}')
-        rows.append(
-            f'<div class="axis-card" role="listitem" aria-label="{card_label}">'
-            f'<div class="axis-card-header">'
-            f'<span class="axis-name">{label}</span>'
-            f'<span class="axis-level" style="color:{_level_color(a.level)};">{lvl}</span>'
-            f'</div>'
-            f'<div class="axis-confidence">Confiance : {conf}</div>'
-            f'<div class="axis-evidence">{escape(ev)}</div>'
-            f'<div class="axis-why"><strong>Pourquoi ce niveau ?</strong> {why}</div>'
-            f'</div>'
+    for axis_score in verdict.axis_scores:
+        label = axis_label(axis_score.axe)
+        level_name = _level_name(axis_score.level)
+        confidence = _confidence_text(
+            axis_score.confidence if axis_score.level is not None else None
         )
 
-    return (
-        '<div class="axis-details" role="list" aria-label="D\u00e9tail par axe d\u0027\u00e9valuation">'
-        '<h2>Détail par axe</h2>' + ''.join(rows) + '</div>'
-    )
+        evidence = ', '.join(axis_score.evidence) if axis_score.evidence else 'Aucune trace'
+
+        if axis_score.variance:
+            evidence = f'{evidence} · variance : {escape(axis_score.variance)}'
+
+        is_limiting = verdict.limiting_axis == axis_score.axe
+
+        accent = _level_color(axis_score.level)
+
+        limiting_html = '<span class="axis-limiting">AXE PLANCHER</span>' if is_limiting else ''
+
+        cards.append(
+            f"""
+<article class="axis-card"
+         {'axis-card-limiting' if is_limiting else ''}
+         style="--axis-accent:{accent};"
+         role="listitem"
+         aria-label="{escape(label)} : "
+                    f"{escape(level_name)}, "
+                    f"confiance {escape(confidence)}">
+
+    <header class="axis-card-header">
+
+        <div>
+            <span class="axis-index">
+                AXE
+            </span>
+
+            <h3>
+                {escape(label)}
+            </h3>
+        </div>
+
+        <div class="axis-meta">
+            {limiting_html}
+
+            <span class="axis-level">
+                {escape(level_name)}
+            </span>
+        </div>
+
+    </header>
+
+    <div class="axis-card-body">
+
+        <div class="axis-confidence">
+            <span>CONFIANCE</span>
+            <strong>{escape(confidence)}</strong>
+        </div>
+
+        <div class="axis-evidence">
+
+            <span class="field-label">
+                OBSERVATIONS
+            </span>
+
+            <p>
+                {escape(evidence)}
+            </p>
+
+        </div>
+
+    </div>
+
+</article>
+"""
+        )
+
+    return f"""
+<section class="section axis-section"
+         aria-labelledby="axes-title">
+
+    <div class="section-heading">
+
+        <span class="section-index">
+            01
+        </span>
+
+        <div>
+            <span class="eyebrow">
+                MATRICE D'ÉVALUATION
+            </span>
+
+            <h2 id="axes-title">
+                Axes
+            </h2>
+        </div>
+
+    </div>
+
+    <div class="axis-grid"
+         role="list"
+         aria-label="Quatre axes d'évaluation">
+
+        {''.join(cards)}
+
+    </div>
+
+</section>
+"""
 
 
-def _why_this_level(axe: str, level: Level | None, _evidence: list[str]) -> str:
-    """Génère une explication pédagogique du niveau pour un axe donné."""
+# ---------------------------------------------------------------------------
+# RED FLAGS
+# ---------------------------------------------------------------------------
+
+
+def _render_red_flags(verdict: Verdict) -> str:
+    """Rend les Red Flags sans les recalculer ni les reformuler."""
+
+    if not verdict.red_flags:
+        return """
+<section class="section diagnostic-section diagnostic-clear"
+         aria-label="Red Flags">
+
+    <div class="diagnostic-status">
+        <span class="status-symbol"
+              aria-hidden="true">
+            OK
+        </span>
+
+        <span>
+            AUCUNE ALERTE
+        </span>
+    </div>
+
+</section>
+"""
+
+    items: list[str] = []
+
+    for flag in verdict.red_flags:
+        severity = max(1, flag.severite)
+        marker = '!' * min(severity, 3)
+
+        question_html = ''
+
+        if flag.question:
+            question_html = f"""
+<div class="flag-question">
+
+    <span>
+        LA DÉCODEUSE
+    </span>
+
+    <p>
+        {escape(flag.question)}
+    </p>
+
+</div>
+"""
+
+        items.append(
+            f"""
+<article class="red-flag">
+
+    <div class="red-flag-marker"
+         aria-label="Sévérité {severity}">
+
+        [{marker}]
+
+    </div>
+
+    <div class="red-flag-content">
+
+        <h3>
+            {escape(flag.titre)}
+        </h3>
+
+        <p class="flag-finding">
+            {escape(flag.constat)}
+        </p>
+
+        <div class="flag-source">
+            SOURCE · {escape(flag.source)}
+        </div>
+
+        {question_html}
+
+    </div>
+
+</article>
+"""
+        )
+
+    return f"""
+<section class="section diagnostic-section"
+         aria-labelledby="red-flags-title">
+
+    <div class="section-heading">
+
+        <span class="section-index">
+            02
+        </span>
+
+        <div>
+            <span class="eyebrow">
+                DIAGNOSTICS
+            </span>
+
+            <h2 id="red-flags-title">
+                Red Flags
+            </h2>
+        </div>
+
+    </div>
+
+    <div class="red-flags">
+        {''.join(items)}
+    </div>
+
+</section>
+"""
+
+
+# ---------------------------------------------------------------------------
+# NEXT STEPS
+# ---------------------------------------------------------------------------
+
+
+def _render_next_steps(verdict: Verdict) -> str:
+    """Rend les Next Steps tels que fournis par le moteur."""
+
+    if not verdict.next_steps:
+        return ''
+
+    items: list[str] = []
+
+    for index, step in enumerate(verdict.next_steps, start=1):
+        items.append(
+            f"""
+<li class="next-step">
+
+    <span class="next-step-index">
+        {index:02d}
+    </span>
+
+    <div class="next-step-content">
+        {escape(step)}
+    </div>
+
+</li>
+"""
+        )
+
+    return f"""
+<section class="section next-steps-section"
+         aria-labelledby="next-steps-title">
+
+    <div class="section-heading">
+
+        <span class="section-index">
+            03
+        </span>
+
+        <div>
+            <span class="eyebrow">
+                ACTION
+            </span>
+
+            <h2 id="next-steps-title">
+                Next Steps
+            </h2>
+        </div>
+
+    </div>
+
+    <ol class="next-steps">
+        {''.join(items)}
+    </ol>
+
+</section>
+"""
+
+
+# ---------------------------------------------------------------------------
+# REFUS
+# ---------------------------------------------------------------------------
+
+
+def _render_refusal(verdict: Verdict) -> str:
+    """Rend le refus comme un état distinct d'un niveau."""
+
+    errors_html = ''
+
+    if verdict.data_errors:
+        errors_html = f"""
+<div class="refusal-errors">
+
+    <span class="field-label">
+        DIAGNOSTIC DE DONNÉES
+    </span>
+
+    <ul>
+        {''.join(f'<li>{escape(error)}</li>' for error in verdict.data_errors)}
+    </ul>
+
+</div>
+"""
+
+    return f"""
+<section class="refusal-screen"
+         aria-labelledby="refusal-title">
+
+    <div class="refusal-monitor">
+
+        {_render_monitor_avatar('refusal')}
+
+    </div>
+
+    <div class="refusal-content">
+
+        <span class="eyebrow">
+            STATUT D'ÉVALUATION
+        </span>
+
+        <h1 id="refusal-title">
+            REFUS
+        </h1>
+
+        <p class="refusal-lead">
+            Le moteur ne tranche pas.
+        </p>
+
+        <p>
+            Les données disponibles sont insuffisantes ou contradictoires
+            pour produire un Verdict fiable.
+        </p>
+
+        {errors_html}
+
+        <div class="refusal-action">
+            <span class="action-key">
+                I
+            </span>
+
+            <span>
+                LA DÉCODEUSE
+            </span>
+        </div>
+
+    </div>
+
+</section>
+"""
+
+
+# ---------------------------------------------------------------------------
+# PÉDAGOGIE
+# ---------------------------------------------------------------------------
+
+
+def _why_this_level(
+    axe: str,
+    level: Level | None,
+    _evidence: list[str],
+) -> str:
+    """Explication pédagogique statique du référentiel.
+
+    Cette fonction ne participe jamais au scoring.
+    """
+
     if level is None:
         return 'Données insuffisantes pour trancher sur cet axe.'
 
-    explanations = {
+    explanations: dict[str, dict[Level, str]] = {
         'size': {
-            Level.RED: "Les PR observées sont de taille S. C'est le niveau d'entrée : l'IA aide sur des features simples.",
-            Level.BLUE: "Les PR sont de taille M : l'IA gère des features de complexité moyenne. Bonne base.",
-            Level.GREEN: "Les PR sont de taille L : l'IA enchaîne plusieurs étapes dans une même feature.",
-            Level.COPPER: "Les PR alternent L et XL. L'IA produit des features multi-modules régulièrement.",
-            Level.SILVER: "L'IA livre des features L-XL sans intervention humaine sur le contenu.",
-            Level.GOLD: "L'IA livre des features XL autonomement, plusieurs fois par jour.",
+            Level.WHITE: ('Aucune adoption AIDD suffisamment établie sur cet axe.'),
+            Level.RED: ('Les PR observées sont principalement de taille S.'),
+            Level.BLUE: ('Les PR observées sont principalement de taille M.'),
+            Level.GREEN: ('Les PR observées couvrent régulièrement des features L.'),
+            Level.COPPER: ('Les PR observées couvrent régulièrement des features L et XL.'),
+            Level.SILVER: (
+                'Les traces montrent des features L-XL livrées avec '
+                'une intervention humaine réduite.'
+            ),
+            Level.GOLD: (
+                'Les traces montrent des features XL livrées de façon autonome et régulière.'
+            ),
         },
         'harness': {
-            Level.RED: "Pas de contexte versionné. L'IA repart de zéro à chaque session.",
-            Level.BLUE: "Une mémoire projet existe et est maintenue. L'IA lit le contexte avant de coder.",
-            Level.GREEN: "Règles et agents sont versionnés. L'IA suit des conventions explicites.",
-            Level.COPPER: "Le harnais est complet : contexte + behavior. L'IA est encadrée.",
-            Level.SILVER: "Des retry loops relancent l'IA automatiquement en cas d'échec.",
-            Level.GOLD: "Le harnais maximal : contexte + behavior + retry loops. L'IA est autonome.",
+            Level.WHITE: ("Aucun harnais AIDD suffisamment établi n'est observé."),
+            Level.RED: ("Le contexte projet versionné n'est pas suffisamment établi."),
+            Level.BLUE: ('Une mémoire projet existe et est maintenue.'),
+            Level.GREEN: ('Des règles ou agents versionnés encadrent le comportement.'),
+            Level.COPPER: ('Le harnais combine contexte et comportement versionnés.'),
+            Level.SILVER: ('Des retry loops permettent une correction automatisée.'),
+            Level.GOLD: ('Le harnais combine contexte, comportement et retry loops.'),
         },
         'intervention': {
-            Level.RED: "Reprise sur la majorité des PR. L'humain corrige beaucoup après l'IA.",
-            Level.BLUE: "Reprise sur une partie des PR. L'humain intervient moins souvent.",
-            Level.GREEN: "Intervention aux étapes clés seulement. L'humain cadre, l'IA exécute.",
-            Level.COPPER: "Intervention ponctuelle. L'humain ne reprend presque jamais.",
-            Level.SILVER: "Aucune intervention une fois la tâche cadrée. L'IA gère tout.",
-            Level.GOLD: 'Même le cadrage est compris. Les agents prennent les tâches en autonomie.',
+            Level.WHITE: ('Aucune adoption AIDD suffisamment établie sur cet axe.'),
+            Level.RED: ('La reprise humaine après génération reste importante.'),
+            Level.BLUE: ('La reprise humaine existe mais devient moins fréquente.'),
+            Level.GREEN: ("L'humain intervient principalement aux étapes clés."),
+            Level.COPPER: ("L'intervention humaine devient ponctuelle."),
+            Level.SILVER: ('La tâche peut être exécutée sans reprise humaine après cadrage.'),
+            Level.GOLD: ('Les agents prennent également en charge une partie du cadrage.'),
         },
         'parallel': {
-            Level.WHITE: "Aucun projet en parallèle. Pas d'activité AIDD observée.",
-            Level.RED: "Un seul projet. L'IA aide sur un chantier à la fois.",
-            Level.BLUE: 'Un seul projet, mais avec plus de complexité.',
-            Level.GREEN: "Deux à trois chantiers en parallèle. L'IA suit plusieurs lignes.",
-            Level.COPPER: "Trois chantiers ou plus, tous menés au bout. L'IA gère la charge.",
-            Level.SILVER: "Trois chantiers ou plus, tous menés au bout. L'IA gère la charge.",
-            Level.GOLD: "Trois chantiers ou plus, tous menés au bout. L'IA gère la charge.",
+            Level.WHITE: ('Aucune activité AIDD parallèle suffisamment établie.'),
+            Level.RED: ('Un chantier est principalement mené à la fois.'),
+            Level.BLUE: ('Un chantier reste principal avec une complexité accrue.'),
+            Level.GREEN: ('Plusieurs chantiers sont menés régulièrement en parallèle.'),
+            Level.COPPER: ('Trois chantiers ou plus peuvent être menés en parallèle.'),
+            Level.SILVER: ('Trois chantiers ou plus sont menés au bout en parallèle.'),
+            Level.GOLD: (
+                'Trois chantiers ou plus sont menés au bout en parallèle avec une forte autonomie.'
+            ),
         },
     }
 
-    base = explanations.get(axe, {}).get(level, 'Niveau maintenu.')
-    return f'<em>{escape(base)}</em>'
+    text = explanations.get(axe, {}).get(
+        level,
+        'Niveau maintenu.',
+    )
 
-
-def _level_color(level: Level | None) -> str:
-    """Couleur CSS d'un niveau."""
-    if level is None:
-        return '#999'
-    return LEVEL_COLORS[level]['accent']
+    return escape(text)
 
 
 def _render_pedagogical_section(verdict: Verdict) -> str:
-    """Section pédagogique : mini-guide 'Comment progresser' + glossaire + références."""
-    # Mini-guide personnalisé
-    guide_items = []
-    if verdict.limiting_axis:
-        axe = verdict.limiting_axis
-        level = verdict.level
-        if level is not None:
-            steps = {
-                'size': {
-                    Level.RED: 'Passe de features S à M : livre des PR multi-étapes.',
-                    Level.BLUE: 'Passe à des features L : enchaîne plusieurs étapes dans une PR.',
-                    Level.GREEN: 'Pousse à des features XL multi-modules régulières.',
-                    Level.COPPER: 'Maintiens un habituel L-XL, pas seulement un pic.',
-                },
-                'harness': {
-                    Level.WHITE: 'Crée une mémoire projet (contexte) et maintiens-la.',
-                    Level.RED: 'Crée une mémoire projet et maintiens-la.',
-                    Level.BLUE: 'Versionne règles et agents dans le dépôt.',
-                    Level.GREEN: 'Ajoute une boucle de relance automatique.',
-                    Level.COPPER: 'Ajoute une boucle de relance automatique.',
-                    Level.SILVER: 'Passe la relance en autonomie des agents.',
-                },
-                'intervention': {
-                    Level.RED: 'Réduis la reprise après coup : cadrer avant, corriger moins.',
-                    Level.BLUE: 'Interviens seulement aux étapes clés.',
-                    Level.GREEN: 'Vise zéro reprise, intervention ponctuelle uniquement.',
-                    Level.COPPER: 'Confirme que les agents prennent les tâches en autonomie.',
-                    Level.SILVER: 'Confirme que les agents prennent les tâches en autonomie.',
-                },
-                'parallel': {
-                    Level.RED: "Mène 2 chantiers de front et les mène jusqu'au bout.",
-                    Level.BLUE: 'Mène 3 chantiers en parallèle, menés au bout.',
-                    Level.GREEN: 'Confirme la complétude des 3 chantiers.',
-                    Level.COPPER: 'Maintiens 3 chantiers en parallèle, tous menés au bout.',
-                    Level.SILVER: 'Maintiens 3 chantiers en parallèle, tous menés au bout.',
-                },
-            }
-            step = steps.get(axe, {}).get(level, 'Maintiens le niveau actuel.')
-            guide_items.append(
-                f'<div class="guide-item">'
-                f'<span class="guide-axe">{escape(axis_label(axe))}</span>'
-                f'<span class="guide-step">{escape(step)}</span>'
-                f'</div>'
-            )
+    """Rend glossaire, guide de lecture et références.
+
+    Le contenu reste secondaire : le Verdict et les axes dominent toujours.
+    """
 
     guide_html = ''
-    if guide_items:
-        guide_html = (
-            '<div class="guide-section">'
-            '<h3>Comment progresser vers le niveau suivant</h3>' + ''.join(guide_items) + '</div>'
+
+    if verdict.limiting_axis and verdict.level is not None:
+        axe = verdict.limiting_axis
+        level = verdict.level
+
+        guide: dict[str, dict[Level, str]] = {
+            'size': {
+                Level.RED: 'Passe de features S à M.',
+                Level.BLUE: 'Passe à des features L.',
+                Level.GREEN: 'Rends les features XL multi-modules régulières.',
+                Level.COPPER: 'Maintiens un habituel L-XL, pas seulement un pic.',
+                Level.SILVER: "Maintiens l'autonomie sur les features L-XL.",
+                Level.GOLD: 'Maintiens le niveau observé.',
+            },
+            'harness': {
+                Level.WHITE: 'Crée et maintiens une mémoire projet.',
+                Level.RED: 'Crée et maintiens une mémoire projet.',
+                Level.BLUE: 'Versionne les règles et agents.',
+                Level.GREEN: 'Ajoute une boucle de relance automatique.',
+                Level.COPPER: 'Automatise davantage les boucles de correction.',
+                Level.SILVER: "Renforce l'autonomie des agents.",
+                Level.GOLD: 'Maintiens le niveau observé.',
+            },
+            'intervention': {
+                Level.RED: 'Réduis la reprise après coup.',
+                Level.BLUE: 'Interviens principalement aux étapes clés.',
+                Level.GREEN: 'Vise une intervention ponctuelle.',
+                Level.COPPER: 'Réduis encore la reprise humaine.',
+                Level.SILVER: "Confirme l'autonomie après cadrage.",
+                Level.GOLD: 'Maintiens le niveau observé.',
+            },
+            'parallel': {
+                Level.RED: "Mène deux chantiers de front jusqu'au bout.",
+                Level.BLUE: 'Mène trois chantiers en parallèle.',
+                Level.GREEN: 'Confirme la complétude des chantiers.',
+                Level.COPPER: 'Maintiens trois chantiers ou plus.',
+                Level.SILVER: 'Maintiens trois chantiers ou plus.',
+                Level.GOLD: 'Maintiens le niveau observé.',
+            },
+        }
+
+        step = guide.get(axe, {}).get(
+            level,
+            'Maintiens le niveau actuel.',
         )
 
-    # Glossaire
-    glossary_items = []
-    for term in GLOSSARY:
-        defn = GLOSSARY.get(term, '')
+        guide_html = f"""
+<div class="guide-section">
+
+    <span class="eyebrow">
+        AXE PLANCHER
+    </span>
+
+    <h3>
+        Comment monter d'un cran
+    </h3>
+
+    <div class="guide-item">
+
+        <span class="guide-axe">
+            {escape(axis_label(axe))}
+        </span>
+
+        <span class="guide-step">
+            {escape(step)}
+        </span>
+
+    </div>
+
+</div>
+"""
+
+    glossary_items: list[str] = []
+
+    for term, definition in GLOSSARY.items():
         glossary_items.append(
-            f'<div class="glossary-item">'
-            f'<span class="glossary-term-inline">{escape(term)}</span>'
-            f'<span class="glossary-def">{escape(defn)}</span>'
-            f'</div>'
+            f"""
+<details class="glossary-item">
+
+    <summary>
+        {escape(term)}
+    </summary>
+
+    <p>
+        {escape(definition)}
+    </p>
+
+</details>
+"""
         )
 
-    # Références
-    ref_items = []
-    for ref in REFERENCES:
-        ref_items.append(
-            f'<div class="ref-item">'
-            f'<a href="{escape(ref["url"])}" target="_blank" rel="noopener">{escape(ref["title"])}</a>'
-            f'<span class="ref-desc">{escape(ref["desc"])}</span>'
-            f'</div>'
+    reference_items: list[str] = []
+
+    for reference in REFERENCES:
+        reference_items.append(
+            f"""
+<div class="reference-item">
+
+    <a href="{escape(reference['url'], quote=True)}"
+       target="_blank"
+       rel="noopener noreferrer">
+        {escape(reference['title'])}
+    </a>
+
+    <span>
+        {escape(reference['desc'])}
+    </span>
+
+</div>
+"""
         )
 
-    return (
-        '<div class="pedagogy">'
-        '<h2>Pour aller plus loin</h2>' + guide_html + '<h3>Glossaire AIDD</h3>'
-        '<div class="glossary-grid">' + ''.join(glossary_items) + '</div>'
-        '<h3>Références curatées</h3>'
-        '<div class="ref-grid">' + ''.join(ref_items) + '</div>'
-        '</div>'
-    )
+    return f"""
+<section class="section pedagogy-section"
+         aria-labelledby="language-title">
+
+    <div class="section-heading">
+
+        <span class="section-index">
+            06
+        </span>
+
+        <div>
+            <span class="eyebrow">
+                LANGAGE LAIVEL-UP
+            </span>
+
+            <h2 id="language-title">
+                Glossaire & ressources
+            </h2>
+        </div>
+
+    </div>
+
+    {guide_html}
+
+    <div class="glossary-grid">
+        {''.join(glossary_items)}
+    </div>
+
+    <div class="references">
+        <span class="field-label">
+            RÉFÉRENCES CURATÉES
+        </span>
+
+        {''.join(reference_items)}
+    </div>
+
+</section>
+"""
+
+
+# ---------------------------------------------------------------------------
+# TRANSPARENCE
+# ---------------------------------------------------------------------------
+
+
+def _render_transparency() -> str:
+    """Bloc de transparence commun aux rapports HTML."""
+
+    return """
+<section class="section transparency-section"
+         aria-labelledby="transparency-title">
+
+    <div class="section-heading">
+
+        <span class="section-index">
+            04
+        </span>
+
+        <div>
+            <span class="eyebrow">
+                INFORMATIONS SYSTÈME
+            </span>
+
+            <h2 id="transparency-title">
+                Transparence
+            </h2>
+        </div>
+
+    </div>
+
+    <div class="transparency-grid">
+
+        <article>
+
+            <span class="field-label">
+                DONNÉES UTILISÉES
+            </span>
+
+            <p>
+                Traces techniques déclarées seulement :
+                commits, PR, contexte.
+                Aucune donnée personnelle.
+                Aucun neurotype demandé ni inféré.
+            </p>
+
+        </article>
+
+        <article>
+
+            <span class="field-label">
+                MÉTHODE
+            </span>
+
+            <p>
+                Score discret par axe puis règle officielle
+                « tous les axes le sont » (<code>min()</code>),
+                avec une confiance par axe.
+            </p>
+
+        </article>
+
+        <article>
+
+            <span class="field-label">
+                LIMITES
+            </span>
+
+            <p>
+                La séniorité, la qualité de code et le neurotype
+                ne sont pas mesurés.
+                Un niveau reflète une adoption observée,
+                pas une valeur humaine.
+            </p>
+
+        </article>
+
+    </div>
+
+</section>
+"""
+
+
+# ---------------------------------------------------------------------------
+# CSS HTML
+# ---------------------------------------------------------------------------
+
+
+def _html_styles() -> str:
+    """Styles embarqués du rapport HTML.
+
+    Aucun framework CSS externe.
+    Aucun asset distant.
+    Le rapport reste autonome une fois généré.
+    """
+
+    return CSS_STYLES
+
+
+# ---------------------------------------------------------------------------
+# HTML — RELECTURE HUMAINE
+# ---------------------------------------------------------------------------
 
 
 def render_html(verdict: Verdict) -> str:
+    """Rend un Verdict sous forme de rapport HTML autonome."""
+
     if verdict.data_errors:
-        badge_text = 'Données invalides : refus de trancher'
-        kelas = 'ko'
+        status_class = 'ko'
+        status_text = 'Données invalides · refus de trancher'
+        mascot_state = 'error'
+
     elif verdict.decided:
-        badge_text = escape(level_label(verdict.level))
-        kelas = 'ok'
+        status_class = 'ok'
+        status_text = 'Engine ready · Verdict établi'
+        mascot_state = 'warning' if verdict.red_flags else 'success'
+
     else:
-        badge_text = 'Données insuffisantes : refus de trancher'
-        kelas = 'ko'
+        status_class = 'ko'
+        status_text = 'Données insuffisantes · refus de trancher'
+        mascot_state = 'refusal'
 
-    limiting = (
-        f'<p class="limiting-axis">Axe plancher / faible : <strong>{escape(axis_label(verdict.limiting_axis))}</strong></p>'
-        if verdict.limiting_axis
-        else ''
-    )
+    level_name = _level_name(verdict.level)
 
-    errors_html = ''.join(f'<div class="flag">{escape(e)}</div>' for e in verdict.data_errors)
-    errors_section = f'<h2>Données invalides</h2>{errors_html}' if verdict.data_errors else ''
+    level_color = _level_color(verdict.level)
 
-    flags_html = ''.join(
-        f'<div class="flag">⚠ Vigilance · <strong>{escape(f.titre)}</strong> · {escape(f.constat)} '
-        f'<em>({escape(f.source)})</em>'
-        + (f'<div><em>Question : {escape(f.question)}</em></div>' if f.question else '')
-        + '</div>'
-        for f in verdict.red_flags
-    )
-    flags_section = (
-        f'<h2>Alertes (hypothèses à vérifier)</h2>{flags_html}' if verdict.red_flags else ''
-    )
+    limiting_html = ''
 
-    # Next steps section. Préfixe textuel — pas seulement la couleur de bordure
-    # — pour rester lisible pour un daltonien ou un lecteur d'écran (10.1.c).
-    next_html = ''.join(
-        f'<div class="next">→ Piste · {escape(n)}</div>' for n in verdict.next_steps
-    )
-    next_section = (
-        f"<h2>Monter d'un cran / levée d'incertitude</h2>{next_html}" if verdict.next_steps else ''
-    )
+    if verdict.limiting_axis:
+        limiting_html = f"""
+<div class="hero-limiting">
 
-    transparency = (
-        '<h2>Transparence</h2>'
-        '<div class="transparency-box">'
-        '<p><strong>Données utilisées :</strong> traces techniques déclarées (commits, PR, '
-        'contexte). Aucune donnée personnelle, aucun neurotype demandé ni inféré.</p>'
-        '<p><strong>Méthode :</strong> score discret par axe puis règle « tous les axes le sont » '
-        '(<code>min()</code>) avec une confiance par axe. Données faibles ou contradictoires '
-        '&rarr; refus de trancher.</p>'
-        '<p><strong>Limites :</strong> séniorité, qualité de code et neurotype non mesurés. '
-        'Un niveau reflète une adoption, jamais une valeur humaine.</p>'
-        '<p><strong>Sources :</strong> référentiel AIDD officiel '
-        '(<a href="https://github.com/ai-driven-dev/laivel-up" target="_blank" '
-        'rel="noopener">github.com/ai-driven-dev/laivel-up</a>).</p>'
-        '</div>'
-    )
+    <span>
+        AXE PLANCHER
+    </span>
+
+    <strong>
+        {escape(axis_label(verdict.limiting_axis))}
+    </strong>
+
+</div>
+"""
+
+    confidence_values = [
+        axis_score.confidence for axis_score in verdict.axis_scores if axis_score.level is not None
+    ]
+
+    global_confidence = min(confidence_values) if confidence_values else None
+
+    if global_confidence is None:
+        confidence_html = """
+<div class="confidence">
+
+    <div class="confidence-header">
+
+        <span class="confidence-label">
+            CONFIANCE
+        </span>
+
+        <strong class="confidence-value">
+            —
+        </strong>
+
+    </div>
+
+    <div class="confidence-bar"
+         aria-hidden="true">
+        <span class="confidence-empty">
+            ░░░░░░░░░░░░░░░░░░░░
+        </span>
+    </div>
+
+</div>
+"""
+
+    else:
+        percentage = max(
+            0,
+            min(100, round(global_confidence * 100)),
+        )
+
+        filled = round(percentage / 5)
+        empty = 20 - filled
+
+        confidence_html = f"""
+<div class="confidence">
+
+    <div class="confidence-header">
+
+        <span class="confidence-label">
+            CONFIANCE
+        </span>
+
+        <strong class="confidence-value">
+            {percentage}%
+        </strong>
+
+    </div>
+
+    <div class="confidence-bar"
+         role="progressbar"
+         aria-valuenow="{percentage}"
+         aria-valuemin="0"
+         aria-valuemax="100"
+         aria-label="Confiance {percentage}%">
+
+        <span class="confidence-filled">
+            {'█' * filled}
+        </span><span class="confidence-empty">
+            {'░' * empty}
+        </span>
+
+    </div>
+
+</div>
+"""
+
+    if verdict.level is None:
+        main_content = _render_refusal(verdict)
+
+    else:
+        main_content = f"""
+<section class="verdict-hero"
+         style="--verdict-accent:{level_color};"
+         aria-labelledby="verdict-title">
+
+    <div class="hero-monitor">
+
+        {
+            _render_monitor_avatar(
+                mascot_state,
+                verdict.level,
+            )
+        }
+
+    </div>
+
+    <div class="hero-verdict">
+
+        <span class="eyebrow">
+            LAIVEL-UP / VERDICT
+        </span>
+
+        <div class="verdict-status {status_class}">
+            {escape(status_text)}
+        </div>
+
+        <h1 id="verdict-title">
+            {escape(level_name)}
+        </h1>
+
+        {limiting_html}
+
+        {confidence_html}
+
+    </div>
+
+</section>
+
+{_render_axis_detail(verdict)}
+
+{_render_red_flags(verdict)}
+
+{_render_next_steps(verdict)}
+"""
 
     return f"""<!doctype html>
 <html lang="fr">
+
 <head>
+
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Verdict AIDD · {escape(verdict.name)}</title>
-<link rel="stylesheet" href="https://fonts.bunny.net/css?family=Press+Start+2P|Share+Tech+Mono&display=swap">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1">
+
+<meta name="description"
+      content="Rapport d'évaluation LAIVEL-UP">
+
+<title>
+LAIVEL-UP · Verdict · {escape(verdict.name)}
+</title>
+
 <style>
-  :root {{
-    --bg: #0f0f23;
-    --surface: #1a1a2e;
-    --surface-2: #222244;
-    --border: #3a3a5c;
-    --text: #e0e0e0;
-    --text-dim: #777799;
-    --accent: #00aaff;
-    --success: #00cc44;
-    --warning: #ccaa00;
-    --danger: #cc3333;
-    --pixel: 2px;
-  }}
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    font-family: 'Share Tech Mono', monospace;
-    background: var(--bg);
-    color: var(--text);
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem;
-    line-height: 1.8;
-    position: relative;
-  }}
-
-  /* Scanlines overlay */
-  body::after {{
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-    pointer-events: none;
-    z-index: 9999;
-  }}
-
-  h1 {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 1rem;
-    font-weight: 400;
-    margin-bottom: 1rem;
-    color: var(--accent);
-    text-shadow: 2px 2px 0px #003366;
-    letter-spacing: 1px;
-  }}
-  h2 {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.7rem;
-    font-weight: 400;
-    margin: 2rem 0 1rem;
-    color: var(--accent);
-    text-shadow: 1px 1px 0px #003366;
-    letter-spacing: 0.5px;
-  }}
-  h3 {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.6rem;
-    font-weight: 400;
-    margin: 1.5rem 0 0.8rem;
-    color: var(--text);
-  }}
-
-  /* Badge verdict — pixel art style. Le verdict est ce que le jury doit
-     comprendre « en un coup d'œil » (critère n°1) : sa taille doit largement
-     dépasser celle du h1 (1rem) plutôt que rivaliser avec lui (10.1.e). */
-  .badge {{
-    display: inline-block;
-    padding: 1.1rem 2rem;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 1.6rem;
-    line-height: 1.5;
-    font-weight: 400;
-    margin: 1.5rem 0;
-    border: 3px solid;
-    image-rendering: pixelated;
-    text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
-    letter-spacing: 0.5px;
-  }}
-  .badge.ok {{
-    background: #003311;
-    color: var(--success);
-    border-color: var(--success);
-    box-shadow:
-      inset 2px 2px 0px rgba(0,204,68,0.3),
-      inset -2px -2px 0px rgba(0,0,0,0.3);
-  }}
-  /* Contraste WCAG vérifié le 30/08 (10.1.d) : #cc3333 (--danger) sur fond
-     #330011 ne donne que 3.56:1, sous le seuil AA texte normal (4.5:1).
-     #ff6b6b sur le même fond donne 6.59:1 — le bordé/box-shadow décoratifs
-     restent en --danger (pas soumis à la contrainte de contraste texte). */
-  .badge.ko {{
-    background: #330011;
-    color: #ff6b6b;
-    border-color: var(--danger);
-    box-shadow:
-      inset 2px 2px 0px rgba(204,51,51,0.3),
-      inset -2px -2px 0px rgba(0,0,0,0.3);
-  }}
-
-  .limiting-axis {{ color: var(--warning); font-weight: 500; margin: 0.5rem 0; }}
-
-  /* World map — NES overworld style */
-  .patapon-world {{
-    background: var(--surface);
-    border: 3px solid var(--border);
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-    position: relative;
-  }}
-  .patapon-world::before {{
-    content: '>>> WORLD MAP <<<';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg);
-    padding: 0 8px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.45rem;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-  }}
-  .world-title {{
-    font-size: 1rem;
-    color: var(--text-dim);
-    margin-bottom: 1rem;
-    text-align: center;
-  }}
-  .world-map {{
-    display: flex;
-    align-items: flex-start;
-    gap: 0;
-    overflow-x: auto;
-    padding: 1rem 0;
-  }}
-  .world-node {{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 90px;
-    position: relative;
-    opacity: 0.3;
-    transition: opacity 0.2s steps(2);
-  }}
-  .world-node.unlocked {{
-    opacity: 0.6;
-  }}
-  .world-node.current {{
-    opacity: 1;
-  }}
-  .world-node.current .node-icon {{
-    animation: nes-pulse 0.8s steps(4) infinite;
-  }}
-  @keyframes nes-pulse {{
-    0%, 100% {{ box-shadow: 0 0 0 0px var(--accent); }}
-    25% {{ box-shadow: 0 0 0 4px var(--accent); }}
-    50% {{ box-shadow: 0 0 0 8px rgba(0,170,255,0.3); }}
-    75% {{ box-shadow: 0 0 0 4px var(--accent); }}
-  }}
-  .node-icon {{
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    border: 3px solid;
-    margin-bottom: 0.5rem;
-    transition: border-color 0.2s steps(2);
-    image-rendering: pixelated;
-  }}
-  .node-label {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.45rem;
-    color: var(--text);
-    margin-bottom: 0.3rem;
-    text-align: center;
-  }}
-  .axis-stage {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.35rem;
-    padding: 2px 4px;
-    border: 1px solid;
-    margin: 1px;
-    display: inline-block;
-    image-rendering: pixelated;
-  }}
-  .achievement-badge {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.35rem;
-    font-weight: 400;
-    padding: 2px 6px;
-    border: 2px solid;
-    margin-top: 0.4rem;
-    letter-spacing: 0.5px;
-    animation: badge-pop 0.4s steps(4) forwards;
-  }}
-  @keyframes badge-pop {{
-    0% {{ transform: scale(0); opacity: 0; }}
-    25% {{ transform: scale(0.5); opacity: 0.5; }}
-    50% {{ transform: scale(1.1); opacity: 1; }}
-    100% {{ transform: scale(1); opacity: 1; }}
-  }}
-  .connector {{
-    display: flex;
-    align-items: center;
-    padding: 0 0.2rem;
-    margin-top: 1rem;
-  }}
-  .connector-line {{
-    width: 30px;
-    height: 4px;
-    background: repeating-linear-gradient(
-      90deg,
-      var(--border) 0px,
-      var(--border) 4px,
-      transparent 4px,
-      transparent 8px
-    );
-    image-rendering: pixelated;
-  }}
-
-  /* Progress bar — pixel blocks */
-  .progress-bar-container {{
-    background: var(--surface);
-    border: 3px solid var(--border);
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-    position: relative;
-  }}
-  .progress-bar-container::before {{
-    content: '>>> PROGRESS <<<';
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg);
-    padding: 0 8px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.45rem;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-  }}
-  .progress-title {{
-    font-size: 1rem;
-    color: var(--text-dim);
-    margin-bottom: 1rem;
-  }}
-  .progress-track {{
-    display: flex;
-    gap: 4px;
-    height: 24px;
-    margin-bottom: 0.8rem;
-  }}
-  .progress-block {{
-    flex: 1;
-    height: 100%;
-    border: 2px solid var(--border);
-    background: var(--surface-2);
-    image-rendering: pixelated;
-  }}
-  .progress-block.filled {{
-    background: var(--success);
-    border-color: var(--success);
-    box-shadow: inset -2px -2px 0px rgba(0,0,0,0.3);
-  }}
-  .progress-block.current {{
-    background: var(--accent);
-    border-color: var(--accent);
-    animation: block-blink 0.6s steps(2) infinite;
-  }}
-  @keyframes block-blink {{
-    0%, 100% {{ opacity: 1; }}
-    50% {{ opacity: 0.5; }}
-  }}
-  .progress-steps {{
-    display: flex;
-    justify-content: space-between;
-  }}
-  .step {{ flex: 1; text-align: center; }}
-  .step-dot {{
-    width: 8px;
-    height: 8px;
-    margin: 0 auto 0.3rem;
-    border: 2px solid;
-  }}
-  .step-label {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.35rem;
-    color: var(--text-dim);
-  }}
-
-  /* Axis detail cards — pixel style */
-  .axis-details {{
-    margin: 1.5rem 0;
-  }}
-  .axis-card {{
-    background: var(--surface);
-    border: 2px solid var(--border);
-    padding: 1rem 1.2rem;
-    margin: 0.8rem 0;
-    transition: border-color 0.2s steps(2);
-  }}
-  .axis-card:hover {{
-    border-color: var(--accent);
-  }}
-  .axis-card-header {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.4rem;
-  }}
-  .axis-name {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.55rem;
-    color: var(--accent);
-  }}
-  .axis-level {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.55rem;
-  }}
-  .axis-confidence {{
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    margin-bottom: 0.3rem;
-  }}
-  .axis-evidence {{
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    margin-bottom: 0.4rem;
-  }}
-  .axis-why {{
-    font-size: 0.8rem;
-    padding: 0.5rem 0.7rem;
-    background: var(--surface-2);
-    border-left: 4px solid var(--accent);
-    line-height: 1.5;
-  }}
-  .axis-why em {{ font-style: normal; color: var(--text); }}
-
-  /* Flags — pixel danger */
-  .flag {{
-    border-left: 4px solid var(--danger);
-    padding: 0.6rem 0.8rem;
-    margin: 0.5rem 0;
-    background: rgba(204,51,51,0.1);
-  }}
-
-  /* Next steps — pixel accent */
-  .next {{
-    border-left: 4px solid var(--accent);
-    padding: 0.6rem 0.8rem;
-    margin: 0.5rem 0;
-    background: rgba(0,170,255,0.08);
-    font-size: 0.85rem;
-  }}
-
-  /* Pedagogy */
-  .pedagogy {{
-    margin: 2rem 0;
-  }}
-  .guide-section {{
-    background: var(--surface);
-    border: 2px solid var(--border);
-    padding: 1rem 1.2rem;
-    margin: 0.8rem 0;
-  }}
-  .guide-item {{
-    display: flex;
-    gap: 0.8rem;
-    padding: 0.4rem 0;
-    align-items: baseline;
-  }}
-  .guide-axe {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.45rem;
-    color: var(--accent);
-    min-width: 120px;
-  }}
-  .guide-step {{ color: var(--text); font-size: 0.85rem; }}
-  .glossary-grid {{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.6rem;
-  }}
-  .glossary-item {{
-    background: var(--surface);
-    border: 2px solid var(--border);
-    padding: 0.6rem 0.8rem;
-  }}
-  .glossary-term-inline {{
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.4rem;
-    color: var(--accent);
-    display: block;
-    margin-bottom: 0.3rem;
-  }}
-  .glossary-def {{
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    display: block;
-  }}
-  .ref-grid {{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.6rem;
-  }}
-  .ref-item {{
-    background: var(--surface);
-    border: 2px solid var(--border);
-    padding: 0.6rem 0.8rem;
-  }}
-  .ref-item a {{
-    color: var(--accent);
-    text-decoration: none;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.4rem;
-    display: block;
-    margin-bottom: 0.3rem;
-  }}
-  .ref-item a:hover {{ text-decoration: underline; }}
-  .ref-desc {{
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    display: block;
-  }}
-
-  /* Transparency — pixel box */
-  .transparency-box {{
-    background: var(--surface);
-    border: 2px solid var(--border);
-    padding: 1rem 1.2rem;
-  }}
-  .transparency-box p {{
-    margin: 0.5rem 0;
-    font-size: 0.85rem;
-    color: var(--text-dim);
-  }}
-  code {{
-    background: var(--surface-2);
-    padding: 2px 4px;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.8rem;
-    border: 1px solid var(--border);
-  }}
-
-  /* Footer — pixel */
-  .report-footer {{
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 3px solid var(--border);
-    text-align: center;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.45rem;
-    color: var(--text-dim);
-  }}
-  .report-footer a {{ color: var(--accent); text-decoration: none; }}
-  .report-footer a:hover {{ text-decoration: underline; }}
-
-  /* Responsive */
-  @media (max-width: 600px) {{
-    body {{ padding: 1rem; }}
-    .world-map {{ flex-direction: column; align-items: center; }}
-    .glossary-grid, .ref-grid {{ grid-template-columns: 1fr; }}
-  }}
+{_html_styles()}
 </style>
+
 </head>
+
 <body>
-<main>
-  <h1>Verdict AIDD · {escape(verdict.name)}</h1>
 
-  <p><span class="badge {kelas}">{badge_text}</span></p>
+<div class="app-shell">
 
-  {limiting}
-  {errors_section}
+    <header class="system-header">
 
-  {_render_progress_bar(verdict)}
-  {_render_world_map(verdict)}
-  {_render_axis_detail(verdict)}
-  {flags_section}
-  {next_section}
-  {_render_pedagogical_section(verdict)}
-  {transparency}
+        <div class="brand">
 
-  <div class="report-footer">
-    Généré par <strong>LAIVEL UP</strong> · Référentiel
-    <a href="https://github.com/ai-driven-dev/laivel-up" target="_blank" rel="noopener">AIDD officiel</a>
-  </div>
-</main>
+            <span class="brand-mark"
+                  aria-hidden="true">
+                ◆
+            </span>
+
+            <div>
+
+                <strong>
+                    LAIVEL-UP
+                </strong>
+
+                <span>
+                    SYSTEM CONSOLE
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="profile-context">
+
+            <span>
+                PROFILE
+            </span>
+
+            <strong>
+                {escape(verdict.name)}
+            </strong>
+
+        </div>
+
+        <div class="system-status">
+
+            <span class="status-dot"
+                  aria-hidden="true">
+            </span>
+
+            MOTEUR PRÊT
+
+        </div>
+
+    </header>
+
+    <main>
+
+        {main_content}
+
+        {_render_transparency()}
+
+        {_render_pedagogical_section(verdict)}
+
+    </main>
+
+    <footer class="system-footer">
+
+        <span>
+            LAIVEL-UP
+        </span>
+
+        <span>
+            SYSTÈME D'ÉVALUATION AIDD
+        </span>
+
+        <span>
+            VRAI MOTEUR · VRAIES PREUVES · VRAI VERDICT
+        </span>
+
+    </footer>
+
+</div>
+
 </body>
+
 </html>
 """
 
 
+# ---------------------------------------------------------------------------
+# ÉCRITURE DES RAPPORTS
+# ---------------------------------------------------------------------------
+
+
 def write_reports(
-    verdict: Verdict, out_dir: Path, with_html: bool = True, stamp: str | None = None
+    verdict: Verdict,
+    out_dir: Path,
+    with_html: bool = True,
+    stamp: str | None = None,
 ) -> tuple[Path, Path | None]:
-    out_dir.mkdir(parents=True, exist_ok=True)
+    """Écrit les rapports Markdown et HTML.
+
+    Les noms sont systématiquement horodatés afin de ne jamais écraser
+    une évaluation précédente.
+
+    Le slug est vérifié afin d'empêcher une sortie du dossier cible.
+    """
+
+    out_dir.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     out_dir_resolved = out_dir.resolve()
+
     safe = slug(verdict.name)
-    # Horodatage systématique : chaque évaluation produit des artefacts datés,
-    # jamais écrasés (stamp injectable pour la reproductibilité des tests).
+
     if stamp is None:
         stamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+
     md = out_dir / f'{safe}-{stamp}.md'
-    # Security: ensure the generated path stays within out_dir
+
     if not md.resolve().is_relative_to(out_dir_resolved):
         raise ValueError(f'Generated path escapes output directory: {md}')
-    md.write_text(render_markdown(verdict), encoding='utf-8')
-    html = None
+
+    _atomic_write(md, render_markdown(verdict))
+
+    html: Path | None = None
+
     if with_html:
         html = out_dir / f'{safe}-{stamp}.html'
+
         if not html.resolve().is_relative_to(out_dir_resolved):
             raise ValueError(f'Generated path escapes output directory: {html}')
-        html.write_text(render_html(verdict), encoding='utf-8')
+
+        _atomic_write(html, render_html(verdict))
+
     return md, html
 
 
+# ---------------------------------------------------------------------------
+# SÉRIALISATION
+# ---------------------------------------------------------------------------
+
+
 def verdict_to_dict(verdict: Verdict) -> dict:
-    """Sérialisation canonique d'un Verdict en dict JSON-serialisable."""
+    """Sérialisation canonique d'un Verdict en dict JSON-compatible."""
+
     return {
         'name': verdict.name,
-        'level': verdict.level.name if verdict.level else None,
+        'level': (verdict.level.name if verdict.level is not None else None),
         'limiting_axis': verdict.limiting_axis,
         'axes': [
             {
-                'axe': a.axe,
-                'level': a.level.name if a.level else None,
-                'confidence': a.confidence,
-                'evidence': a.evidence,
-                'variance': a.variance,
+                'axe': axis_score.axe,
+                'level': (axis_score.level.name if axis_score.level is not None else None),
+                'confidence': axis_score.confidence,
+                'evidence': axis_score.evidence,
+                'variance': axis_score.variance,
             }
-            for a in verdict.axis_scores
+            for axis_score in verdict.axis_scores
         ],
         'red_flags': [
             {
-                'titre': f.titre,
-                'constat': f.constat,
-                'source': f.source,
-                'question': f.question,
-                'severite': f.severite,
+                'titre': flag.titre,
+                'constat': flag.constat,
+                'source': flag.source,
+                'question': flag.question,
+                'severite': flag.severite,
             }
-            for f in verdict.red_flags
+            for flag in verdict.red_flags
         ],
         'next_steps': verdict.next_steps,
         'data_errors': verdict.data_errors,

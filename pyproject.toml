@@ -156,7 +156,7 @@ exclude_dirs = ["tests"]
 # B101 : assert en tests ; B110 : fallback volontaire best-effort (encoding.py,
 # activation VT Windows en dégradation gracieuse) ; B601 : subprocess shell
 # contrôlé (profils officiels).
-skips = ["B101", "B110", "B601"]
+skips = ["B101", "B110"]
 
 [tool.pip-audit]
 desc = "on"

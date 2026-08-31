@@ -95,7 +95,7 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
                 conf = f'{a.confidence:.0%}' if a.level is not None else '—'
                 ax_rows.append(f'<tr><td>{escape(label)}</td><td>{lvl}</td><td>{conf}</td></tr>')
             axis_cards.append(
-                f'<div class="axis-card">'
+                f'<div class="axis-card" role="listitem" aria-label="{escape(r.name)}">'
                 f'<h4>{escape(r.name)}</h4>'
                 f'<table><tr><th>Axe</th><th>Niveau</th><th>Confiance</th></tr>'
                 + ''.join(ax_rows)

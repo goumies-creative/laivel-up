@@ -11,10 +11,6 @@ from __future__ import annotations
 
 import os
 import sys
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from rich.console import Console
 
 
 def _enable_virtual_terminal_windows() -> None:  # pragma: no cover
@@ -110,23 +106,3 @@ def ensure_utf8_env() -> None:  # pragma: no cover
         os.environ['PYTHONIOENCODING'] = 'utf-8'
     _enable_virtual_terminal_windows()
     _try_reconfigure_stdout()
-
-
-def make_console(no_color: bool = False, emoji: bool | None = None) -> Console:  # pragma: no cover
-    """Crée une Console Rich avec encodage UTF-8 robuste.
-
-    Args:
-        no_color: True pour désactiver les couleurs (respecte NO_COLOR).
-        emoji: True pour emojis Unicode, False pour fallback ASCII.
-               None = auto-détection via supports_utf8().
-    """
-    if emoji is None:
-        emoji = supports_utf8()
-    from rich.console import Console
-
-    return Console(
-        force_terminal=True,
-        legacy_windows=False,
-        no_color=no_color,
-        emoji=emoji,
-    )

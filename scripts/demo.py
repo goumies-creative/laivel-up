@@ -49,6 +49,7 @@ def _run(cmd: str, label: str, comment: str = '', pause: int = PAUSE_MEDIUM) -> 
         capture_output=False,
         text=True,
         cwd=str(DEMO_DIR),
+        timeout=30,
     )
     if result.returncode != 0:
         print(f'\n[ERREUR] Commande échouée : {cmd}', file=sys.stderr)
