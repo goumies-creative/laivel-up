@@ -110,10 +110,6 @@
   > NIVEAU : 🔹 Blue
   > Axe plancher : Taille
 
-  !! ALERTE : Blue déclaré sans contexte
-     Niveau Blue suppose une mémoire projet, aucun fichier de contexte repéré. (état du dépôt)
-     > As-tu une mémoire projet dans la tête ou versionnée ailleurs (wiki, tickets) ?
-
   --- Comment monter d'un cran ---
   > Passer à des features L : enchaîner plusieurs étapes dans une même PR.
 

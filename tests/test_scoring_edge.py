@@ -246,7 +246,7 @@ class TestDetectRedFlags:
         p = ProfileData(
             name='x',
             declared_level=Level.BLUE,
-            traces={'XXcontext_versionedXX': True},
+            traces={'context_versioned': True},
         )
         flags = detect_red_flags(p)
         assert not any('contexte' in f.titre.lower() for f in flags)
