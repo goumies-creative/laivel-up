@@ -103,15 +103,17 @@ mort) et la commande `gh release view` de `CONTRIBUTING.md` échouera.
 
 ---
 
-### ☐ 1.3 — Corriger l'URL de clone dans `CONTRIBUTING.md`
+### ☑ 1.3 — Corriger l'URL de clone dans `CONTRIBUTING.md`
 **Effort : XS (5 min) · Deadline : 29/08**
 
-**Pourquoi :** la section "Développement local" dit
+**Statut : ✅ FAIT (31/08).** Le repo public existe déjà (`.git/config` → remote `origin` = `https://github.com/goumies-creative/laivel-up.git`), le blocage annoncé ("une fois le repo public créé") n'existait plus.
+
+**Pourquoi :** la section "Développement local" disait
 `git clone https://github.com/ai-driven-dev/laivel-up.git` — c'est l'URL du
-**sujet officiel**, pas de ton outil. Quiconque suit cette instruction clone
+**sujet officiel**, pas de ton outil. Quiconque suivait cette instruction clonait
 le mauvais dépôt.
 
-- ☐ Remplacer par l'URL réelle du dépôt de rendu (à fixer une fois le repo public créé, cf. section 5)
+- ☑ Remplacé par `git clone https://github.com/goumies-creative/laivel-up.git`
 
 ---
 
@@ -712,8 +714,35 @@ Principes bruts, sans réponse arrêtée sur les valeurs exactes (à itérer) :
 - **Snapshot** : `test_main_help` et `test_interrogate_help` mis à jour
 - **README-OFFICIEL** : lien officiel vers SUJET.md ajouté
 
-### ☐ 2.5 — Revue copy française complète
+**31/08 (matin) — Session Claude/MCP filesystem, vérifications pré-rendu :**
+- Diagnostic à froid confirmé par lecture directe (pas supposé) : `.git/config` → remote `origin` = `https://github.com/goumies-creative/laivel-up.git` (repo public existe bel et bien)
+- **1.3 fait** : URL de clone `CONTRIBUTING.md` corrigée (`ai-driven-dev` → `goumies-creative`), le blocage "repo pas encore public" n'était plus d'actualité
+- **2.5 resynchronisé** : case ☐ → ☑ (le travail était fait et journalisé le 30/08, la case n'avait pas suivi)
+- **11.6 vérifié** : lecture complète de `team.py::evaluate_member` — aucun écrasement, l'historique accumule bien un enregistrement par évaluation (voir détail dans la section 11.6)
+- **1.6 — toujours en attente côté toi** : `.git/refs/tags` est vide et aucun `packed-refs` n'existe en local → le tag `v0.2.0-hackathon` n'a pas encore été poussé. Push/tag/PyPI restent hors de portée du MCP filesystem (lecture/écriture de fichiers seulement, pas de commandes git)
+- **2 points de vigilance repérés (non corrigés, à trancher par toi avant le push)** :
+  1. `src/laivelup/scoring.py.bak` existe à la racine du package — fichier de sauvegarde probablement oublié, à supprimer ou vérifier qu'il est bien gitignoré avant publication (bruit inutile pour un jury qui parcourt le code)
+  2. `src/laivelup/tui/` (mascot/, screens/, viewmodels/, widgets/) est présent dans l'arborescence alors que le HEAD courant est sur `main` — la section 11.3 prévoyait cette isolation TUI sur la branche dédiée `feat/tui-8bit`, pas sur `main`. Le MCP filesystem ne permet pas de vérifier si ces fichiers sont trackés par git sur `main` ou simplement présents dans l'arbre de travail (untracked) — `git status` côté toi tranchera ; si trackés sur `main`, risque de contredire la règle d'isolement posée en 11.3
+
+**31/08 (suite) — Vérification en direct GitHub/PyPI (bash_tool, API publiques, sans authentification) :**
+- 🚨 **`https://api.github.com/repos/goumies-creative/laivel-up` → 404**, idème pour `/tags`, `/releases`, `/actions/runs`. L'utilisateur GitHub `goumies-creative` existe bien (200 sur `/users/goumies-creative`), donc ce n'est pas un problème de nom — le dépôt lui-même n'est **pas visible publiquement** en ce moment. Vu que le README documente déjà une note CI (jobs bloqués par la facturation, 495 tests/95% coverage en local) — la preuve que du code a bien tourné en CI dessus — le dépôt existe très probablement mais **en privé**, pas absent. **Correction de mon affirmation précédente** ("le repo public existe déjà", écrite en 1.3 ce matin) : l'URL de clone est la bonne, mais sa visibilité publique n'est **pas confirmée** — à vérifier et corriger en priorité absolue, cf. nouvel item 1.6 bis ci-dessous.
+- **`https://pypi.org/pypi/laivelup/json` → 404** : le package n'est pas encore publié sur PyPI. Confirme (source indépendante du `.git/refs/tags` local, déjà vide) que 1.6 n'est pas fait.
+- **11.4 avancé** : lecture de `docs/QUICKSTART_JUDGES.md` — trouvé et corrigé le même chantier que 2.1 avait déjà résolu dans le README, mais oublié ici : ancienne table "Accuracy/Explainability/Robustness/Reusability" avec scores auto-attribués (4/5), et compteur de tests périmé ("85+" puis "344"). Remplacé par la table officielle `SUJET.md` (identique au README) et le compte à jour (495 tests). `pip install .` remplacé par `pip install laivelup` en première commande (cohérent avec la commande de lancement annoncée en 2.4), `pip install .` gardé en option clone local.
+- **README resynchronisé** : même écart trouvé dans la table "Critères d'évaluation" du README (356 tests/88.73% — périmé depuis le 29/08) → aligné sur 495 tests/95% (chiffre que tu avais toi-même noté dans la note CI juste au-dessus, dans le même fichier)
+
+### ☐ 1.6 bis — URGENT : confirmer/forcer la visibilité publique du repo GitHub
+**Effort : XS (2 min) · Bloquant absolu pour le formulaire (2.4) et pour 1.6**
+
+**Pourquoi :** un jury qui reçoit un lien de repo privé ne peut rien évaluer. Vérifié en direct (31/08) : `goumies-creative/laivel-up` renvoie 404 sur l'API GitHub publique sans authentification — signe d'un dépôt privé (ou pas encore créé, moins probable vu la note CI déjà présente dans le README qui suppose des runs CI antérieurs).
+
+- ☐ Ouvrir `https://github.com/goumies-creative/laivel-up/settings` → si la page charge, le repo existe : descendre à "Danger Zone" → "Change visibility" → Public
+- ☐ Si la page ne charge pas (404 côté navigateur aussi) : le repo n'existe pas encore → le créer (`gh repo create goumies-creative/laivel-up --public --source=. --remote=origin` depuis le dossier du projet, ou via l'interface GitHub) puis `git push -u origin main`
+- ☐ Une fois public, revalider en relançant `curl https://api.github.com/repos/goumies-creative/laivel-up` (doit répondre 200) — je peux le refaire côté moi si tu veux une confirmation indépendante
+
+### ☑ 2.5 — Revue copy française complète
 **Effort : M · Deadline : 30/08**
+
+**Statut : ✅ FAIT (30/08)** — voir journal de bord ci-dessous pour le détail (case restée ☐ par oubli de synchro, corrigée le 31/08).
 
 **Pourquoi :** tous les textes affichés aux utilisateurs doivent être
 impeccables, en français correct, intelligibles et accessibles.
@@ -790,14 +819,16 @@ via le prompt [`docs/prompts/revue-copy-francaise.md`](docs/prompts/revue-copy-f
 
 **Pourquoi :** le dernier audit 7-piliers (28/08) a produit 69 findings sur du code qui passait déjà tous les checks · relancer un audit complet à quelques heures du rendu risque d'ouvrir des chantiers qu'il n'y aura pas le temps de fermer proprement.
 
-### ☐ 11.6 — Ne pas écraser l'évaluation précédente d'un membre lors d'une réévaluation
+### ☑ 11.6 — Ne pas écraser l'évaluation précédente d'un membre lors d'une réévaluation
 **Effort : XS pour vérifier, S si correctif réel · Timing : éligible avant midi (vérification rapide d'abord)**
+
+**Statut : ✅ Vérifié (31/08) — pas de bug, aucun correctif nécessaire.** Lecture complète de `team.py::evaluate_member` : chaque appel fait `team.history.append({...})` (accumulation, jamais une réécriture) puis trim S3 à `_MAX_HISTORY=100`. Seul `team.members[member_slug]` (l'instantané "état courant") est remplacé à chaque réévaluation — c'est le comportement attendu (état courant ≠ historique). `remove_member(purge=False)` marque les entrées passées `opt_out: True` sans les supprimer ; `purge=True` les filtre. Confirme la cohérence avec `test_remove_member_purge_historique`.
 
 **Pourquoi :** intégrité des données d'équipe. `team.history` semble déjà accumuler un enregistrement par évaluation (cf. tests RGPD droit à l'oubli · `test_remove_member_purge_historique` vérifie `len(team.history) == 1` après un seul `evaluate_member`), mais ça reste à confirmer sur le code réel de `team.py`, pas à supposer depuis les tests seuls.
 
-- ☐ Lire `team.py::evaluate_member` en entier avant toute conclusion
-- ☐ Confirmer si l'historique est bien préservé pour une mise à jour partielle des traces (pas seulement une évaluation complète)
-- ☐ Corriger si un écrasement réel est trouvé
+- ☑ Lire `team.py::evaluate_member` en entier avant toute conclusion
+- ☑ Confirmer si l'historique est bien préservé pour une mise à jour partielle des traces (pas seulement une évaluation complète)
+- ☑ Corriger si un écrasement réel est trouvé — sans objet, rien trouvé
 
 ### ☐ 11.7 — Nouvel axe « Professionnalisation / Industrialisation » (optionnel, hors règle AND)
 **Effort : L · Timing : après soumission · décision de conception actée (31/08)**
@@ -809,3 +840,130 @@ via le prompt [`docs/prompts/revue-copy-francaise.md`](docs/prompts/revue-copy-f
 - ☐ Vérifier si les données brutes des profils officiels (`profiles/*/git-activity.json`, `repo-context/`, `sonar-measures.json`, etc.) permettent réellement de répondre à cet axe
 - ☐ Créer, dans un dossier dédié, un profil officiel réaliste complet couvrant ce nouvel axe (basé sur l'existant officiel)
 - ☐ Créer un second profil avec 2 « trous » de données sur ce nouvel axe (cas refus de deviner)
+
+**Vision (31/08) — ce que mesure l'axe :** au-delà des 4 axes officiels (qui
+regardent *comment le code a été écrit*), cet axe regarde *comment le projet
+est industrialisé pour durer* : CI/CD, outillage qualité, discipline de
+release. Trois signaux pistés, chacun **corroboré** plutôt que pris seul —
+même philosophie anti-déclaratif que les 4 axes officiels (cf. ADR-0004) :
+
+| Signal (piste, non arrêtée) | Source brute envisagée | Pourquoi corroboré, pas seul |
+|---|---|---|
+| CI/CD configuré | `repo-context/` (workflows détectés) ou `git-activity.json` | Un fichier de config seul ne prouve pas qu'elle tourne réellement — à croiser avec un historique de runs si dispo |
+| Qualité outillée | `sonar-measures.json` (**actuellement non utilisé** par l'extracteur, cf. `GRID_QUICKREF.md` — piste immédiate) | Piège déjà identifié pour les 4 axes officiels (« s'arrêter aux métriques ») : s'applique tout autant ici |
+| Discipline de release | tags / CHANGELOG dans `git-activity.json` ou `repo-context/` | Un CHANGELOG statique ne prouve pas des releases réelles — à croiser avec des tags git si disponibles |
+
+Ces 3 signaux restent des pistes : seuils et pondération sont un chantier à
+part (1ère puce ci-dessus), et la disponibilité réelle de `sonar-measures.json`
+et des workflows CI par profil officiel reste à vérifier fichier par fichier
+(3e puce ci-dessus) — rien de ceci n'est supposé acquis par ce document.
+
+**Cas d'usage détaillé de `docs/EXTENDING.md`** (recette « Ajouter un axe
+bonus (hors règle AND) », ajoutée en miroir de cette vision — voir plus bas) :
+
+1. **`model.py`** — ne **pas** ajouter la clé dans `AXES` (ça la ferait
+   entrer dans le `min()` du verdict principal). Ajouter plutôt :
+   - `BONUS_AXES = ('industrialisation',)` (tuple séparé de `AXES`)
+   - `AXIS_LABELS['industrialisation'] = 'Industrialisation'` (même dict,
+     l'affichage n'a pas besoin d'être séparé)
+   - `Verdict.bonus_axis_scores: list[AxisScore] = field(default_factory=list)`
+     — nouveau champ à côté de `axis_scores`, pour ne jamais mélanger les
+     deux dans le calcul du niveau
+2. **`scoring_defaults.py`** — nouvelle sous-clé
+   `SCORING_DEFAULTS['INDUSTRIALIZATION']`, isolée des seuils des 4 axes
+   officiels (aucun risque de collision si on retouche un jour les seuils
+   historiques)
+3. **`scoring.py` → `evaluate()`** — après le calcul de `global_level` (qui
+   ne doit lire que `AXES`), ajouter un **second passage indépendant** sur
+   `BONUS_AXES` avec un scorer `industrialisation_max()` dédié : même
+   sémantique refus > deviner (confiance basse ou données absentes →
+   `level=None`, jamais un niveau inventé) — **mais** un axe bonus non
+   tranché ne doit **jamais** déclencher le `_refuse()` du verdict
+   principal. C'est le point de vigilance n°1 de cette étape : un profil
+   sans données d'industrialisation doit rester RED/BLUE/GREEN/COPPER
+   normalement sur les 4 axes officiels, avec juste `bonus_axis_scores`
+   vide ou à confiance basse à côté
+4. **`tests/test_scoring.py`** — au minimum 3 cas en plus du nominal :
+   (a) profil avec signaux d'industrialisation complets → axe bonus
+   tranché sans toucher au niveau global ; (b) profil sans aucune donnée
+   d'industrialisation → niveau global inchangé, axe bonus refusé/absent ;
+   (c) **non-régression** : les 4 profils officiels calibrés
+   (arthur/bohort/leodagan/perceval) gardent exactement leur niveau AND
+   actuel après l'ajout — le test qui protège la preuve « 4/4, zéro écart »
+   du pitch
+5. **`schemas/profile.schema.json`** — champs `traces.*` de l'axe bonus
+   ajoutés comme **optionnels** (jamais `required`), pour ne casser la
+   validation d'aucun profil existant, y compris les 4 officiels qui n'ont
+   pas ces données
+6. **`scripts/extract_official_profile.py`** (extracteur profils officiels
+   → traces — hors recette générique `EXTENDING.md`, spécifique à ce
+   projet) — **vérifié sur les 4 profils réels (31/08)**, pas supposé :
+   - `sonar-measures.json` **existe pour les 4 profils** (arthur, bohort,
+     leodagan, perceval) — contrairement à `pull-requests.json`, ce n'est
+     pas une pièce partielle : aucun « trou » sur cette pièce précise pour
+     les profils officiels
+   - Structure réelle : `component.measures` = liste de `{metric, value}`
+     (valeurs en chaîne, à caster) — pas un objet plat comme les autres
+     pièces. Champs utiles vérifiés sur les 4 profils : `coverage`,
+     `code_smells`, `bugs`, `duplicated_lines_density`
+   - **Correction de la piste CI/CD envisagée plus haut :** aucun fichier
+     de workflow (`.github/workflows/*`) n'est présent dans `repo-context/`
+     pour aucun des 4 profils — la piste « CI/CD configuré via
+     repo-context » n'a donc pas de données réelles à lire. En revanche
+     `git-activity.json` (déjà lu par l'extracteur pour les 4 axes
+     officiels) contient un objet `ci` non exploité à ce jour —
+     `ci.failure_rate` / `ci.median_runs_to_green`, présent sur les 4
+     profils : signal plus fort qu'un simple fichier de config (il prouve
+     que la CI tourne, pas seulement qu'elle existe), et **sans nouvelle
+     source de données à brancher** — juste un champ de plus à lire dans un
+     fichier déjà ouvert
+   - Signal de tendance couverture, également déjà présent dans
+     `git-activity.json → tests` : `coverage_start` / `coverage_end` /
+     `prs_with_tests_ratio` — sert de **corroboration** au chiffre statique
+     de `sonar-measures.json → coverage` (écart constaté sur les 4 profils :
+     quelques points de pourcentage, cohérent avec une différence de
+     périmètre de mesure entre les deux outils, pas une contradiction)
+   - Nouvelles fonctions d'extraction, strictement additives :
+     `_extract_sonar_measures()`, `_extract_ci_signals()`,
+     `_extract_coverage_trend()` — écrites dans un **nouveau namespace**
+     `traces['industrialisation'] = {...}`, jamais dans les clés existantes
+     (`pr_sizes`, `context_versioned`, etc.) : aucune clé actuelle n'est
+     renommée, déplacée ou recalculée → zéro risque de régression sur les 4
+     niveaux déjà calibrés
+   - Lecture protégée pièce par pièce (même pattern que le reste de
+     l'extracteur) : un `sonar-measures.json` absent ou malformé sur un
+     futur 5e profil ne doit jamais faire échouer l'extraction des 4 axes
+     officiels — juste laisser `traces['industrialisation']` vide ou
+     partiel
+
+**Risque de régression identifié (schema) — à corriger dans la même passe :**
+`schemas/profile.schema.json` a `"additionalProperties": false` sur
+`traces` — une clé `industrialisation` non déclarée y serait **rejetée**
+par le validateur `jsonschema` (`Draft202012Validator`), alors que le
+fallback `_validate_minimal()` de `schema.py` (utilisé quand la dépendance
+`jsonschema` n'est pas installée, cf. ADR-0012) ne fait lui aucune
+vérification `additionalProperties` et laisserait passer la même clé sans
+broncher — **asymétrie à connaître**, pas un bug en soi, mais un piège si on
+ne corrige qu'un des deux chemins de validation en pensant avoir couvert le
+cas. Fix : ajouter `industrialisation` comme propriété **optionnelle**
+(objet imbriqué, ses propres sous-clés typées/bornées) dans
+`traces.properties` du schema — jamais dans `required`, et sans toucher aux
+10 propriétés existantes.
+
+**Affichage (rappel décision actée) :** CLI + rapports MD/HTML, visuellement
+distinct du bloc verdict AND (cf. §9.1.c et §10 pour les conventions de
+couleur/typo déjà posées) — jamais dans le même bloc que les 4 axes qui
+déterminent le niveau.
+
+**Docs mises à jour en miroir de cette vision (31/08) :**
+- `docs/EXTENDING.md` : nouvelle section « Ajouter un axe bonus (hors règle
+  AND) » — recette générique pour tout futur axe optionnel, pas seulement
+  Industrialisation
+- `docs/adr/0017-axe-bonus-industrialisation-hors-regle-and.md` : décision
+  actée formalisée au format ADR (même format que ADR-0004 sur la grille à 4
+  axes), pour qu'un futur lecteur du dépôt (jury inclus) retrouve le
+  raisonnement sans devoir relire ce plan
+
+> Rappel : ce chantier reste **après soumission** (règle de section 11, non
+> renégociée ici) — seule la documentation de la vision est faite le 31/08,
+> aucun code n'est touché avant le rendu.

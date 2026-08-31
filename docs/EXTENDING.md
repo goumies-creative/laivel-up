@@ -8,6 +8,34 @@
 4. Ajouter les tests dans `tests/test_scoring.py`
 5. Mettre à jour `schemas/profile.schema.json`
 
+## Ajouter un axe bonus (hors règle AND)
+
+Variante de la recette ci-dessus pour un axe **optionnel**, qui ne doit
+**jamais** influencer le niveau global (`min()` sur `AXES`). Un axe bonus
+mesure autre chose que les axes officiels (ex. professionnalisation du
+delivery plutôt que la façon dont le code a été écrit) et reste affiché à
+part. Cas d'usage réel documenté : l'axe Industrialisation, voir
+`docs/plans/2026-08-28-001-chore-finalisation-hackathon-plan.md` §11.7 et
+`docs/adr/0017-axe-bonus-industrialisation-hors-regle-and.md`.
+
+1. Ajouter la clé dans un tuple séparé `BONUS_AXES` (**pas** dans `AXES`)
+   et le libellé dans `AXIS_LABELS` (`src/laivelup/model.py`)
+2. Ajouter un champ dédié sur `Verdict` (ex. `bonus_axis_scores: list[AxisScore]`)
+   — jamais dans `axis_scores`, qui alimente le `min()` du verdict principal
+3. Ajouter les seuils dans une sous-clé isolée de `SCORING_DEFAULTS`
+   (`src/laivelup/scoring_defaults.py`)
+4. Ajouter la logique dans `scoring.py` → `evaluate()`, en **second passage
+   indépendant** après le calcul de `global_level` : un axe bonus non
+   tranché (confiance basse ou données absentes) ne doit jamais déclencher
+   le refus du verdict principal
+5. Ajouter les tests dans `tests/test_scoring.py`, avec un cas de
+   non-régression explicite sur les niveaux déjà calibrés des profils
+   officiels
+6. Ajouter les champs `traces.*` correspondants dans
+   `schemas/profile.schema.json` comme **optionnels** (jamais `required`)
+7. Afficher l'axe bonus visuellement séparé du bloc verdict AND (CLI +
+   rapports MD/HTML) — jamais mélangé aux axes qui déterminent le niveau
+
 ## Ajouter un niveau
 
 1. Ajouter dans `Level` enum (`model.py`)
@@ -111,7 +139,7 @@ Pour toute nouvelle fonctionnalité :
 ```python
 # Format : test_<ce_qu'on_teste>_<ce_qu'on_s_attend>
 def test_evaluate_insufficient_data_refuses():
-    """La Décodeuse refuse quand les données manquent."""
+    """Laivel Up refuse quand les données manquent."""
     result = evaluate({})
     assert not result.decided
 

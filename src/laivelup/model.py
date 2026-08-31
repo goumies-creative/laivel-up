@@ -44,6 +44,17 @@ AXIS_LABELS = {
     'parallel': 'En parallèle',
 }
 
+# Couleurs par niveau (canonical — importées par report.py, calibrate_dashboard.py)
+LEVEL_COLORS: dict[Level, dict[str, str]] = {
+    Level.WHITE: {'bg': '#e8e8e8', 'fg': '#666', 'accent': '#999', 'icon': '❖'},
+    Level.RED: {'bg': '#fde8e8', 'fg': '#c0392b', 'accent': '#e74c3c', 'icon': '🔺'},
+    Level.BLUE: {'bg': '#e8f0fd', 'fg': '#2471a3', 'accent': '#3498db', 'icon': '🔹'},
+    Level.GREEN: {'bg': '#e8fde8', 'fg': '#1e8449', 'accent': '#27ae60', 'icon': '🟢'},
+    Level.COPPER: {'bg': '#fdf2e8', 'fg': '#b7950b', 'accent': '#d4ac0d', 'icon': '🥉'},
+    Level.SILVER: {'bg': '#f0f0f8', 'fg': '#7f8c8d', 'accent': '#95a5a6', 'icon': '🥈'},
+    Level.GOLD: {'bg': '#fdf8e8', 'fg': '#b7950b', 'accent': '#f1c40f', 'icon': '🥇'},
+}
+
 
 def level_label(level: Level | None) -> str:
     """Libellé d'un niveau, « — » si aucun niveau (cellule vide, comme la grille)."""

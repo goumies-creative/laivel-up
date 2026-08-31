@@ -13,17 +13,7 @@ from __future__ import annotations
 from html import escape
 
 from .calibrate_core import CalibrationResult
-from .model import Level, axis_label, level_label
-
-LEVEL_COLORS: dict[Level, dict[str, str]] = {
-    Level.WHITE: {'bg': '#e8e8e8', 'fg': '#666', 'accent': '#999', 'icon': '❖'},
-    Level.RED: {'bg': '#fde8e8', 'fg': '#c0392b', 'accent': '#e74c3c', 'icon': '🔺'},
-    Level.BLUE: {'bg': '#e8f0fd', 'fg': '#2471a3', 'accent': '#3498db', 'icon': '🔹'},
-    Level.GREEN: {'bg': '#e8fde8', 'fg': '#1e8449', 'accent': '#27ae60', 'icon': '🟢'},
-    Level.COPPER: {'bg': '#fdf2e8', 'fg': '#b7950b', 'accent': '#d4ac0d', 'icon': '🥉'},
-    Level.SILVER: {'bg': '#f0f0f8', 'fg': '#7f8c8d', 'accent': '#95a5a6', 'icon': '🥈'},
-    Level.GOLD: {'bg': '#fdf8e8', 'fg': '#b7950b', 'accent': '#f1c40f', 'icon': '🥇'},
-}
+from .model import LEVEL_COLORS, Level, axis_label, level_label
 
 LEVEL_BY_NAME: dict[str, Level] = {lvl.name: lvl for lvl in Level}
 
@@ -105,7 +95,7 @@ def generate_calibrate_html(result: CalibrationResult) -> str:
                 conf = f'{a.confidence:.0%}' if a.level is not None else '—'
                 ax_rows.append(f'<tr><td>{escape(label)}</td><td>{lvl}</td><td>{conf}</td></tr>')
             axis_cards.append(
-                f'<div class="axis-card">'
+                f'<div class="axis-card" role="listitem" aria-label="{escape(r.name)}">'
                 f'<h4>{escape(r.name)}</h4>'
                 f'<table><tr><th>Axe</th><th>Niveau</th><th>Confiance</th></tr>'
                 + ''.join(ax_rows)

@@ -48,7 +48,7 @@ laivelup team export "Alpha" --format html
 | Commande | Description |
 |----------|-------------|
 | `evaluate <profil>` | Évalue un profil et génère les rapports MD/HTML |
-| `interrogate [profil]` | Mode entretien guidé : questions ouvertes, re-score itératif |
+| `interrogate [profil]` | Mode entretien guidé : mené par l'évaluateur·rice avec la personne évaluée — questions ouvertes, re-score itératif |
 | `team create <nom> <membres>` | Crée une équipe avec pseudo-anonymisation RGPD |
 | `team evaluate <équipe> <slug> <profil>` | Évalue un membre de l'équipe |
 | `team export <équipe> --format <fmt>` | Exporte en MD, HTML, CSV ou JSON |
@@ -216,7 +216,7 @@ Libellés repris tels quels du sujet officiel (`SUJET.md`) — à vous de juger,
 | 🎯 Le bon niveau ? | `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff` — refuse un niveau (`UNDECIDED`) plutôt que d'en deviner un quand les données manquent |
 | 💬 On comprend pourquoi ? | `laivelup evaluate <profil> --verbose` + rapports MD/HTML — chaque verdict documente ses sources et ses limites |
 | 🔧 Comment tu l'as construit ? | `aidd_docs/` (sessions, audits, ADR) — orchestration OpenCode + compound-engineering, harnais documenté de bout en bout |
-| ✨ La qualité est là ? | 356 tests (88.73% coverage), ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |
+| ✨ La qualité est là ? | 495 tests (95% coverage), ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |
 
 ### Vidéo démo
 

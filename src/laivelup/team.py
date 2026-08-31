@@ -246,9 +246,14 @@ def set_opt_out(team: Team, member_slug: str, opt_out: bool = True) -> None:
     team.members[member_slug].opt_out = opt_out
 
 
+def _filter_history(team: Team) -> list[dict]:
+    """Filtre l'historique en excluant les membres opt-out."""
+    opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
+    return [h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')]
+
+
 def export_json(team: Team, path: Path) -> Path:
     """Exporte l'état de l'équipe en JSON (exclut les membres en opt-out)."""
-    opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
     data = {
         'team': team.name,
         'exported_at': datetime.now().isoformat(),
@@ -265,9 +270,7 @@ def export_json(team: Team, path: Path) -> Path:
             if not m.opt_out
         },
         # B1: filtre par opt_out du membre OU opt_out persisté dans l'historique
-        'history': [
-            h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')
-        ],
+        'history': _filter_history(team),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding='utf-8')
@@ -290,10 +293,7 @@ def export_markdown(team: Team, path: Path) -> Path:
         conf = '—' if m.level is None else f'{m.confidence:.0%}'
         lines.append(f'| {m.name} | `{m_slug}` | {level} | {axis} | {conf} |')
 
-    opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
-    history_filtered = [
-        h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')
-    ]
+    history_filtered = _filter_history(team)
 
     if history_filtered:
         lines.append('\n## Historique\n')
@@ -353,10 +353,7 @@ def export_html(team: Team, path: Path) -> Path:
             f'<td>{html_escape(axis_label(m.limiting_axis) if m.limiting_axis else "—")}</td><td>{conf}</td></tr>'
         )
 
-    opt_out_slugs = {s for s, m in team.members.items() if m.opt_out}
-    history_filtered = [
-        h for h in team.history if h.get('slug') not in opt_out_slugs and not h.get('opt_out')
-    ]
+    history_filtered = _filter_history(team)
 
     history_rows = []
     for entry in history_filtered[-20:]:

@@ -1,0 +1,70 @@
+name: scoring-mutation-kill
+description: Tuer les 61 mutants survivants de scoring.py (coeur metier) — maximiser le mutation score sans toucher au code prod
+
+metric:
+  primary:
+    type: hard
+    name: mutation_score
+    direction: maximize
+    target: 0.90
+  degenerate_gates:
+    - name: test_pass_rate
+      check: ">= 1.0"
+      description: Tous les tests doivent rester verts
+    - name: coverage
+      check: ">= 95"
+      description: Coverage globale ne doit pas regresser sous 95%
+  diagnostics:
+    - name: survived
+    - name: killed
+    - name: untested
+    - name: baseline_seconds
+
+measurement:
+  command: "python scripts/measure_mutation.py"
+  timeout_seconds: 1800
+  working_directory: "."
+  stability:
+    mode: single
+    repeat_count: 1
+    aggregation: median
+    noise_threshold: 0.02
+
+scope:
+  mutable:
+    - "tests/test_scoring.py"
+    - "tests/test_scoring_edge.py"
+    - "tests/test_scoring_defaults.py"
+    - "tests/test_properties.py"
+    - "tests/test_scoring_mutation.py"
+  immutable:
+    - "src/laivelup/scoring.py"
+    - "src/laivelup/calibrate_core.py"
+    - "pyproject.toml"
+    - "scripts/measure_mutation.py"
+
+execution:
+  mode: serial
+  backend: worktree
+  max_concurrent: 1
+
+parallel:
+  port_strategy: none
+  shared_files: []
+
+dependencies:
+  approved: []
+
+constraints:
+  - "Ne jamais modifier src/laivelup/scoring.py — seul tests/ est mutable (principe mutation testing)"
+  - "Un test = une assertion (TESTING_STRATEGY.md) — pas de test fourre-tout"
+  - "Couvrir les seuils metier critiques : seuil 0.5 reprise, regle AND min(), clamp [0,1], confiance"
+  - "Documenter les mutants equivalents (pas de forcing a 100%)"
+
+stopping:
+  max_iterations: 4
+  max_hours: 1
+  plateau_iterations: 3
+  target_reached: true
+
+max_runner_up_merges_per_batch: 0

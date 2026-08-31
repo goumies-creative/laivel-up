@@ -21,6 +21,7 @@ dev = [
     "bandit>=1.7",
     "pip-audit>=2.7",
     "pre-commit>=3.7",
+    "mutmut<3",
 ]
 
 [build-system]
@@ -155,8 +156,18 @@ exclude_dirs = ["tests"]
 # B101 : assert en tests ; B110 : fallback volontaire best-effort (encoding.py,
 # activation VT Windows en dégradation gracieuse) ; B601 : subprocess shell
 # contrôlé (profils officiels).
-skips = ["B101", "B110", "B601"]
+skips = ["B101", "B110"]
 
 [tool.pip-audit]
 desc = "on"
 skip = []
+
+# Mutation testing (mutmut 2.x — la 3.x refuse Windows natif, issue boxed/mutmut#397)
+# Périmètre : cœur métier uniquement (cf. docs/plans/2026-08-31-mutation-testing-plan.md)
+# Timing : exécution MANUELLE post-soumission — jamais en CI ni pre-commit (lenteur).
+# Suite rapide sans hypothesis pour la baseline ; les survivants sont re-vérifiés
+# avec test_properties.py avant de les déclarer réels.
+[mutmut]
+paths_to_mutate = "src/laivelup/scoring.py"
+tests_dir = "tests/"
+runner = "python -m pytest tests/test_scoring.py tests/test_scoring_edge.py tests/test_scoring_defaults.py -x -q --no-cov -o addopts="

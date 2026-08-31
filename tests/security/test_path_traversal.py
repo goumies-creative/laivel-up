@@ -42,3 +42,4 @@ class TestPathTraversal:
         evil = tmp_path / '..' / 'etc' / 'passwd'
         r = runner.invoke(app, ['evaluate', str(evil), '--no-html'])
         assert r.exit_code != 0
+        assert r.output.strip() != ''

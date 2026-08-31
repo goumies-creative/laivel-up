@@ -7,6 +7,7 @@ graph TD
         EVAL["laivelup evaluate"]
         INTER["laivelup interrogate"]
         TEAM["laivelup team"]
+        TEAM_CLI["team_cli.py<br/>team subcommands"]
     end
 
     subgraph Core ["Core"]
@@ -18,6 +19,11 @@ graph TD
         ENCODING["encoding.py<br/>UTF-8 cross-platform"]
         UTILS["utils.py<br/>slug HMAC + salt"]
         QUESTIONS["questions.py<br/>QUESTION_IDS"]
+        CONSOLE["console.py<br/>Rich console setup"]
+        COMPL_PATCH["_completion_patch.py<br/>Windows console patch"]
+        NES_RENDER["nes_rendering.py<br/>NES-style output"]
+        CALIBRATE_CORE["calibrate_core.py<br/>calibration engine"]
+        CALIBRATE_DASH["calibrate_dashboard.py<br/>HTML dashboard"]
     end
 
     subgraph Config ["Config"]
@@ -63,24 +69,31 @@ graph TD
     INTER --> MODEL
     INTER --> QUESTIONS
     TEAM --> TEAM_MOD
+    TEAM --> TEAM_CLI
 
     SCHEMA --> MODEL
     SCORING --> MODEL
     SCORING --> SCORING_DEF
     SCORING --> QUESTIONS
     REPORT --> MODEL
+    REPORT --> NES_RENDER
     TEAM_MOD --> MODEL
     TEAM_MOD --> UTILS
     UTILS --> MODEL
+    CLI --> CONSOLE
+    CONSOLE --> COMPL_PATCH
 
+    CALIBRATE --> CALIBRATE_CORE
     CALIBRATE --> SCORING
+    CALIBRATE_CORE --> SCORING
+    CALIBRATE_DASH --> CALIBRATE_CORE
     CALIBRATE_D --> SCORING
     CALIBRATE_D --> SCORING_DEF
     APPLY_FIX --> SCORING_DEF
     GEN_PROFILE --> TEAM_MOD
     CI_EVAL --> SCORING
     CI_EVAL --> GEN_PROFILE
-    BENCHMARK --> CLI_YML
+    BENCHMARK --> CI_YML
 
     CI_YML --> CALIBRATE
     CI_YML --> CALIBRATE_D

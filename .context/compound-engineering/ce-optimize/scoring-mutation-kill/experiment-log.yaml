@@ -1,0 +1,26 @@
+spec: scoring-mutation-kill
+run_id: "2025-08-31T10-00-00"
+started_at: "2025-08-31T10:00:00Z"
+baseline:
+  timestamp: "2025-08-31T10:00:00Z"
+  gates:
+    test_pass_rate: 1.0
+    coverage: 99.0
+  diagnostics:
+    survived: 61
+    killed: 155
+    untested: 105
+    baseline_seconds: 2.2
+    mutation_score: 0.7176
+experiments: []
+best:
+  iteration: 0
+  metrics:
+    mutation_score: 0.7176
+    test_pass_rate: 1.0
+    coverage: 99.0
+    survived: 61
+    killed: 155
+    untested: 105
+  total_judge_cost_usd: 0
+hypothesis_backlog: []

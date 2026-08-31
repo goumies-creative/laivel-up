@@ -21,6 +21,7 @@ class TestDosProfileGiant:
         """Profil > 2 Mo → exit 2 (trop volumineux)."""
         r = runner.invoke(app, ['evaluate', str(giant_profile), '--no-html'])
         assert r.exit_code == 2
+        assert 'trop volumineux' in r.output.lower()
 
     def test_giant_profile_message(self, giant_profile: Path):
         """Message d'erreur explicite pour fichier trop volumineux."""
@@ -36,3 +37,4 @@ class TestDosProfileGiant:
         """Fichier inexistant → exit 2 proprement."""
         r = runner.invoke(app, ['evaluate', str(tmp_path / 'nope.json'), '--no-html'])
         assert r.exit_code != 0
+        assert r.output.strip() != ''

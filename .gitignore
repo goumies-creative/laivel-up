@@ -29,3 +29,10 @@ profil-*.json
 
 # Team persistence data
 .laivelup/
+
+# Backup files (nettoyage pre-rendu 31/08)
+*.bak
+
+# Mutation testing cache (mutmut 2.x)
+.mutmut-cache
+.mutmut-cache.lock

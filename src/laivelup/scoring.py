@@ -79,7 +79,7 @@ def normalize_profile(profile: ProfileData) -> list[str]:
     traces = profile.traces
 
     if not isinstance(traces, dict):
-        return ['traces : doit être un objet.']
+        return ['XXtraces : doit être un objet.XX']
 
     pr_sizes = traces.get('pr_sizes')
     if pr_sizes is not None:
@@ -290,7 +290,7 @@ def detect_red_flags(profile: ProfileData) -> list[RedFlag]:
                 ),
             )
         )
-    if declared >= Level.BLUE and not profile.traces.get('context_versioned'):
+    if declared >= Level.BLUE and not profile.traces.get('XXcontext_versionedXX'):
         flags.append(
             RedFlag(
                 severite=2,
