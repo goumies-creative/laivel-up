@@ -107,7 +107,7 @@ def render_markdown(verdict: Verdict) -> str:
     else:
         lines.append('\n**Niveau :** non déterminable · données insuffisantes ou contradictoires')
     if verdict.limiting_axis:
-        lines.append(f'\n**Axe plancher / faible :** `{verdict.limiting_axis}`')
+        lines.append(f'\n**Axe plancher / faible :** {axis_label(verdict.limiting_axis)}')
     if verdict.axis_scores:
         lines.append('\n## Axes')
         lines.append('\n| Axe | Niveau | Confiance | Éléments observés |')
@@ -435,7 +435,7 @@ def render_html(verdict: Verdict) -> str:
         kelas = 'ko'
 
     limiting = (
-        f'<p class="limiting-axis">Axe plancher / faible : <strong>{escape(verdict.limiting_axis)}</strong></p>'
+        f'<p class="limiting-axis">Axe plancher / faible : <strong>{escape(axis_label(verdict.limiting_axis))}</strong></p>'
         if verdict.limiting_axis
         else ''
     )

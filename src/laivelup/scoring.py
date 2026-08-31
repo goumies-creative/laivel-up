@@ -251,16 +251,18 @@ def parallel_max(traces: dict) -> tuple[Level | None, float, list[str]]:
 
     if n == 0:
         return Level.WHITE, CONFIDENCE_MEDIUM, ['aucun chantier en parallèle']
+    pl_s = '' if n == 1 else 's'
     if n < 3:
-        return Level.GREEN, CONFIDENCE_MEDIUM, [f'{n} chantiers en parallèle']
+        return Level.GREEN, CONFIDENCE_MEDIUM, [f'{n} chantier{pl_s} en parallèle']
     if completed_int is not None and completed_int >= 3:
         return Level.GOLD, CONFIDENCE_MEDIUM, [f'{n} chantiers en parallèle, tous menés au bout']
     if completed_int is None:
         return Level.GREEN, CONFIDENCE_LOW, [f'{n} chantiers en parallèle (complétude à confirmer)']
+    pl_c = '' if completed_int == 1 else 's'
     return (
         Level.GREEN,
         CONFIDENCE_LOW,
-        [f'{n} chantiers ouverts mais {completed_int} menés au bout'],
+        [f'{n} chantier{pl_s} ouvert{pl_s} mais {completed_int} mené{pl_c} au bout'],
     )
 
 

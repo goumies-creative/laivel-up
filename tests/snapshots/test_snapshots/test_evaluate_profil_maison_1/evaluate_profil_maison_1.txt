@@ -34,7 +34,7 @@
       "level": "GREEN",
       "confidence": 0.8,
       "evidence": [
-        "1 chantiers en parallèle"
+        "1 chantier en parallèle"
       ],
       "variance": null
     }

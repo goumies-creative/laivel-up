@@ -12,7 +12,7 @@
   Harness: ░░░░░░░
   Intervention: ░░░░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : size
+  > Axe plancher : Taille
 
 
 > QUESTION 1/2 ██████████
@@ -25,7 +25,7 @@
   Harness: ░░░░░░░
   Intervention: ░░░░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : size
+  > Axe plancher : Taille
 
 
 > QUESTION 2/2 ██████████
@@ -59,19 +59,12 @@
 +------------------------------------------+
 
   Questions à poser :
-  > Quelle est la taille habituelle de tes features livrées avec l'IA (S, M, L, 
-XL) ?
+  > Quelle est la taille habituelle de tes features livrées avec l'IA (S, M, L, XL) ?
   > Quel niveau AIDD estimes-tu être actuellement, et sur quoi te bases-tu ?
-  > Quelle part de tes PR est reprise ou corrigée par toi après coup ? (Et 
-vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)
+  > Quelle part de tes PR est reprise ou corrigée par toi après coup ? (Et vient-elle d'erreurs de l'IA, de raffinement, de contexte perdu ?)
   > As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?
-  > Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont 
-au bout ?
+  > Combien de chantiers mènes-tu en parallèle, habituellement, et combien vont au bout ?
 
-> Rapport Markdown : 
-<TMP>
-_verdict0\entretien-24e8cdb9.md
-> Rapport HTML     : 
-<TMP>
-_verdict0\entretien-24e8cdb9.html
+> Rapport Markdown : <TMP>
+> Rapport HTML     : <TMP>
 

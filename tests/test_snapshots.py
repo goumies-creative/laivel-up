@@ -20,12 +20,24 @@ REPO = Path(__file__).parent.parent
 runner = CliRunner()
 
 
+@pytest.fixture(autouse=True)
+def _fixed_console_width(monkeypatch):
+    """Largeur console déterministe cross-OS : Rich ne wrappe plus les chemins,
+    le point de coupe ne dépend donc plus du chemin absolu (CI Linux/macOS)."""
+    from laivelup import cli
+
+    monkeypatch.setenv('COLUMNS', '400')
+    for con in (cli.console, cli.error_console):
+        monkeypatch.setattr(con, '_width', 400, raising=False)
+
+
 def _normalize(output: str) -> str:
-    """Normalise les chemins temporaires et codes ANSI pour des snapshots stables."""
+    """Normalise les chemins temporaires et codes ANSI pour des snapshots stables,
+    quel que soit l'OS (Windows temp, /tmp POSIX multi-segments)."""
     # Strip ANSI escape codes (Rich force_terminal=True les ajoute)
     output = re.sub(r'\x1b\[[0-9;]*m', '', output)
     output = re.sub(r'C:\\Users\\[^\\]+\\AppData\\Local\\Temp\\[^\n]+', '<TMP>', output)
-    output = re.sub(r'/tmp/[^/\n]+', '<TMP>', output)
+    output = re.sub(r'/tmp/\S+', '<TMP>', output)
     output = re.sub(r'pytest-\d+', 'pytest-N', output)
     return output
 

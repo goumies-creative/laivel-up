@@ -75,11 +75,11 @@ def main():
         args.out.write_text(md, encoding='utf-8')
 
     # Afficher le verdict pour GitHub Actions
-    from laivelup.model import LEVEL_LABELS
+    from laivelup.model import LEVEL_LABELS, axis_label
 
     if verdict.level is not None:
         print(f'[AIDD] Niveau : {LEVEL_LABELS[verdict.level]}')
-        print(f'[AIDD] Axe plancher : {verdict.limiting_axis}')
+        print(f'[AIDD] Axe plancher : {axis_label(verdict.limiting_axis)}')
     else:
         print('[AIDD] Refus de trancher (donnees insuffisantes)')
 

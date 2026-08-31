@@ -349,7 +349,7 @@ def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = 
         label = LEVEL_LABELS[verdict.level]
         console.print(f'  [bold green]> NIVEAU : {label}[/bold green]')
         if verdict.limiting_axis:
-            console.print(f'  [bold]> Axe plancher : {verdict.limiting_axis}[/bold]')
+            console.print(f'  [bold]> Axe plancher : {axis_label(verdict.limiting_axis)}[/bold]')
     else:
         _nes_box(
             [
@@ -585,7 +585,7 @@ def interrogate(
                 '',
                 f'  [bold green]{label}[/bold green]',
                 '',
-                f'  [dim]Axe plancher : {verdict.limiting_axis}[/dim]',
+                f'  [dim]Axe plancher : {axis_label(verdict.limiting_axis or "")}[/dim]',
             ],
             color='green',
             width=44,
@@ -631,7 +631,7 @@ def _print_interrogate_score(verdict: Verdict, turn: int, max_turns: int) -> Non
         console.print(f'  {p}')
 
     if verdict.limiting_axis:
-        console.print(f'  [dim]> Axe plancher : {verdict.limiting_axis}[/dim]')
+        console.print(f'  [dim]> Axe plancher : {axis_label(verdict.limiting_axis)}[/dim]')
     console.print()
 
 

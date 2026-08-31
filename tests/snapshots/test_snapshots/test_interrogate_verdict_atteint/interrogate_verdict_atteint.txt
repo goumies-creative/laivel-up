@@ -12,7 +12,7 @@
   Harness: ░░░░░░░
   Intervention: ░░░░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : size
+  > Axe plancher : Taille
 
 
 > QUESTION 1/6 ██████████
@@ -25,7 +25,7 @@
   Harness: ░░░░░░░
   Intervention: ░░░░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : harness
+  > Axe plancher : Harness
 
 
 > QUESTION 2/6 ██████████
@@ -38,7 +38,7 @@
   Harness: ░░░░░░░
   Intervention: ░░░░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : harness
+  > Axe plancher : Harness
 
 
 > QUESTION 3/6 ██████████
@@ -51,7 +51,7 @@
   Harness: ░░░░░░░
   Intervention: ███░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : harness
+  > Axe plancher : Harness
 
 
 > QUESTION 4/6 ██████████
@@ -64,7 +64,7 @@
   Harness: ░░░░░░░
   Intervention: ███░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : harness
+  > Axe plancher : Harness
 
 
 > QUESTION 5/6 ██████████
@@ -77,7 +77,7 @@
   Harness: ███░░░░
   Intervention: ███░░░░
   En parallèle: ░░░░░░░
-  > Axe plancher : parallel
+  > Axe plancher : En parallèle
 
 
 > QUESTION 6/6 ██████████
@@ -92,7 +92,7 @@
 |                                          |
 |   🔹 Blue        |
 |                                          |
-|   Axe plancher : size         |
+|   Axe plancher : Taille       |
 +------------------------------------------+
 
 
@@ -107,15 +107,11 @@
 └──────────────┴──────────┴───────────┘
 
   > NIVEAU : 🔹 Blue
-  > Axe plancher : size
+  > Axe plancher : Taille
 
   --- Comment monter d'un cran ---
   > Passer à des features L : enchaîner plusieurs étapes dans une même PR.
 
-> Rapport Markdown : 
-<TMP>
-ict_attei0\entretien-24e8cdb9.md
-> Rapport HTML     : 
-<TMP>
-ict_attei0\entretien-24e8cdb9.html
+> Rapport Markdown : <TMP>
+> Rapport HTML     : <TMP>
 

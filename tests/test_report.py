@@ -108,7 +108,7 @@ class TestRenderMarkdown:
     def test_limiting_axis(self):
         v = _make_verdict(limiting_axis='harness')
         md = render_markdown(v)
-        assert 'harness' in md
+        assert '**Axe plancher / faible :** Harness' in md
 
 
 # --- render_html -------------------------------------------------------
