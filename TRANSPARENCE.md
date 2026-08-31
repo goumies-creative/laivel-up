@@ -39,6 +39,19 @@ Le rapport restitue toujours :
 C'est un droit d'explication par design : la décision est déterministe,
 documentée dans la sortie, et reproductible.
 
+## Opposition (opt-out) et effacement
+
+Le Team Tracker donne deux leviers distincts, alignés sur le RGPD :
+
+| Levier | Commande | Article | Effet |
+|--------|----------|---------|-------|
+| **Opposition (opt-out)** | `team opt-out <équipe> <slug>` | Art. 21 | Le membre refuse tout nouveau traitement : `team evaluate` refuse l'évaluation, le membre et son historique disparaissent des exports partagés (MD · HTML · CSV · JSON). Son slug reste dans le fichier d'équipe local : `--disable` réactive le traitement. |
+| **Effacement (purge)** | `team remove <équipe> <slug> --purge` | Art. 17 | Le membre **et** tout son historique évalué sont supprimés du fichier d'équipe. Aucune trace restante. |
+
+Le pseudo (slug) est le seul identifiant présent dans les exports : le nom
+réel est protégé par un HMAC salé stocké uniquement dans le fichier d'équipe
+local (cf. `METHODE.md`, équité structurelle).
+
 ## Mécanisme de refus (équité structurelle)
 
 - Le moteur **refuse de trancher** plutôt que de deviner quand les données sont

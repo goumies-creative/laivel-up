@@ -55,6 +55,11 @@ laivelup team export "Alpha" --format html
 | `team opt-out <équipe> <slug> [--enable/--disable]` | Active/désactive l'opt-out RGPD |
 | `team remove <équipe> <slug> [--purge]` | Supprime un membre (historique optionnel) |
 
+> **RGPD** : `opt-out` = droit d'opposition (art. 21 · refus d'évaluation +
+> exclusion des exports, réversible via `--disable`) · `remove --purge` =
+> droit à l'effacement (art. 17 · membre + historique supprimés). Les
+> exports ne contiennent que les pseudo (slugs HMAC).
+
 ## Options
 
 | Option | Description |

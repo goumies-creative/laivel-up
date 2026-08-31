@@ -765,10 +765,19 @@ def team_opt_out(
     team_name: str = typer.Argument(..., help="Nom de l'équipe."),
     member_slug: str = typer.Argument(..., help='Pseudo anonymisé (slug) du membre.'),
     enable: bool = typer.Option(
-        True, '--enable/--disable', help="Activer ou désactiver l'opt-out (droit d'opposition)."
+        True,
+        '--enable/--disable',
+        help="Activer ou désactiver l'opposition au traitement (RGPD art. 21).",
     ),
 ) -> None:
-    """Active ou désactive l'opt-out RGPD pour un membre."""
+    """Active ou désactive l'opt-out RGPD (droit d'opposition) d'un membre.
+
+    Opt-out actif : `team evaluate` refuse toute nouvelle évaluation du
+    membre et celui-ci disparaît des exports partagés (MD · HTML · CSV ·
+    JSON). Son slug reste dans le fichier d'équipe : `--disable` réactive
+    le traitement. Pour un effacement complet (art. 17), utiliser
+    `team remove <équipe> <slug> --purge`.
+    """
     try:
         team = load_team(team_name)
     except ValueError as e:
