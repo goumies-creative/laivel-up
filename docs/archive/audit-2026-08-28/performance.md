@@ -82,7 +82,7 @@ def _validate_team_name(name: str) -> None:
         ...
 ```
 
-Python缓存 les modules dans `sys.modules`, donc le coût est un dict lookup répété sur la stack d'imports. Inutile et non idiomatique.
+Python met les modules en cache dans `sys.modules`, donc le coût est un dict lookup répété sur la stack d'imports. Inutile et non idiomatique.
 
 **Impact** : xs — appelé 1 fois par création d'équipe.
 

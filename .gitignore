@@ -36,3 +36,4 @@ profil-*.json
 # Mutation testing cache (mutmut 2.x)
 .mutmut-cache
 .mutmut-cache.lock
+.venv-lock/
