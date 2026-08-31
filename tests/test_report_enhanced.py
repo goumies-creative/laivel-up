@@ -156,6 +156,15 @@ class TestPedagogySection:
         for term in GLOSSARY:
             assert term in html
 
+    def test_glossary_reprise_definition(self):
+        """« Reprise » : définie avec sa mesure (traces), son lien grille, 70 % -> Red."""
+        v = _make_verdict()
+        html = render_html(v)
+        assert 'Reprise (proportion de)' in html
+        assert 'commits correctifs' in html
+        assert 'cellule Red' in html
+        assert 'traces du profil' in html
+
     def test_references_in_html(self):
         v = _make_verdict()
         html = render_html(v)

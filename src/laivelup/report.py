@@ -36,6 +36,12 @@ GLOSSARY: dict[str, str] = {
         "Quand l'humain intervient dans le travail de l'IA. Cadrer = choisir la tâche et "
         "dire ce qui est attendu. Monter d'un niveau = reprendre moins pour atteindre la qualité."
     ),
+    'Reprise (proportion de)': (
+        "La part de PR livrées avec l'IA que l'humain a dû reprendre après coup : "
+        'corriger, retoucher, refaire. La grille officielle dit « commits correctifs ». '
+        "70 % : sur 10 PR, 7 reprises · cellule Red de l'axe Intervention. "
+        "La valeur vient des traces du profil, jamais d'une réponse au questionnaire seule."
+    ),
     'Taille (Size)': (
         "La taille habituelle des features livrées avec l'IA : S (petite), M (moyenne), "
         "L (multi-étapes), XL (multi-modules). Pas la plus grosse jamais faite, l'habituel."

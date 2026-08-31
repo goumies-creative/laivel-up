@@ -83,6 +83,13 @@ libres dans les traces avant de re-scorer.
 
 ### Ratio de reprise
 
+La trace `retries_after_fact` (nom machine) mesure la **proportion de reprise**
+(texte humain) : la part de PR livrées avec l'IA que l'humain a dû reprendre
+après coup · la grille officielle dit « commits correctifs » (majorité ·
+partie · étapes clés · jamais). Le seuil interne 50 % sépare « sur la majorité »
+(cellule Red) de « sur une partie » (Blue) : il operationalise les catégories
+officielles, qui ne chiffrent pas.
+
 - « 60 % » → 0.6 (pourcentage)
 - « 0.5 » → 0.5 (ratio brut, ne pas diviser par 100)
 - « 0,5 » → 0.5 (virgule française acceptée)
