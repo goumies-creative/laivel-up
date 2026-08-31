@@ -11,6 +11,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import time
@@ -20,13 +21,13 @@ DEMO_DIR = Path(__file__).resolve().parent.parent
 PROFILS = [
     (
         'profil-maison-1.json',
-        'Profil 1 : contexte + rules',
-        'Contexte versionné, règles agent : signal de rigueur',
+        'Profil 1 : contexte + règles',
+        'Contexte versionné, règles agents : des fondations solides.',
     ),
     (
         'profil-maison-2.json',
         'Profil 2 : boucles de relance',
-        'Retries après coup : le moteur ne triche pas la lecture',
+        'Reprises après coup : le moteur ne croit pas le déclaratif.',
     ),
 ]
 
@@ -56,13 +57,16 @@ def _run(cmd: str, label: str, comment: str = '', pause: int = PAUSE_MEDIUM) -> 
 
 def main() -> None:
     """Scénario démo complet 5 étapes (~50s + pauses)."""
-    print("LAIVEL UP — Démo CLI d'évaluation AIDD\n")
-    print('Méthode : refus de deviner, questions au lieu de verdicts.')
+    print("LAIVEL UP · Démo CLI d'évaluation AIDD\n")
+    print('Refus de deviner : des questions, jamais de verdicts arrachés.')
     time.sleep(PAUSE_SHORT)
 
     # Étape 1 : Aide
     _run(
-        'laivelup --help', 'Étape 1 : Aide CLI', 'Découvrir les commandes disponibles', PAUSE_SHORT
+        'laivelup --help',
+        "Étape 1 · Découvrir l'outil",
+        'Toutes les commandes, en un écran.',
+        PAUSE_SHORT,
     )
 
     # Étape 2 : Évaluation profil 1
@@ -71,28 +75,40 @@ def main() -> None:
         if profil_path.exists():
             _run(
                 f'laivelup evaluate {profil_path} --no-html',
-                f'Étape 2 : {description}',
-                comment,
+                'Étape 2 · Évaluer les profils',
+                f'{description} · {comment}',
                 PAUSE_LONG,
             )
         else:
-            print(f'  [SKIP] Profil absent : {profil}')
+            print(f'  [IGNORÉ] Profil absent : {profil}')
 
     # Étape 3 : Création équipe
     _run(
         'laivelup team create DemoEquipe Alice,Bob,Charlie',
-        'Étape 3 : Création équipe (RGPD)',
-        "Le nom n'apparaît jamais en clair dans les rapports",
+        'Étape 3 · Créer une équipe',
+        'Pseudo-anonymisation RGPD : les noms ne sortent jamais en clair.',
         PAUSE_MEDIUM,
     )
 
     # Étape 4 : Évaluation membre
+    # Note fonctionnelle (audit copy-francaise-integrale.md) : le slug reel
+    # d'Alice est pseudo-anonymise (alice-xxxxxxxx), pas le litteral 'alice'.
+    # On le relit depuis le fichier d'equipe genere a l'etape 3 pour eviter
+    # un echec de commande pendant la demo.
     profil_path = DEMO_DIR / 'exemples' / PROFILS[0][0]
+    team_file = DEMO_DIR / '.laivelup' / 'teams' / 'DemoEquipe.json'
+    alice_slug = 'alice'
+    if team_file.exists():
+        team_data = json.loads(team_file.read_text(encoding='utf-8'))
+        for slug_key, member in team_data.get('members', {}).items():
+            if member.get('name') == 'Alice':
+                alice_slug = slug_key
+                break
     if profil_path.exists():
         _run(
-            f'laivelup team evaluate DemoEquipe alice {profil_path}',
-            'Étape 4 : Évaluation membre',
-            'Même moteur, agrégé au niveau équipe',
+            f'laivelup team evaluate DemoEquipe {alice_slug} {profil_path}',
+            'Étape 4 · Évaluer un membre',
+            "Même moteur, au service de l'équipe.",
             PAUSE_MEDIUM,
         )
 
@@ -101,8 +117,8 @@ def main() -> None:
     rapport_dir.mkdir(exist_ok=True)
     _run(
         f'laivelup team export DemoEquipe --format md --out {rapport_dir}',
-        'Étape 5 : Export résultats',
-        'Rapport exportable, prêt à partager',
+        'Étape 5 · Exporter',
+        'Un rapport prêt à partager.',
         PAUSE_SHORT,
     )
 
