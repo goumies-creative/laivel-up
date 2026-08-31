@@ -163,7 +163,11 @@ laivelup --install-completion
 ```
 
 Active l'auto-complétion des commandes et options au premier `Tab`,
-cross-shell (fournie nativement par Typer).
+cross-shell (fournie nativement par Typer). Après l'installation, recharger
+le shell (`source ~/.bashrc`, ou ouvrir un nouveau terminal), puis taper la
+commande **sans extension** : `laivelup e` + `Tab` complète en `evaluate`.
+(Nommer la commande `laivelup.exe` via la complétion par défaut de bash est
+normal : la complétion des arguments s'applique après le nom de commande.)
 
 **Windows · Git Bash :** si votre `~/.bashrc` contient des caractères hors
 ANSI (accents, émojis), la commande peut échouer avec `UnicodeDecodeError`
