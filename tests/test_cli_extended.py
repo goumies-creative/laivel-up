@@ -1266,3 +1266,53 @@ class TestFeedbackFor:
         p = ProfileData(name='x')
         _merge_answer(p, QUESTION_IDS['PR_SIZES'], 'souvent des M')
         assert _feedback_for(p, QUESTION_IDS['PR_SIZES'], 'souvent des M') == 'Réponse enregistrée.'
+
+
+# --- --install-completion : rc hors ANSI ne casse plus (patch Typer) ------
+
+
+class TestInstallCompletion:
+    """--install-completion : rc hors ANSI ne casse plus (patch Typer amont).
+
+    Typer 0.20 : --install-completion est un flag pur, le shell est
+    auto-détecté via shellingham → on mocke detect_shell pour viser bash/zsh.
+    """
+
+    def _mock_home_and_shell(self, monkeypatch, tmp_path, shell):
+        from pathlib import Path
+
+        import typer._completion_shared as _shared
+
+        monkeypatch.setattr(Path, 'home', lambda: tmp_path)
+        monkeypatch.setattr(_shared.shellingham, 'detect_shell', lambda: (shell, shell))
+
+    def test_bash_install_with_non_ansi_rc(self, monkeypatch, tmp_path):
+        """Un .bashrc contenant des octets hors cp1252 n'interrompt plus l'install."""
+        rc = tmp_path / '.bashrc'
+        rc.write_bytes(b'# rc\nexport X=1\n\x90 caf\xe9\n')
+        self._mock_home_and_shell(monkeypatch, tmp_path, 'bash')
+        r = runner.invoke(app, ['--install-completion'], prog_name='laivelup')
+        assert r.exit_code == 0, r.output
+        assert 'source' in rc.read_text(encoding='utf-8')
+        script = tmp_path / '.bash_completions' / 'laivelup.sh'
+        assert script.exists()
+        assert 'complete -o default' in script.read_text(encoding='utf-8')
+
+    def test_zsh_install_with_non_ansi_rc(self, monkeypatch, tmp_path):
+        """Un .zshrc hors ANSI ne casse plus l'install zsh."""
+        rc = tmp_path / '.zshrc'
+        rc.write_bytes(b'# zshrc\n\x90 caf\xe9\n')
+        self._mock_home_and_shell(monkeypatch, tmp_path, 'zsh')
+        r = runner.invoke(app, ['--install-completion'], prog_name='laivelup')
+        assert r.exit_code == 0, r.output
+        assert 'compinit' in rc.read_text(encoding='utf-8')
+        script = tmp_path / '.zfunc' / '_laivelup'
+        assert script.exists()
+
+    def test_bash_install_without_rc(self, monkeypatch, tmp_path):
+        """Pas de .bashrc existant : l'install crée le nécessaire."""
+        self._mock_home_and_shell(monkeypatch, tmp_path, 'bash')
+        r = runner.invoke(app, ['--install-completion'], prog_name='laivelup')
+        assert r.exit_code == 0, r.output
+        assert (tmp_path / '.bashrc').exists()
+        assert (tmp_path / '.bash_completions' / 'laivelup.sh').exists()

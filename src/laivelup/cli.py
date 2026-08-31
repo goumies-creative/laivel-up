@@ -37,6 +37,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from . import __version__
+from ._completion_patch import patch_completion_encodings
 from .calibrate_dashboard import generate_calibrate_html
 from .encoding import ensure_utf8_env, make_console
 from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
@@ -57,6 +58,10 @@ from .team import (
     save_team,
     set_opt_out,
 )
+
+# Bug Typer amont : install_bash/install_zsh lisent ~/.bashrc sans encoding ->
+# UnicodeDecodeError sur rc hors ANSI (cp1252 FR). Patch tolérant au chargement.
+patch_completion_encodings()
 
 # ─── Console setup (P0.2: TTY detection + encoding cross-platform) ──
 # Note: ensure_utf8_env() is called lazily in main() to avoid side effects at import time
