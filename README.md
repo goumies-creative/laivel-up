@@ -75,20 +75,24 @@ laivelup team export "Alpha" --format html
 ```
 src/laivelup/
     __init__.py     → version du package
-    cli.py          → CLI Typer (evaluate, interrogate, team)
-    model.py        → données (Level, AxisScore, Verdict, ProfileData)
+    cli.py          → CLI Typer (evaluate, interrogate, calibrate)
+    team_cli.py     → commandes team (create, evaluate, export, opt-out, remove)
+    model.py        → données (Level, AxisScore, Verdict, ProfileData, LEVEL_COLORS)
     scoring.py      → moteur d'évaluation (grille AIDD 4 axes × 7 niveaux)
-    report.py       → génération de rapports Markdown + HTML
+    report.py       → rendu Markdown + HTML du verdict
+    report_css.py   → styles CSS embarqués du rapport HTML
     team.py         → Team Tracker (équipes, historique, export)
-    utils.py        → slug HMAC-SHA256 + generate_team_salt
+    utils.py        → slug HMAC-SHA256, generate_team_salt, load_profile_data
     questions.py    → QUESTION_IDS dict partagé scoring/CLI
+    console.py      → console Rich partagée (factory make_console)
+    nes_rendering.py → rendu NES 8-bit (boîtes ASCII, barres pixel)
     encoding.py     → UTF-8 cross-platform
 
 tests/
     test_scoring.py     → tests unitaires du moteur
     test_scoring_edge.py → tests edge cases du moteur (48 tests)
     test_cli.py         → tests du CLI
-    test_cli_extended.py → tests étendus du CLI (43 tests)
+    test_cli_extended.py → tests étendus du CLI
     test_interactive.py → tests du mode interrogate
     test_properties.py  → tests property-based (hypothesis)
     test_snapshots.py   → tests snapshot de sortie CLI
@@ -147,7 +151,7 @@ MIT. AI-Driven Dev pourra réutiliser le projet en attribuant le travail à l'au
 
 > **Note CI :** les jobs GitHub Actions sont actuellement bloqués par la
 > facturation du compte (limite de dépense), pas par le code. Tous les
-> contrôles passent en local et via pre-commit : 495 tests, ruff, mypy,
+> contrôles passent en local et via pre-commit : 533 tests, ruff, mypy,
 > bandit, coverage 95 %. Ils relanceront dès la régularisation du billing.
 
 ### Installation rapide
@@ -216,8 +220,15 @@ Libellés repris tels quels du sujet officiel (`SUJET.md`) — à vous de juger,
 | 🎯 Le bon niveau ? | `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff` — refuse un niveau (`UNDECIDED`) plutôt que d'en deviner un quand les données manquent |
 | 💬 On comprend pourquoi ? | `laivelup evaluate <profil> --verbose` + rapports MD/HTML — chaque verdict documente ses sources et ses limites |
 | 🔧 Comment tu l'as construit ? | `aidd_docs/` (sessions, audits, ADR) — orchestration OpenCode + compound-engineering, harnais documenté de bout en bout |
-| ✨ La qualité est là ? | 495 tests (95% coverage), ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |
+| ✨ La qualité est là ? | 533 tests (95% coverage), ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |
 
 ### Vidéo démo
 
-Voir [docs/VIDEO_PRODUCTION.md](docs/VIDEO_PRODUCTION.md) pour la vidéo 2 min.
+La démo de 2 min : [goumies-creative-laivel-up-demo.mp4](goumies-creative-laivel-up-demo.mp4).
+Voir [docs/VIDEO_PRODUCTION.md](docs/VIDEO_PRODUCTION.md) pour le guide de production.
+
+### Audit qualité (2026-08-31)
+
+Triple passe qualité (GC Framework + AIDD 7 piliers + Compound Engineering
+5 personas) : 25 findings consolidés, tous traités. Rapports et mitigation
+dans `aidd_docs/tasks/2026_08/2026_08_31_audit/`.

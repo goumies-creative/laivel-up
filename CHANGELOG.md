@@ -5,6 +5,32 @@ Toutes les changements notables de LAIVEL UP sont documentés dans ce fichier.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/),
 et le projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [0.3.0] - 2026-08-31
+
+### Added
+- `team_cli.py` : commandes team extraites de `cli.py` (985 → 733 lignes)
+- `nes_rendering.py` : rendu NES 8-bit extrait de `cli.py` (boîtes ASCII, barres pixel)
+- `console.py` : console Rich partagée (factory `make_console`)
+- `report_css.py` : styles CSS du rapport HTML en constante module (~19 Ko, plus de reconstruction à chaque appel)
+- `utils.py` : `load_profile_data()` avec garde de taille (2 Mo) et validation de type
+- Écriture atomique des rapports MD/HTML (`tempfile` + `os.replace`)
+- `meta` whitelisté dans le schema (`note`, `source_dir`, `source`, `repo_path`, `user`, `generated_by`)
+- ARIA (`role="listitem"`, `aria-label`) sur les cartes axes du dashboard calibration
+- `docs/adr/0017` : axe bonus / industrialisation hors règle AND
+- Rapport d'audit complet : `aidd_docs/tasks/2026_08/2026_08_31_audit/` (25 findings, tous traités)
+- Démo vidéo : `goumies-creative-laivel-up-demo.mp4`
+
+### Changed
+- `report.py` : refonte HTML (design system console, avatar moniteur, HTML sémantique, responsive + print)
+- `report.py` : labels UI en français (CONFIANCE, OBSERVATIONS, MATRICE D'ÉVALUATION, etc.)
+- `cli.py` : lazy imports (`validate_profile`, `evaluate`, `QUESTION_IDS`)
+- `team.py` : helper `_filter_history` (suppression duplication opt-out ×3)
+- `encoding.py` : suppression `make_console` (code mort, remplacé par `console.py`)
+- `scripts/demo.py` : timeout 30 s sur les subprocess
+- `pyproject.toml` : suppression du skip Bandit B601
+- `docs/architecture.mmd` : ajout des modules manquants + correction typo
+- Tests : `_slug` testé via exports publics, assertions sur le contenu stderr des tests security, encodage utf-8 explicite
+
 ## [0.2.0] - 2026-08-28
 
 ### Added

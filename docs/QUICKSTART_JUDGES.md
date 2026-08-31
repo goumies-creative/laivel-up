@@ -2,6 +2,10 @@
 
 > Pour évaluer LAIVEL UP en 2 minutes. Aucune installation requise si Python 3.11+ est disponible.
 
+## Démo vidéo
+
+Voir la démo de 2 min : [goumies-creative-laivel-up-demo.mp4](../goumies-creative-laivel-up-demo.mp4)
+
 ## Installation
 
 ```bash
@@ -64,7 +68,7 @@ python scripts/calibrate.py --expected grille/profils-officiels/expected.json --
 ## Vérification de qualité
 
 ```bash
-pytest -q                    # 495 tests
+pytest -q                    # 533 tests
 ruff check src/ tests/       # 0 errors
 mypy src/                    # 0 errors
 bandit -r src/               # 0 issues
@@ -92,4 +96,4 @@ Libellés repris tels quels du sujet officiel (`SUJET.md`) — à vous de juger,
 | 🎯 Le bon niveau ? | `python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff` — refuse un niveau (`UNDECIDED`) plutôt que d'en deviner un quand les données manquent |
 | 💬 On comprend pourquoi ? | `laivelup evaluate <profil> --verbose` + rapports MD/HTML |
 | 🔧 Comment tu l'as construit ? | `aidd_docs/` (sessions, audits, ADR) |
-| ✨ La qualité est là ? | 495 tests, ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |
+| ✨ La qualité est là ? | 533 tests, ruff/mypy/bandit ✅, CI matrix 3OS × 3Python — voir `QUALITY.md` |

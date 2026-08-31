@@ -1,12 +1,16 @@
 ---
 type: documentation
 date: 2026-08-22
-status: draft
+status: done
 ---
 
 # Production video LAIVEL UP - Guide complet
 
 Guide pas-a-pas pour produire la video de demo 2 min du hackathon AI-Driven Dev.
+
+> **Statut (2026-08-31) : vidéo produite.** La démo finale est disponible à la
+> racine du dépôt : [goumies-creative-laivel-up-demo.mp4](../goumies-creative-laivel-up-demo.mp4).
+> Ce guide reste la référence pour régénérer ou retravailler la vidéo.
 
 ## Pre requis
 
