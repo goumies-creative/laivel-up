@@ -1,27 +1,59 @@
 ---
 id: aidd
-levels:
-  - id: white
-    label: "❖ White"
-    rank: 0
-  - id: red
-    label: "🔺 Red"
-    rank: 1
-  - id: blue
-    label: "🔹 Blue"
-    rank: 2
-  - id: green
-    label: "🟢 Green"
-    rank: 3
-  - id: copper
-    label: "🥉 Copper"
-    rank: 4
-  - id: silver
-    label: "🥈 Silver"
-    rank: 5
-  - id: gold
-    label: "🥇 Gold"
-    rank: 6
+version: 1
+# Bloc machine : seule source que charge la bibliothèque (laivelup.grid_doc).
+# Les tableaux ci-dessous sont la même grille, en français, pour les humains ;
+# le chargement échoue si les deux divergent.
+#
+# `requirements[axe]` liste les exigences de cet axe de la plus faible à la plus
+# forte. L'indice dans cette liste est l'ordre de l'exigence. Invariant vérifié
+# au chargement : un niveau n'exige jamais moins que celui du dessous.
+machine: |
+  {
+    "levels": [
+      {"id": "white", "label": "❖ White", "rank": 0},
+      {"id": "red", "label": "🔺 Red", "rank": 1},
+      {"id": "blue", "label": "🔹 Blue", "rank": 2},
+      {"id": "green", "label": "🟢 Green", "rank": 3},
+      {"id": "copper", "label": "🥉 Copper", "rank": 4},
+      {"id": "silver", "label": "🥈 Silver", "rank": 5},
+      {"id": "gold", "label": "🥇 Gold", "rank": 6}
+    ],
+    "axes": [
+      {"id": "size", "label": "Taille"},
+      {"id": "harness", "label": "Harness"},
+      {"id": "intervention", "label": "Intervention"},
+      {"id": "parallel", "label": "En parallèle"}
+    ],
+    "requirements": {
+      "size": ["—", "S", "M", "L", "L-XL"],
+      "harness": [
+        "rien",
+        "prompts",
+        "context engineering",
+        "context engineering, behavior",
+        "context engineering, behavior, boucles"
+      ],
+      "intervention": [
+        "—",
+        "après coup, sur la majorité",
+        "après coup, sur une partie",
+        "aux étapes clés",
+        "jamais, une fois la tâche cadrée",
+        "jamais, cadrage compris"
+      ],
+      "parallel": ["0", "1", "3"]
+    },
+    "cells": {
+      "white": {"size": "—", "harness": "rien", "intervention": "—", "parallel": "0"},
+      "red": {"size": "S", "harness": "prompts", "intervention": "après coup, sur la majorité", "parallel": "1"},
+      "blue": {"size": "M", "harness": "context engineering", "intervention": "après coup, sur une partie", "parallel": "1"},
+      "green": {"size": "L", "harness": "context engineering, behavior", "intervention": "aux étapes clés", "parallel": "1"},
+      "copper": {"size": "L-XL", "harness": "context engineering, behavior", "intervention": "aux étapes clés", "parallel": "3"},
+      "silver": {"size": "L-XL", "harness": "context engineering, behavior, boucles", "intervention": "jamais, une fois la tâche cadrée", "parallel": "3"},
+      "gold": {"size": "L-XL", "harness": "context engineering, behavior, boucles", "intervention": "jamais, cadrage compris", "parallel": "3"}
+    }
+  }
 ---
 # Référentiel AIDD
 
