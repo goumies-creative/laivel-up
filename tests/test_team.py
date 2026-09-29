@@ -279,13 +279,13 @@ class TestSaveTeamCleanupOnFailure:
         team = create_team('CleanupTest', ['Alice'])
         target = tmp_path / 'team.json'
 
-        def failing_replace(_self, _dest):
+        def failing_replace(*_args, **_kwargs):
             raise OSError('disk full')
 
-        monkeypatch.setattr(Path, 'replace', failing_replace)
+        monkeypatch.setattr(team_mod.os, 'replace', failing_replace)
         with pytest.raises(OSError):
             team_mod.save_team(team, target)
-        assert list(tmp_path.glob('*.tmp')) == []
+        assert sorted(p.name for p in tmp_path.iterdir()) == []
 
 
 class TestLoadTeamFileSizeGuard:
