@@ -47,11 +47,12 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install security tools
-        run: pip install bandit pip-audit
+        run: pip install bandit==1.9.4 pip-audit==2.10.1
       - name: Bandit security scan
         run: bandit -r src/ -c pyproject.toml
+      # Audite le lockfile, pas l'environnement : un exit non nul = gate rouge.
       - name: pip-audit dependency scan
-        run: pip-audit -r requirements.lock
+        run: pip-audit -r requirements.lock --progress-spinner off
       - name: Install project
         run: pip install -e .
       - name: Security tests
