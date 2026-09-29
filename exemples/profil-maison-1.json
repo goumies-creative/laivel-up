@@ -1,0 +1,16 @@
+{
+  "name": "profil-maison-1",
+  "declared_level": "BLUE",
+  "traces": {
+    "pr_sizes": ["M", "M", "M", "S"],
+    "context_versioned": false,
+    "agent_rules_versioned": false,
+    "retry_loops": false,
+    "retries_after_fact": 0.7,
+    "parallel_projects": 1
+  },
+  "answers": {},
+  "meta": {
+    "note": "Profil de test généré maison pour simuler un cas « jamais vu » : déclaratif Blue, traces contradictoires."
+  }
+}

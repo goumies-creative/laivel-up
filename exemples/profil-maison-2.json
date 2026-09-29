@@ -1,0 +1,12 @@
+{
+  "name": "profil-maison-2",
+  "declared_level": null,
+  "traces": {
+    "pr_sizes": ["S", "S"],
+    "retries_after_fact": 0.8
+  },
+  "answers": {},
+  "meta": {
+    "note": "Profil avec données partielles : doit déclencher le refus de trancher + questions ciblées."
+  }
+}
