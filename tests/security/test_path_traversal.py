@@ -43,3 +43,32 @@ class TestPathTraversal:
         r = runner.invoke(app, ['evaluate', str(evil), '--no-html'])
         assert r.exit_code != 0
         assert r.output.strip() != ''
+
+    def test_slug_escape_refused_by_write_reports(self, tmp_path: Path, monkeypatch):
+        """Violation délibérée : un slug qui s'échappe de --out est refusé.
+
+        Si le garde `is_relative_to` de write_reports est désactivé, ce test
+        échoue (écriture hors dossier au lieu de ValueError).
+        """
+        import pytest
+
+        from laivelup import report as report_mod
+        from laivelup.model import Level, Verdict
+
+        monkeypatch.setattr(report_mod, 'slug', lambda _name: '../evil')
+        verdict = Verdict(name='evil', level=Level.BLUE, axis_scores=[], limiting_axis=None)
+        with pytest.raises(ValueError, match='escapes output directory'):
+            report_mod.write_reports(verdict, tmp_path / 'rapports')
+        assert not (tmp_path / 'evil').exists()
+
+    def test_malicious_profile_name_stays_inside_out_dir(self, tmp_path: Path):
+        """Un nom de profil '../../evil' n'écrit jamais hors de --out."""
+        from laivelup.model import Level, Verdict
+        from laivelup.report import write_reports
+
+        out = tmp_path / 'rapports'
+        verdict = Verdict(name='../../evil', level=Level.BLUE, axis_scores=[], limiting_axis=None)
+        md, html = write_reports(verdict, out)
+        assert md.resolve().parent == out.resolve()
+        assert html is not None and html.resolve().parent == out.resolve()
+        assert not (tmp_path / 'evil').exists()

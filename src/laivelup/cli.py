@@ -25,11 +25,7 @@ Exit codes :
 from __future__ import annotations
 
 import json
-import os
-import re
-import sys
 from pathlib import Path
-from typing import Any, Optional
 
 import typer
 from rich.console import Console
@@ -38,17 +34,21 @@ from rich.table import Table
 
 from . import __version__
 from ._completion_patch import patch_completion_encodings
-from .console import NO_COLOR, TTY, console, error_console, make_console
-from .model import LEVEL_LABELS, Level, ProfileData, Verdict, axis_label, level_label
-from .nes_rendering import (
-    LEVEL_RICH_COLORS,
-    PIXEL_D,
-    PIXEL_F,
-    PIXEL_H,
-    _nes_box,
-    _nes_level_bar,
-    _nes_progress_bar,
+from .cli_display import (
+    MAX_JSON_MB,
+    _filter_fields,
+    _load_profile,
+    _print_verdict,
 )
+from .cli_interrogate import (
+    _feedback_for,
+    _merge_answer,
+    _parse_retry_ratio,
+    _print_interrogate_score,
+)
+from .console import TTY, console, error_console, make_console
+from .model import LEVEL_LABELS, Level, ProfileData, axis_label
+from .nes_rendering import PIXEL_F, PIXEL_H, _nes_box, _nes_progress_bar
 from .report import verdict_to_dict, write_reports
 from .team_cli import register_team_commands
 
@@ -65,8 +65,6 @@ app = typer.Typer(
 team_app = typer.Typer(help="Gestion d'équipes et suivi multi-membres.")
 app.add_typer(team_app, name='team')
 register_team_commands(team_app)
-
-MAX_JSON_MB = 2
 
 # ─── Schema (P0.3) ──────────────────────────────────────────────────
 COMMAND_SCHEMA = {
@@ -179,167 +177,6 @@ def main(
 def schema_cmd() -> None:
     """Retourne le schema JSON de ce tool (auto-découverte agent)."""
     print(json.dumps(COMMAND_SCHEMA, indent=2, ensure_ascii=False))
-
-
-# ─── Helpers ─────────────────────────────────────────────────────────
-def _load_profile(path: Path) -> ProfileData:
-    """Charge un profil JSON avec une erreur amicale et une borne de taille."""
-    from .schema import validate_profile
-
-    try:
-        size = path.stat().st_size
-    except OSError:
-        raise typer.BadParameter(f'Fichier introuvable : {path}')
-    if size > MAX_JSON_MB * 1024 * 1024:
-        raise typer.BadParameter(f'Fichier trop volumineux (> {MAX_JSON_MB} Mo) : {path}')
-    try:
-        data = json.loads(path.read_text(encoding='utf-8'))
-    except json.JSONDecodeError as exc:
-        error_console.print(f'[bold red]JSON invalide dans {path} :[/bold red] {exc}')
-        raise typer.Exit(code=2)
-    if not isinstance(data, dict):
-        error_console.print('[bold red]Le JSON doit contenir un objet profil.[/bold red]')
-        raise typer.Exit(code=2)
-
-    schema_errors = validate_profile(data)
-    if schema_errors:
-        error_console.print('[bold red]Profil invalide :[/bold red]')
-        for e in schema_errors:
-            error_console.print(f'  · {e}')
-        raise typer.Exit(code=2)
-
-    declared = data.get('declared_level')
-    if isinstance(declared, str) and declared:
-        declared = declared.upper()
-    declared_level = None
-    if declared:
-        try:
-            declared_level = Level[declared]
-        except KeyError:
-            error_console.print(
-                f'[bold red]declared_level inconnu : {declared}[/bold red] '
-                f'(valeurs : {", ".join(l.name for l in Level)})'
-            )
-            raise typer.Exit(code=2)
-    return ProfileData(
-        name=data.get('name', path.stem),
-        declared_level=declared_level,
-        traces=data.get('traces', {}),
-        answers=data.get('answers', {}),
-        meta=data.get('meta', {}),
-    )
-
-
-# ─── 8-bit NES art constants ───────────────────────────────────────
-NES_BORDER = '#3a3a5c'
-NES_ACCENT = '#00aaff'
-NES_SUCCESS = '#00cc44'
-NES_WARNING = '#ccaa00'
-NES_DANGER = '#cc3333'
-
-
-def _print_verdict(verdict: Verdict, is_verbose: bool = False, use_json: bool = False) -> Verdict:
-    """Affiche le verdict en style NES 8-bit."""
-    if use_json:
-        return verdict
-
-    console.print()
-
-    # Tableau des axes
-    table = Table(
-        title=f'VERDICT · {verdict.name}',
-        border_style=NES_BORDER,
-        header_style='bold cyan',
-    )
-    table.add_column('AXE', style='bold')
-    table.add_column('NIVEAU')
-    table.add_column('CONFIANCE')
-
-    for a in verdict.axis_scores:
-        lvl_str = level_label(a.level)
-        conf = f'{a.confidence:.0%}' if a.level is not None else '--'
-        color = LEVEL_RICH_COLORS.get(a.level, 'dim') if a.level is not None else 'dim'
-        table.add_row(
-            axis_label(a.axe),
-            f'[{color}]{lvl_str}[/{color}]',
-            conf,
-        )
-    console.print(table)
-
-    console.print()
-
-    if verdict.data_errors:  # pragma: no cover — rendu Rich uniquement, schema bloque en amont
-        _nes_box(
-            [
-                '[bold red]!! DONNÉES INVALIDES !![/bold red]',
-                '[red]Refus de trancher.[/red]',
-            ],
-            color='red',
-            width=44,
-        )
-        for e in verdict.data_errors:
-            console.print(f'  [red]> {e}[/red]')
-    elif verdict.decided:
-        assert verdict.level is not None
-        label = LEVEL_LABELS[verdict.level]
-        console.print(f'  [bold green]> NIVEAU : {label}[/bold green]')
-        if verdict.limiting_axis:
-            console.print(f'  [bold]> Axe plancher : {axis_label(verdict.limiting_axis)}[/bold]')
-    else:
-        _nes_box(
-            [
-                '[bold yellow]!! REFUS DE TRANCHER !![/bold yellow]',
-                '[yellow]Données insuffisantes.[/yellow]',
-            ],
-            color='yellow',
-            width=44,
-        )
-        console.print()
-        console.print('[dim]  Questions à poser :[/dim]')
-        for q in verdict.next_steps:
-            console.print(f'  [dim]> {q}[/dim]')
-
-    # Red flags
-    for f in verdict.red_flags:  # pragma: no cover — rendu Rich uniquement
-        console.print()
-        console.print(f'  [bold red]!! ALERTE : {f.titre}[/bold red]')
-        console.print(f'     {f.constat} ({f.source})')
-        if f.question:
-            console.print(f'     [cyan]> {f.question}[/cyan]')
-
-    # Next steps
-    if verdict.decided:
-        console.print()
-        console.print("[dim]  --- Comment monter d'un cran ---[/dim]")
-        for n in verdict.next_steps:
-            console.print(f'  [dim]> {n}[/dim]')
-
-    # Verbose
-    if is_verbose:  # pragma: no cover — rendu Rich uniquement
-        console.print()
-        console.print('[dim]  --- Détails techniques ---[/dim]')
-        for a in verdict.axis_scores:
-            label = axis_label(a.axe)
-            lvl = level_label(a.level)
-            conf = f'{a.confidence:.0%}' if a.level is not None else '--'
-            console.print(f'  [dim]> {label}: {lvl} ({conf})[/dim]')
-            if a.evidence:
-                for ev in a.evidence:
-                    console.print(f'     [dim]  source · {ev}[/dim]')
-            if a.variance:
-                console.print(f'     [dim]  variance · {a.variance}[/dim]')
-        if verdict.data_errors:
-            console.print('[dim]  > données invalides :[/dim]')
-            for e in verdict.data_errors:
-                console.print(f'     [dim]  > {e}[/dim]')
-
-    return verdict
-
-
-def _filter_fields(data: dict[str, Any], fields_str: str) -> dict[str, Any]:
-    """Filtre les champs d'un dict JSON."""
-    field_list = [f.strip() for f in fields_str.split(',')]
-    return {k: v for k, v in data.items() if k in field_list}
 
 
 # ─── evaluate command (P0.1 + P1.3 + P2.2) ─────────────────────────
@@ -553,38 +390,17 @@ def interrogate(
     console.print()
 
 
-def _print_interrogate_score(verdict: Verdict, turn: int, max_turns: int) -> None:
-    """Affiche un indicateur visuel du score actuel pendant l'entretien."""
-    console.print()
-    console.print(f'[dim]  ÉTAPE {turn}/{max_turns} {PIXEL_H * 20}[/dim]')
-
-    if not verdict.axis_scores:
-        return
-
-    # Barre de progression par axe (style NES)
-    parts = []
-    for a in verdict.axis_scores:
-        label = axis_label(a.axe)
-        bar = _nes_level_bar(a.level)
-        parts.append(f'{label}: {bar}')
-
-    for p in parts:
-        console.print(f'  {p}')
-
-    if verdict.limiting_axis:
-        console.print(f'  [dim]> Axe plancher : {axis_label(verdict.limiting_axis)}[/dim]')
-    console.print()
-
-
 # ─── calibrate command (dashboard HTML) ──────────────────────────────
 @app.command(name='calibrate')
 def calibrate_cmd(
-    expected: Path = typer.Option(
+    expected: Path | None = typer.Option(
         None,
         '--expected',
         help='Chemin vers expected.json (défaut : grille/profils-officiels/expected.json)',
     ),
-    profiles_dir: Path = typer.Option(None, '--profiles-dir', help='Dossier des profils officiels'),
+    profiles_dir: Path | None = typer.Option(
+        None, '--profiles-dir', help='Dossier des profils officiels'
+    ),
     out: Path = typer.Option(Path('rapports'), '--out', help='Dossier de sortie.'),
     show_proof: bool = typer.Option(
         False, '--show-proof', help='Affiche le tableau de preuve en CLI.'
@@ -624,114 +440,6 @@ def calibrate_cmd(
     html_content = generate_calibrate_html(result)
     html_path.write_text(html_content, encoding='utf-8')
     console.print(f'[dim]Tableau de bord calibration : {html_path}[/dim]')
-
-
-# --- Retry ratio parsing ---------------------------------------------------------
-
-
-def _parse_retry_ratio(low: str) -> float | None:
-    """Extrait un ratio de reprise (0-1) d'une réponse libre."""
-    percent = re.search(r'(\d+(?:[.,]\d+)?)\s*(?:%|pourcent)', low)
-    if percent:
-        return min(max(float(percent.group(1).replace(',', '.')) / 100.0, 0.0), 1.0)
-    ratio = re.search(r'(\d+)\s*(?:fois\s*)?sur\s*(\d+)', low)
-    if ratio and int(ratio.group(2)) > 0:
-        return min(max(int(ratio.group(1)) / int(ratio.group(2)), 0.0), 1.0)
-    number = re.search(r'\d+(?:[.,]\d+)?', low)
-    if not number:
-        return None
-    value = float(number.group(0).replace(',', '.'))
-    return min(max(value if value <= 1.0 else value / 100.0, 0.0), 1.0)
-
-
-_LEVELS_BY_KEYWORD = (
-    ('white', 'WHITE'),
-    ('red', 'RED'),
-    ('blue', 'BLUE'),
-    ('green', 'GREEN'),
-    ('copper', 'COPPER'),
-    ('silver', 'SILVER'),
-    ('gold', 'GOLD'),
-    ('blanc', 'WHITE'),
-    ('rouge', 'RED'),
-    ('bleu', 'BLUE'),
-    ('vert', 'GREEN'),
-    ('cuivre', 'COPPER'),
-)
-
-
-def _feedback_for(profile: ProfileData, question: str, answer: str) -> str:
-    """Feedback après fusion : nomme ce qui a été enregistré, pour que la
-    réponse ne soit jamais confondue avec la création d'une donnée. La valeur
-    d'une trace vient du profil ou du chiffre donné ; une confirmation ne fait
-    que la corroborer."""
-    from .questions import QUESTION_IDS
-
-    t = profile.traces
-    if question == QUESTION_IDS['RETRIES_RATIO'] and t.get('retries_after_fact') is not None:
-        return f'Proportion de reprise : {t["retries_after_fact"]:.0%}.'
-    if question == QUESTION_IDS['RETRIES_TRIANGULATED'] and t.get('retries_triangulated') is True:
-        return 'Reprise corroborée · la valeur des traces reste celle-ci.'
-    if (
-        question == QUESTION_IDS['ADOPTION_SIGNALS']
-        and answer.strip().lower().startswith(('oui', 'yes'))
-        and t.get('context_versioned') is True
-    ):
-        return 'Contexte marqué comme versionné.'
-    return 'Réponse enregistrée.'
-
-
-def _merge_answer(profile: ProfileData, question: str, answer: str) -> ProfileData:
-    """Fusionne la réponse dans les traces pour le rescore."""
-    from .questions import QUESTION_IDS
-
-    low = answer.strip().lower()
-
-    if question == QUESTION_IDS['PR_SIZES']:
-        tokens = set(low.split())
-        matched = [s.upper() for s in ('s', 'm', 'l', 'xl') if s in tokens]
-        if matched:
-            current = profile.traces.setdefault('pr_sizes', [])
-            for size in matched:
-                if size not in current:
-                    current.append(size)
-
-    elif question == QUESTION_IDS['RETRIES_TRIANGULATED']:
-        if answer.strip():
-            profile.traces['retries_triangulated'] = True
-
-    elif question == QUESTION_IDS['RETRIES_RATIO']:
-        parsed = _parse_retry_ratio(low)
-        if parsed is not None:
-            profile.traces['retries_after_fact'] = parsed
-
-    elif question == QUESTION_IDS['ADOPTION_SIGNALS']:
-        if low.startswith(('oui', 'yes')):
-            profile.traces['context_versioned'] = True
-
-    elif question == QUESTION_IDS['PROJECTS_COMPLETED']:
-        nb = re.search(r'\d+', low)
-        if nb:
-            profile.traces['projects_completed'] = int(nb.group(0))
-
-    elif question == QUESTION_IDS['PARALLEL_PROJECTS']:
-        numbers = re.findall(r'\d+', low)
-        if numbers:
-            profile.traces['parallel_projects'] = int(numbers[0])
-            if len(numbers) >= 2:
-                profile.traces['projects_completed'] = int(numbers[1])
-            elif re.search(r'tou(?:s|t)\b', low):
-                profile.traces['projects_completed'] = int(numbers[0])
-
-    elif question == QUESTION_IDS['DECLARED_LEVEL']:
-        for word, level in _LEVELS_BY_KEYWORD:
-            if re.search(rf'\b{word}\b', low):
-                profile.declared_level = Level[level]
-                break
-
-    profile.answers['last_question'] = question
-    profile.answers['last_answer'] = answer
-    return profile
 
 
 if __name__ == '__main__':

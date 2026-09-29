@@ -44,5 +44,15 @@
     "Proportion de reprise indiquée sans PR à l'appui : peux-tu fournir quelques PR typiques pour la corroborer ?",
     "As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?"
   ],
+  "gaps": [
+    {
+      "text": "Proportion de reprise indiquée sans PR à l'appui : peux-tu fournir quelques PR typiques pour la corroborer ?",
+      "type": "proof"
+    },
+    {
+      "text": "As-tu une mémoire projet (contexte) ? Des règles ou agents versionnés ?",
+      "type": "proof"
+    }
+  ],
   "data_errors": []
 }

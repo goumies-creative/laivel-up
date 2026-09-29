@@ -122,6 +122,23 @@ class RedFlag:
     question: str | None = None  # la question à poser pour vérifier l'hypothèse
 
 
+# --- Écarts typés (item 7) -------------------------------------------------
+# Un écart de PRATIQUE (✗, U+2717) = cellule prouvée non satisfaite
+# (ex : "passer de features S à M"). Un écart de PREUVE (?) = donnée
+# manquante ou non corroborée, refus de deviner (ex : question posée).
+# Le champ interne s'appelle `kind` (évite le shadowing de `type`) ;
+# verdict_to_dict() le sérialise sous la clé `type` (contrat item 7).
+
+GAP_PRACTICE = 'practice'
+GAP_PROOF = 'proof'
+
+
+@dataclass
+class Gap:
+    text: str
+    kind: str = GAP_PROOF  # GAP_PRACTICE | GAP_PROOF
+
+
 @dataclass
 class Verdict:
     name: str
@@ -131,6 +148,7 @@ class Verdict:
     data_errors: list[str] = field(default_factory=list)  # profils invalides (données qui mentent)
     red_flags: list[RedFlag] = field(default_factory=list)
     next_steps: list[str] = field(default_factory=list)  # comment monter d'un cran / questions
+    gaps: list[Gap] = field(default_factory=list)  # même contenu que next_steps, typé (item 7)
 
     @property
     def decided(self) -> bool:

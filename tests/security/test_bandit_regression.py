@@ -92,3 +92,24 @@ class TestBanditRegression:
             )
         except json.JSONDecodeError:
             pass
+
+    def test_bandit_canary_flags_known_dangerous_pattern(self, tmp_path):
+        """Canari : bandit signale `eval()` sur un fichier témoin.
+
+        Si le scanner est désactivé, mal configuré ou muet, ce test échoue :
+        il prouve que la règle bandit ci-dessus protège réellement.
+        """
+        evil = tmp_path / 'evil_canary.py'
+        evil.write_text('def f(user_input):\n    return eval(user_input)\n', encoding='utf-8')
+        result = subprocess.run(
+            ['python', '-m', 'bandit', str(evil), '-f', 'json', '-q'],
+            capture_output=True,
+            text=True,
+            cwd=str(REPO),
+        )
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise AssertionError(f'bandit sans JSON : {result.stdout[:500]}') from exc
+        test_ids = {i.get('test_id') for i in data.get('results', [])}
+        assert 'B307' in test_ids, f'bandit aurait dû signaler B307 (eval) : {test_ids}'

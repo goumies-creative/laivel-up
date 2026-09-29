@@ -51,3 +51,20 @@ class TestJsonInjection:
         """Profil valide → exit 0 (pas de faux positif)."""
         r = runner.invoke(app, ['evaluate', str(valid_profile), '--no-html'])
         assert r.exit_code == 0
+
+    def test_proto_key_alone_rejected(self, valid_profile: Path, tmp_path: Path):
+        """Violation délibérée : profil valide + seule clé `__proto__` → rejeté.
+
+        Le profil de base est valide : seul `additionalProperties: false`
+        (racine du schema) peut le rejeter. Si cette règle est désactivée,
+        la commande réussit (exit 0) et ce test échoue.
+        """
+        import json
+
+        data = json.loads(valid_profile.read_text(encoding='utf-8'))
+        data['__proto__'] = {'admin': True}
+        target = tmp_path / 'proto-only.json'
+        target.write_text(json.dumps(data), encoding='utf-8')
+        r = runner.invoke(app, ['evaluate', str(target), '--no-html'])
+        assert r.exit_code != 0
+        assert r.output.strip() != ''

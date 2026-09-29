@@ -27,9 +27,32 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 
-from .model import Level, Verdict, axis_label, level_label
+from .model import GAP_PRACTICE, Level, Verdict, axis_label, level_label
 from .report_css import CSS_STYLES
 from .utils import slug
+
+# ---------------------------------------------------------------------------
+# ÉCARTS TYPÉS (item 7)
+# ---------------------------------------------------------------------------
+# ✗ (U+2717 BALLOT X) = écart de PRATIQUE : cellule prouvée non satisfaite.
+# ? = écart de PREUVE : donnée manquante ou non corroborée (refus de deviner).
+
+GAP_PRACTICE_MARK = '✗'
+GAP_PROOF_MARK = '?'
+GAPS_LEGEND_MD = (
+    f'\n*Légende : {GAP_PRACTICE_MARK} = écart de pratique (cellule prouvée non satisfaite) · '
+    f'{GAP_PROOF_MARK} = écart de preuve (donnée manquante, refus de deviner).*'
+)
+
+
+def _gap_mark(kind: str) -> str:
+    """Symbole d'un écart typé (défaut prudent : preuve)."""
+    return GAP_PRACTICE_MARK if kind == GAP_PRACTICE else GAP_PROOF_MARK
+
+
+# ---------------------------------------------------------------------------
+# ÉCRITURE ATOMIQUE
+# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # ÉCRITURE ATOMIQUE
@@ -301,8 +324,13 @@ def render_markdown(verdict: Verdict) -> str:
     if verdict.next_steps:
         lines.append("\n## Comment monter d'un cran / point de levée d'incertitude")
 
-        for next_step in verdict.next_steps:
-            lines.append(f'\n- {next_step}')
+        if verdict.gaps:
+            for gap in verdict.gaps:
+                lines.append(f'\n- {_gap_mark(gap.kind)} {gap.text}')
+            lines.append(GAPS_LEGEND_MD)
+        else:
+            for next_step in verdict.next_steps:
+                lines.append(f'\n- {next_step}')
 
     lines.append(
         '\n## Transparence\n'
@@ -628,16 +656,47 @@ def _render_red_flags(verdict: Verdict) -> str:
 
 
 def _render_next_steps(verdict: Verdict) -> str:
-    """Rend les Next Steps tels que fournis par le moteur."""
+    """Rend les Next Steps tels que fournis par le moteur, avec écarts typés."""
 
     if not verdict.next_steps:
         return ''
 
     items: list[str] = []
 
-    for index, step in enumerate(verdict.next_steps, start=1):
-        items.append(
-            f"""
+    if verdict.gaps:
+        for index, gap in enumerate(verdict.gaps, start=1):
+            mark = _gap_mark(gap.kind)
+            css_class = 'gap-practice' if gap.kind == GAP_PRACTICE else 'gap-proof'
+            items.append(
+                f"""
+<li class="next-step {css_class}">
+
+    <span class="next-step-index">
+        {index:02d}
+    </span>
+
+    <span class="next-step-mark" aria-hidden="true">
+        {escape(mark)}
+    </span>
+
+    <div class="next-step-content">
+        {escape(gap.text)}
+    </div>
+
+</li>
+"""
+            )
+        legend_html = f"""
+<div class="gaps-legend">
+    Légende : {escape(GAP_PRACTICE_MARK)} = écart de pratique
+    (cellule prouvée non satisfaite) · {escape(GAP_PROOF_MARK)} = écart de preuve
+    (donnée manquante, refus de deviner).
+</div>
+"""
+    else:
+        for index, step in enumerate(verdict.next_steps, start=1):
+            items.append(
+                f"""
 <li class="next-step">
 
     <span class="next-step-index">
@@ -650,7 +709,8 @@ def _render_next_steps(verdict: Verdict) -> str:
 
 </li>
 """
-        )
+            )
+        legend_html = ''
 
     return f"""
 <section class="section next-steps-section"
@@ -677,6 +737,8 @@ def _render_next_steps(verdict: Verdict) -> str:
     <ol class="next-steps">
         {''.join(items)}
     </ol>
+
+    {legend_html}
 
 </section>
 """
@@ -1202,7 +1264,9 @@ def render_html(verdict: Verdict) -> str:
 """
 
     if verdict.level is None:
-        main_content = _render_refusal(verdict)
+        # Refus : état distinct, mais les écarts typés (item 7) restent visibles
+        # en HTML comme en Markdown (le refus porte sur le niveau, pas sur l'action).
+        main_content = _render_refusal(verdict) + _render_next_steps(verdict)
 
     else:
         main_content = f"""
@@ -1442,5 +1506,6 @@ def verdict_to_dict(verdict: Verdict) -> dict:
             for flag in verdict.red_flags
         ],
         'next_steps': verdict.next_steps,
+        'gaps': [{'text': gap.text, 'type': gap.kind} for gap in verdict.gaps],
         'data_errors': verdict.data_errors,
     }
