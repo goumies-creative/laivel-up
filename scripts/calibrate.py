@@ -8,9 +8,8 @@ Usage :
   python scripts/calibrate.py --expected grille/profils-officiels/expected.json --fix
   python scripts/calibrate.py --expected grille/profils-officiels/expected.json --diff
 
-Correctif (28/08) : le glob des profils incluait `expected.json` lui-même
-(fichier de réponses, pas un profil), listé comme un 5e profil fantôme
-"expected: pas dans expected.json" dans la sortie. Exclu du glob désormais.
+La boucle de comparaison est unique : `laivelup.calibrate_core.run_calibration`.
+Ce script ne fait que le rendu texte et le mode `--template`.
 """
 
 from __future__ import annotations
@@ -22,50 +21,25 @@ from pathlib import Path
 # Ajouter le src au path pour importer laivelup
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
-from laivelup.model import AXES, Level, ProfileData
+from laivelup.calibrate_core import EXPECTED_FILE, PROFILES_DIR, _load_expected, run_calibration
+from laivelup.calibrate_core import _profile_files as core_profile_files
+from laivelup.model import AXIS_LABELS, Level
 from laivelup.scoring import evaluate
 from laivelup.utils import load_profile_data
 
 # Re-export pour compatibilité tests (test_calibrate.py importe _load_profile)
 _load_profile = load_profile_data
 
-PROFILES_DIR = Path(__file__).parent.parent / 'grille' / 'profils-officiels'
-EXPECTED_FILE = PROFILES_DIR / 'expected.json'
 
-# Labels FR pour l'affichage
-AXIS_LABELS = {
-    'size': 'Taille',
-    'harness': 'Harness',
-    'intervention': 'Intervention',
-    'parallel': 'En parallele',
-}
-
-LEVEL_LABELS = {
-    Level.WHITE: 'White',
-    Level.RED: 'Red',
-    Level.BLUE: 'Blue',
-    Level.GREEN: 'Green',
-    Level.COPPER: 'Copper',
-    Level.SILVER: 'Silver',
-    Level.GOLD: 'Gold',
-}
+def _level_name(level: Level) -> str:
+    """Nom de niveau en texte plat (LEVEL_LABELS porte un emoji, hors script)."""
+    return level.name.capitalize()
 
 
 def _profile_files(expected_path: Path | None = None) -> list[Path]:
     """Liste les fichiers de profils, en excluant les fichiers de réponses
     attendues (expected.json ou équivalent passé via --expected)."""
-    excluded = {EXPECTED_FILE.name}
-    if expected_path is not None:
-        excluded.add(expected_path.name)
-    return sorted(p for p in PROFILES_DIR.glob('*.json') if p.name not in excluded)
-
-
-def _load_expected(path: Path) -> dict[str, str]:
-    """Charge les niveaux attendus {profil_name: level_name}."""
-    if not path.exists():
-        return {}
-    data = json.loads(path.read_text(encoding='utf-8'))
-    return {k: v.upper() for k, v in data.get('levels', {}).items()}
+    return core_profile_files(PROFILES_DIR, *((expected_path.name,) if expected_path else ()))
 
 
 def generate_template() -> None:
@@ -120,83 +94,49 @@ def _fix_suggestion(
     if verdict_level.value < expected.value:
         # Il manque des crans : identifier l'axe plancher
         limiting = next((a for a in axis_scores if a.level == verdict_level), None)
-        if limiting:
+        if limiting and limiting.level:
             return (
                 f"  -> {name} : axe '{AXIS_LABELS.get(limiting.axe, limiting.axe)}' "
-                f'bloque a {LEVEL_LABELS.get(limiting.level, "?")} '
-                f'(attendu {expected_level})'
+                f'bloque a {_level_name(limiting.level)} (attendu {expected_level})'
             )
     return f'  -> {name} : verifier les traces'
 
 
 def calibrate(expected_path: Path, fix: bool = False, diff: bool = False) -> int:
     """Compare les verdicts aux niveaux attendus. Retourne le nombre d'erreurs."""
-    expected = _load_expected(expected_path)
-    if not expected:
+    if not _load_expected(expected_path):
         print(f'Aucun niveau attendu dans {expected_path}')
         return 0
 
-    profiles = _profile_files(expected_path)
-    errors = 0
-    results = []
+    result = run_calibration(expected=expected_path, profiles_dir=PROFILES_DIR)
 
-    for p in profiles:
-        profile = load_profile_data(p)
-        verdict = evaluate(profile)
-        stem = p.stem
+    print(f'\nCalibration : {result.total} profils testes, {result.errors} erreurs\n')
+    for row in result.rows:
+        icon = '+' if row.status == 'OK' else 'X' if row.status == 'FAIL' else '-'
+        print(f'  {icon} {row.name}: {row.detail}')
 
-        if stem not in expected:
-            results.append((stem, 'SKIP', 'pas dans expected.json', verdict, None))
-            continue
-
-        expected_level = expected[stem]
-        if expected_level == 'UNDECIDED':
-            if not verdict.decided:
-                results.append((stem, 'OK', 'refus confirme', verdict, None))
-            else:
-                detail = f'attendu UNDECIDED, obtenu {verdict.level.name}'
-                results.append((stem, 'FAIL', detail, verdict, expected_level))
-                errors += 1
-        elif verdict.decided and verdict.level is not None:
-            if verdict.level.name == expected_level:
-                results.append((stem, 'OK', verdict.level.name, verdict, expected_level))
-            else:
-                detail = f'attendu {expected_level}, obtenu {verdict.level.name}'
-                results.append((stem, 'FAIL', detail, verdict, expected_level))
-                errors += 1
-        else:
-            detail = f'attendu {expected_level}, obtenu UNDECIDED'
-            results.append((stem, 'FAIL', detail, verdict, expected_level))
-            errors += 1
-
-    # Affichage
-    print(f'\nCalibration : {len(results)} profils testes, {errors} erreurs\n')
-    for name, status, detail, verdict, expected_level in results:
-        icon = '+' if status == 'OK' else 'X' if status == 'FAIL' else '-'
-        print(f'  {icon} {name}: {detail}')
-
-        if diff and expected_level and verdict and verdict.axis_scores:
-            for a in verdict.axis_scores:
+        if diff and row.expected and row.axis_scores:
+            for a in row.axis_scores:
                 if a.level is not None:
                     a_label = AXIS_LABELS.get(a.axe, a.axe)
-                    a_level = LEVEL_LABELS.get(a.level, a.level.name)
+                    a_level = _level_name(a.level)
                     # Comparer avec l'axe correspondant de l'attendu
                     print(f'      {a_label}: {a_level} (confiance {a.confidence:.0%})')
 
-    if errors > 0 and fix:
+    if result.errors > 0 and fix:
         print('\n--- Suggestions de fix ---')
-        for name, status, detail, verdict, expected_level in results:
-            if status == 'FAIL' and expected_level:
+        for row in result.rows:
+            if row.status == 'FAIL' and row.expected:
                 print(
                     _fix_suggestion(
-                        name,
-                        verdict.level if verdict else None,
-                        expected_level,
-                        verdict.axis_scores if verdict else [],
+                        row.name,
+                        row.verdict.level if row.verdict else None,
+                        row.expected,
+                        row.verdict.axis_scores if row.verdict else [],
                     )
                 )
 
-    return errors
+    return result.errors
 
 
 def main() -> None:
