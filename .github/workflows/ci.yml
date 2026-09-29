@@ -54,7 +54,7 @@ jobs:
       - name: pip-audit dependency scan
         run: pip-audit -r requirements.lock --progress-spinner off
       - name: Install project
-        run: pip install -e .
+        run: pip install -e .[dev]
       - name: Security tests
         run: pytest tests/security/ -v
 

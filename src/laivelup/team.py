@@ -98,8 +98,25 @@ def _identity(st: os.stat_result) -> tuple[int, int]:
     return (st.st_dev, st.st_ino)
 
 
+def _refuse_link(path: Path) -> None:
+    """Refuse `path` si lui-même ou l'un de ses ancêtres est un lien."""
+    link = _first_link(path)
+    if link is not None:
+        raise ValueError(
+            f'Refus : {link} est un lien symbolique (symlink) ou une jonction ; '
+            f"l'écriture confinede au répertoire {path}"
+        )
+
+
 def _assert_confined(parent: Path, observed: tuple[int, int]) -> None:
-    """Vérifie que le répertoire visé est toujours celui qui a été contrôlé."""
+    """Vérifie que le répertoire visé est toujours celui qui a été contrôlé.
+
+    Le lien est re-vérifié, pas seulement l'identité : un répertoire échangé
+    contre un lien peut hériter du numéro d'inode de celui qu'il remplaçait, et
+    l'identité seule ne verrait alors rien. La re-vérification est le seul
+    garde-fou qui ne dépende pas de l'unicité des inodes.
+    """
+    _refuse_link(parent)
     try:
         current = _identity(parent.lstat())
     except OSError:
@@ -125,18 +142,19 @@ def _write_json_confined(target: Path, data: dict) -> None:
     acteur non fiable pourrait réécrire.
     """
     parent = target.parent
-    parent.mkdir(parents=True, exist_ok=True)
+    try:
+        parent.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        # `mkdir` traverse un lien cassé et échoue en FileExistsError avant que
+        # le contrôle n'ait lieu : le syscall ne doit pas se substituer au refus.
+        _refuse_link(parent)
+        raise
 
     # L'observation encadre le contrôle de liens : un échange survenu pendant
     # le contrôle devient visible, là où un échange survenu avant ne le serait
     # pas. C'est la limite assumée quand on n'a pas de descripteur à ouvrir.
     observed = _identity(parent.lstat())
-    link = _first_link(parent)
-    if link is not None:
-        raise ValueError(
-            f'Refus : {link} est un lien symbolique (symlink) ou une jonction ; '
-            f"l'écriture confinede au répertoire {parent}"
-        )
+    _refuse_link(parent)
     _assert_confined(parent, observed)
 
     if _DIR_FD_SUPPORTED:

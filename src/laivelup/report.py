@@ -60,15 +60,15 @@ def _gap_mark(kind: str) -> str:
 
 
 def _atomic_write(path: Path, content: str) -> None:
-    """Écriture atomique via tempfile + os.replace."""
+    """Écriture atomique via tempfile + remplacement de chemin."""
     fd, tmp = tempfile.mkstemp(dir=path.parent, suffix='.tmp')
     try:
         os.write(fd, content.encode('utf-8'))
         os.close(fd)
-        os.replace(tmp, path)
+        Path(tmp).replace(path)
     except BaseException:
         os.close(fd) if not os.get_inheritable(fd) else None
-        os.unlink(tmp)
+        Path(tmp).unlink()
         raise
 
 
