@@ -10,6 +10,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .model import AxisScore, Verdict
 from .scoring import evaluate
 from .utils import load_profile_data
 
@@ -24,7 +25,8 @@ class CalibrationRow:
     detail: str
     obtained: str | None
     expected: str | None
-    axis_scores: list = field(default_factory=list)
+    axis_scores: list[AxisScore] = field(default_factory=list)
+    verdict: Verdict | None = None
 
 
 @dataclass
@@ -36,8 +38,14 @@ class CalibrationResult:
     expected_path: Path
 
 
-def _profile_files(profiles_dir: Path, expected_name: str) -> list[Path]:
-    excluded = {expected_name}
+def _profile_files(profiles_dir: Path, *excluded_names: str) -> list[Path]:
+    """Profils du dossier, hors fichiers de réponses attendues.
+
+    `expected.json` est toujours exclu : c'est un fichier de réponses, pas un
+    profil. Les noms additionnels (ex. le --expected d'un run ponctuel) aussi,
+    pour ne jamais lister un fichier de réponses comme un profil fantôme.
+    """
+    excluded = {EXPECTED_FILE.name, *excluded_names}
     return sorted(p for p in profiles_dir.glob('*.json') if p.name not in excluded)
 
 
@@ -75,6 +83,7 @@ def run_calibration(
                     obtained=verdict.level.name if verdict.level else 'UNDECIDED',
                     expected=None,
                     axis_scores=verdict.axis_scores,
+                    verdict=verdict,
                 )
             )
             continue
@@ -92,6 +101,7 @@ def run_calibration(
                         obtained='UNDECIDED',
                         expected='UNDECIDED',
                         axis_scores=verdict.axis_scores,
+                        verdict=verdict,
                     )
                 )
             else:
@@ -103,6 +113,7 @@ def run_calibration(
                         obtained=obt_level,
                         expected='UNDECIDED',
                         axis_scores=verdict.axis_scores,
+                        verdict=verdict,
                     )
                 )
                 errors += 1
@@ -116,6 +127,7 @@ def run_calibration(
                         obtained=obt_level,
                         expected=exp_level,
                         axis_scores=verdict.axis_scores,
+                        verdict=verdict,
                     )
                 )
             else:
@@ -127,6 +139,7 @@ def run_calibration(
                         obtained=obt_level,
                         expected=exp_level,
                         axis_scores=verdict.axis_scores,
+                        verdict=verdict,
                     )
                 )
                 errors += 1
@@ -139,6 +152,7 @@ def run_calibration(
                     obtained='UNDECIDED',
                     expected=exp_level,
                     axis_scores=verdict.axis_scores,
+                    verdict=verdict,
                 )
             )
             errors += 1

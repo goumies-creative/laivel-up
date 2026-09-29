@@ -8,6 +8,8 @@ graph TD
         INTER["laivelup interrogate"]
         TEAM["laivelup team"]
         TEAM_CLI["team_cli.py<br/>team subcommands"]
+        CLI_DISP["cli_display.py<br/>verdict + profil + filtres"]
+        CLI_INTER["cli_interrogate.py<br/>entretien + fusion"]
     end
 
     subgraph Core ["Core"]
@@ -65,9 +67,13 @@ graph TD
     EVAL --> SCHEMA
     EVAL --> SCORING
     EVAL --> REPORT
+    EVAL --> CLI_DISP
     INTER --> SCORING
     INTER --> MODEL
     INTER --> QUESTIONS
+    INTER --> CLI_INTER
+    CLI_DISP --> UTILS
+    CLI_DISP --> SCHEMA
     TEAM --> TEAM_MOD
     TEAM --> TEAM_CLI
 

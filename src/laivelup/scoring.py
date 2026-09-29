@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from .model import AXES, AxisScore, Level, ProfileData, RedFlag, Verdict
+from .model import AXES, AxisScore, Gap, Level, ProfileData, RedFlag, Verdict
 from .questions import QUESTION_IDS
 from .scoring_defaults import SCORING_DEFAULTS
 
@@ -366,16 +366,23 @@ def _questions_for(profile: ProfileData) -> list[str]:
 # --- Évaluation -------------------------------------------------------------------
 
 
+def _gaps_proof(questions: list[str]) -> list[Gap]:
+    """Écarts de preuve : données manquantes / non corroborées (refus de deviner)."""
+    return [Gap(text=q, kind='proof') for q in questions]
+
+
 def evaluate(profile: ProfileData) -> Verdict:
     errors = normalize_profile(profile)
     if errors:
+        questions = _questions_for(profile)
         return Verdict(
             name=profile.name,
             level=None,
             axis_scores=[],
             limiting_axis=None,
             data_errors=errors,
-            next_steps=_questions_for(profile),
+            next_steps=questions,
+            gaps=_gaps_proof(questions),
         )
 
     scorers = {
@@ -403,12 +410,14 @@ def evaluate(profile: ProfileData) -> Verdict:
     low_conf_axes = [a for a in axes if a.level is not None and a.confidence < CONFIDENCE_THRESHOLD]
 
     def _refuse(limiting: str | None) -> Verdict:
+        questions = _questions_for(profile)
         return Verdict(
             name=profile.name,
             level=None,
             axis_scores=axes,
             limiting_axis=limiting,
-            next_steps=_questions_for(profile),
+            next_steps=questions,
+            gaps=_gaps_proof(questions),
         )
 
     if undecided_axes:
@@ -433,6 +442,10 @@ def evaluate(profile: ProfileData) -> Verdict:
         )
 
     next_steps = progress_for_axis(limiting, global_level) + extra
+    gaps: list[Gap] = [
+        Gap(text=s, kind='practice') for s in progress_for_axis(limiting, global_level)
+    ]
+    gaps += [Gap(text=e, kind='proof') for e in extra]
     return Verdict(
         name=profile.name,
         level=global_level,
@@ -440,4 +453,5 @@ def evaluate(profile: ProfileData) -> Verdict:
         limiting_axis=limiting,
         red_flags=detect_red_flags(profile),
         next_steps=next_steps,
+        gaps=gaps,
     )

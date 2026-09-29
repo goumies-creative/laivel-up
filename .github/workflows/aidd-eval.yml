@@ -65,7 +65,7 @@ jobs:
         env:
           AUTHOR_USER: ${{ steps.author.outputs.user }}
         run: |
-          python scripts/generate_profile.py \
+          python scripts/generate_profile.py . \
             --user "$AUTHOR_USER" \
             --out profile.json \
             --verbose

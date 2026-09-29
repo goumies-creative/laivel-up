@@ -1,8 +1,14 @@
 # Copyright 2026 Romy Alula — MIT License
 """Modèle de données : axes AIDD, profil, verdict.
 
-Aligné sur la grille officielle (levels/aidd.md) : 4 axes, 7 niveaux cumulatifs.
+Aligné sur la grille officielle (grille/aidd.md) : 4 axes, 7 niveaux cumulatifs.
 Le niveau n'est atteint que si tous les axes le sont (règle AND).
+
+`grille/aidd.md` est la seule source de la grille : elle est chargée au
+démarrage, et `Level`, `AXES` et les libellés ci-dessous en sont dérivés. Si la
+grille se contredit — un niveau qui exige moins que celui du dessous, une
+cellule inconnue, un tableau lisible qui diverge du bloc machine — l'import
+échoue plutôt que de laisser tourner un calcul faux.
 
 Équité structurelle : aucun champ lié au neurotype, aucune donnée sensible.
 Le profil décrit des traces observables et des réponses déclaratives neutres.
@@ -12,6 +18,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import IntEnum
+
+from .grid_doc import GridError, load_grid
 
 
 class Level(IntEnum):
@@ -24,25 +32,31 @@ class Level(IntEnum):
     GOLD = 6
 
 
-LEVEL_LABELS = {
-    Level.WHITE: '❖ White',
-    Level.RED: '🔺 Red',
-    Level.BLUE: '🔹 Blue',
-    Level.GREEN: '🟢 Green',
-    Level.COPPER: '🥉 Copper',
-    Level.SILVER: '🥈 Silver',
-    Level.GOLD: '🥇 Gold',
-}
+GRID = load_grid()
 
-AXES = ('size', 'harness', 'intervention', 'parallel')
+
+def _check_against_grid() -> None:
+    """La grille fait foi ; l'enum doit en être l'image exacte."""
+    enum_ids = tuple(level.name.lower() for level in Level)
+    if enum_ids != GRID.level_ids:
+        raise GridError(
+            f'{GRID.path} : les niveaux de la grille {GRID.level_ids} ne correspondent '
+            f'pas à Level {enum_ids}'
+        )
+    if tuple(level.value for level in Level) != tuple(level.rank for level in GRID.levels):
+        raise GridError(
+            f'{GRID.path} : les rangs de la grille ne correspondent pas aux valeurs de Level'
+        )
+
+
+_check_against_grid()
+
+LEVEL_LABELS = {Level[level_id.upper()]: label for level_id, label in GRID.labels().items()}
+
+AXES = GRID.axis_ids
 
 # Display labels for axes (technical key unchanged: "parallel").
-AXIS_LABELS = {
-    'size': 'Taille',
-    'harness': 'Harness',
-    'intervention': 'Intervention',
-    'parallel': 'En parallèle',
-}
+AXIS_LABELS = GRID.axis_labels()
 
 # Couleurs par niveau (canonical — importées par report.py, calibrate_dashboard.py)
 LEVEL_COLORS: dict[Level, dict[str, str]] = {
@@ -108,6 +122,23 @@ class RedFlag:
     question: str | None = None  # la question à poser pour vérifier l'hypothèse
 
 
+# --- Écarts typés (item 7) -------------------------------------------------
+# Un écart de PRATIQUE (✗, U+2717) = cellule prouvée non satisfaite
+# (ex : "passer de features S à M"). Un écart de PREUVE (?) = donnée
+# manquante ou non corroborée, refus de deviner (ex : question posée).
+# Le champ interne s'appelle `kind` (évite le shadowing de `type`) ;
+# verdict_to_dict() le sérialise sous la clé `type` (contrat item 7).
+
+GAP_PRACTICE = 'practice'
+GAP_PROOF = 'proof'
+
+
+@dataclass
+class Gap:
+    text: str
+    kind: str = GAP_PROOF  # GAP_PRACTICE | GAP_PROOF
+
+
 @dataclass
 class Verdict:
     name: str
@@ -117,6 +148,7 @@ class Verdict:
     data_errors: list[str] = field(default_factory=list)  # profils invalides (données qui mentent)
     red_flags: list[RedFlag] = field(default_factory=list)
     next_steps: list[str] = field(default_factory=list)  # comment monter d'un cran / questions
+    gaps: list[Gap] = field(default_factory=list)  # même contenu que next_steps, typé (item 7)
 
     @property
     def decided(self) -> bool:

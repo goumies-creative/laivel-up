@@ -14,7 +14,9 @@ import contextlib
 import csv
 import hashlib
 import json
+import os
 import re
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from html import escape as html_escape
@@ -29,6 +31,22 @@ _DEFAULT_TEAM_DIR = Path('.laivelup') / 'teams'
 _MAX_MEMBERS = 50
 _MAX_HISTORY = 100
 MAX_TEAM_FILE_MB = 1  # Teams can accumulate history, so smaller limit than profiles
+
+# Reparse tags Windows que pathlib ne voit pas comme des liens.
+_IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003
+_IO_REPARSE_TAG_SYMLINK = 0xA000000C
+
+# E/S relative à un descripteur de répertoire : c'est ce qui permet d'écrire
+# dans le répertoire contrôlé plutôt que dans un chemin re-résolu plus tard.
+# `getattr` : O_DIRECTORY/O_NOFOLLOW n'existent pas sur Windows, mais ce chemin
+# n'y est jamais pris (`_DIR_FD_SUPPORTED` est False) — mypy reste content.
+_O_DIRECTORY = getattr(os, 'O_DIRECTORY', 0)
+_O_NOFOLLOW = getattr(os, 'O_NOFOLLOW', 0)
+_DIR_FD_SUPPORTED = (
+    hasattr(os, 'O_DIRECTORY')
+    and os.open in os.supports_dir_fd
+    and os.replace in os.supports_dir_fd
+)
 
 
 def _validate_team_name(name: str) -> None:
@@ -47,15 +65,154 @@ def _team_path(name: str, path: Path | None = None) -> Path:
     return _DEFAULT_TEAM_DIR / f'{name}.json'
 
 
-def save_team(team: Team, path: Path | None = None) -> Path:
-    """Sauvegarde l'état de l'équipe en JSON (atomic write)."""
-    target = _team_path(team.name, path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    # Security: reject if parent is a symlink (G01)
-    if target.parent.exists() and target.parent.is_symlink():
+def _is_link(st: os.stat_result) -> bool:
+    """Vrai si l'entrée est un lien symbolique ou une jonction Windows."""
+    return getattr(st, 'st_reparse_tag', 0) in (
+        _IO_REPARSE_TAG_MOUNT_POINT,
+        _IO_REPARSE_TAG_SYMLINK,
+    )
+
+
+def _first_link(path: Path) -> Path | None:
+    """Premier composant de `path` qui est un lien, ou None.
+
+    `Path.is_symlink()` ne regarde que le composant final : un de ses ancêtres
+    peut être un lien, et sur Windows une jonction n'est pas un symlink pour
+    pathlib (`islink` répond False alors que le chemin redirige ailleurs). On
+    parcourt donc chaque composant depuis l'ancrage.
+    """
+    current = Path(path.anchor) if path.anchor else Path()
+    for part in path.parts[1:] if path.anchor else path.parts:
+        current = current / part
+        try:
+            st = current.lstat()
+        except OSError:
+            return None  # composant absent : rien à contrôler
+        if current.is_symlink() or _is_link(st):
+            return current
+    return None
+
+
+def _identity(st: os.stat_result) -> tuple[int, int]:
+    """Identité d'un répertoire, indépendante de son chemin."""
+    return (st.st_dev, st.st_ino)
+
+
+def _refuse_link(path: Path) -> None:
+    """Refuse `path` si lui-même ou l'un de ses ancêtres est un lien."""
+    link = _first_link(path)
+    if link is not None:
         raise ValueError(
-            f'Refus : le répertoire parent est un lien symbolique (symlink) : {target.parent}'
+            f'Refus : {link} est un lien symbolique (symlink) ou une jonction ; '
+            f"l'écriture confinede au répertoire {path}"
         )
+
+
+def _assert_confined(parent: Path, observed: tuple[int, int]) -> None:
+    """Vérifie que le répertoire visé est toujours celui qui a été contrôlé.
+
+    Le lien est re-vérifié, pas seulement l'identité : un répertoire échangé
+    contre un lien peut hériter du numéro d'inode de celui qu'il remplaçait, et
+    l'identité seule ne verrait alors rien. La re-vérification est le seul
+    garde-fou qui ne dépende pas de l'unicité des inodes.
+    """
+    _refuse_link(parent)
+    try:
+        current = _identity(parent.lstat())
+    except OSError:
+        current = None
+    if current != observed:
+        raise ValueError(
+            f'Refus : le répertoire {parent} a été remplacé pendant le contrôle de confinement.'
+        )
+
+
+def _write_json_confined(target: Path, data: dict) -> None:
+    """Écrit `data` en JSON dans `target` sans jamais sortir du répertoire contrôlé.
+
+    Contrôler un chemin puis réutiliser ce chemin plus tard laisse une fenêtre
+    : un tiers peut remplacer le répertoire entre le contrôle et l'écriture. On
+    attache donc les deux au même objet répertoire — on l'ouvre en descripteur
+    et on travaille par opérations relatives à ce descripteur.
+
+    Windows n'expose pas d'E/S relative à un descripteur de répertoire dans la
+    bibliothèque standard : on y ré-contrôle l'identité du répertoire autour de
+    l'écriture et on échoue s'il a changé. La fenêtre résiduelle y est réelle,
+    et assumée : ce schéma protège un répertoire privé, pas un chemin qu'un
+    acteur non fiable pourrait réécrire.
+    """
+    parent = target.parent
+    try:
+        parent.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        # `mkdir` traverse un lien cassé et échoue en FileExistsError avant que
+        # le contrôle n'ait lieu : le syscall ne doit pas se substituer au refus.
+        _refuse_link(parent)
+        raise
+
+    # L'observation encadre le contrôle de liens : un échange survenu pendant
+    # le contrôle devient visible, là où un échange survenu avant ne le serait
+    # pas. C'est la limite assumée quand on n'a pas de descripteur à ouvrir.
+    observed = _identity(parent.lstat())
+    _refuse_link(parent)
+    _assert_confined(parent, observed)
+
+    if _DIR_FD_SUPPORTED:
+        _write_via_dir_fd(target, data, observed)
+    else:
+        _write_via_path(target, data, observed)
+
+
+def _write_via_dir_fd(target: Path, data: dict, observed: tuple[int, int]) -> None:
+    """Écriture ancrée sur un descripteur de répertoire (POSIX)."""
+    parent = target.parent
+    # os.open volontaire : pathlib n'a pas d'équivalent dir_fd (confinement TOCTOU).
+    dir_fd = os.open(parent, os.O_RDONLY | _O_DIRECTORY | _O_NOFOLLOW)
+    tmp_name: str | None = None
+    try:
+        if _identity(os.fstat(dir_fd)) != observed:
+            raise ValueError(
+                f'Refus : le répertoire {parent} a été remplacé pendant le contrôle de confinement.'
+            )
+        tmp_name = f'.{target.name}.{os.getpid()}.{os.urandom(8).hex()}.tmp'
+        fd = os.open(tmp_name, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600, dir_fd=dir_fd)
+        try:
+            with os.fdopen(fd, 'w', encoding='utf-8') as tmp:
+                json.dump(data, tmp, indent=2, ensure_ascii=False)
+        except BaseException:
+            os.unlink(tmp_name, dir_fd=dir_fd)
+            tmp_name = None
+            raise
+        os.replace(tmp_name, target.name, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+        tmp_name = None
+    finally:
+        if tmp_name is not None:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name, dir_fd=dir_fd)
+        os.close(dir_fd)
+
+
+def _write_via_path(target: Path, data: dict, observed: tuple[int, int]) -> None:
+    """Écriture par chemin, avec re-contrôle de l'identité du répertoire."""
+    parent = target.parent
+    fd, _tmp = tempfile.mkstemp(dir=parent, prefix=f'.{target.name}.', suffix='.tmp')
+    tmp_name: str | None = _tmp
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as tmp:
+            json.dump(data, tmp, indent=2, ensure_ascii=False)
+        _assert_confined(parent, observed)
+        assert tmp_name is not None  # mypy : non-None ici (mkstemp vient de réussir)
+        os.replace(tmp_name, target)  # noqa: PTH105 -- atomicité + test qui bouche os.replace
+        tmp_name = None
+    finally:
+        if tmp_name is not None:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_name)  # noqa: PTH108 -- nettoyage du temporaire, Path équivalent mais test bouche os
+
+
+def save_team(team: Team, path: Path | None = None) -> Path:
+    """Sauvegarde l'état de l'équipe en JSON (atomic write confiné)."""
+    target = _team_path(team.name, path)
     data = {
         'name': team.name,
         'salt': team.salt,
@@ -75,20 +232,7 @@ def save_team(team: Team, path: Path | None = None) -> Path:
         },
         'history': team.history,
     }
-    # Atomic write: temp file + os.replace (avoids TOCTOU + partial writes)
-    import tempfile
-
-    with tempfile.NamedTemporaryFile(
-        mode='w', encoding='utf-8', dir=target.parent, delete=False, suffix='.tmp'
-    ) as tmp:
-        json.dump(data, tmp, indent=2, ensure_ascii=False)
-        tmp_path = Path(tmp.name)
-    try:
-        tmp_path.replace(target)
-    except Exception:
-        with contextlib.suppress(OSError):
-            tmp_path.unlink()
-        raise
+    _write_json_confined(target, data)
     return target
 
 

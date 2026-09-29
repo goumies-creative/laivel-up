@@ -34,6 +34,13 @@ where = ["src"]
 [tool.setuptools.package-data]
 laivelup = ["schemas/*.json"]
 
+# La grille vit hors de `src/` : `laivelup.grid_doc.grid_path()` la cherche
+# dans `<sys.prefix>/share/laivelup/grille/aidd.md` pour une installation
+# non-éditable. Sans cette entrée, l'import de `laivelup` échoue après
+# `pip install .` (GRID est chargé au moment de l'import dans model.py).
+[tool.setuptools.data-files]
+"share/laivelup/grille" = ["grille/aidd.md"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -57,11 +64,15 @@ select = [
 ]
 [tool.ruff.lint.per-file-ignores]
 "src/laivelup/cli.py" = ["T201", "T203", "B008", "B904", "ARG001", "ARG002", "E501", "SIM108", "F401", "E741", "RUF059"]
-"src/laivelup/report.py" = ["E501", "C408"]
+"src/laivelup/report.py" = ["E501", "C408", "RUF001"]
 "src/laivelup/schema.py" = ["B904", "E501"]
 "src/laivelup/scoring.py" = ["E501", "RUF005", "RUF015"]
 "src/laivelup/model.py" = ["E741"]
 "src/laivelup/team.py" = ["F401", "PTH123", "B007", "E501", "W292", "RUF059"]
+# Idiom Typer inchangé depuis l'extraction de cli.py : B008 (typer.Argument/Option
+# en défaut), B904 (typer.Exit = contrôle de flux, pas exception en cascade) et
+# ARG001 (options d'interface pas encore câblées).
+"src/laivelup/team_cli.py" = ["B008", "B904", "ARG001"]
 "src/laivelup/__init__.py" = ["F401", "RUF059"]
 "scripts/*.py" = ["T201", "T203", "F401", "ARG001", "B007", "SIM108", "E501"]
 "tests/test_interactive.py" = ["T201", "T203", "ARG005", "E501"]

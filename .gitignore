@@ -12,7 +12,6 @@ Thumbs.db
 rapports/
 .coverage
 correctness_review.json
-tests/snapshots/
 
 # Caches d'outils (mypy, ruff, pytest, hypothesis)
 .mypy_cache/
@@ -25,7 +24,6 @@ tests/snapshots/
 verdict.md
 benchmark-results.json
 profil.json
-profil-*.json
 
 # Team persistence data
 .laivelup/

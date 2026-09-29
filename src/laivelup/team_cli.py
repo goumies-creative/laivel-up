@@ -42,8 +42,8 @@ def register_team_commands(team_app: typer.Typer) -> None:
             raise typer.Exit(code=1)
         if name in _TEAM_SUBCOMMANDS:
             error_console.print(
-                f'[yellow]Avertissement : le nom d\'équipe "{name}" correspond à une sous-commande. '
-                f"Cela peut créer une ambiguïté à l'usage.[/yellow]"
+                f'[yellow]Avertissement : le nom d\'équipe "{name}" correspond à '
+                f"une sous-commande. Cela peut créer une ambiguïté à l'usage.[/yellow]"
             )
         try:
             team = create_team(name, member_list)
@@ -56,7 +56,8 @@ def register_team_commands(team_app: typer.Typer) -> None:
             error_console.print(f'[bold red]{e}[/bold red]')
             raise typer.Exit(code=2)
         console.print(
-            f"[bold green]Équipe '{team.name}' créée[/bold green] avec {len(team.members)} membres :"
+            f"[bold green]Équipe '{team.name}' créée[/bold green] "
+            f'avec {len(team.members)} membres :'
         )
         for slug, m in team.members.items():
             console.print(f'  · {m.name} → [dim]{slug}[/dim]')
@@ -79,7 +80,8 @@ def register_team_commands(team_app: typer.Typer) -> None:
             raise typer.Exit(code=2)
         if member_slug not in team.members:
             error_console.print(
-                f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]"
+                f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe "
+                f"'{team_name}'.[/bold red]"
             )
             if team.members:
                 error_console.print('Membres disponibles :')
@@ -161,7 +163,8 @@ def register_team_commands(team_app: typer.Typer) -> None:
             raise typer.Exit(code=2)
         if member_slug not in team.members:
             error_console.print(
-                f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]"
+                f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe "
+                f"'{team_name}'.[/bold red]"
             )
             raise typer.Exit(code=1)
         set_opt_out(team, member_slug, enable)
@@ -191,7 +194,8 @@ def register_team_commands(team_app: typer.Typer) -> None:
             raise typer.Exit(code=2)
         if member_slug not in team.members:
             error_console.print(
-                f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe '{team_name}'.[/bold red]"
+                f"[bold red]Membre '{member_slug}' non trouvé dans l'équipe "
+                f"'{team_name}'.[/bold red]"
             )
             raise typer.Exit(code=1)
         remove_member(team, member_slug, purge)
