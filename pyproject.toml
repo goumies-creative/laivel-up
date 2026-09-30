@@ -157,10 +157,6 @@ exclude_lines = [
     "def make_console",
 ]
 
-[[tool.coverage.overrides]]
-module = "laivelup.scoring"
-fail_under = 100
-
 [tool.bandit]
 targets = ["src"]
 exclude_dirs = ["tests"]

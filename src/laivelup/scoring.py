@@ -396,15 +396,14 @@ def evaluate(profile: ProfileData) -> Verdict:
     for axe in AXES:
         level, confidence, evidence = scorers[axe](profile.traces)
         axes.append(AxisScore(axe=axe, level=level, confidence=confidence, evidence=evidence))
-    tails = next((a for a in axes if a.axe == 'size'), None)
-    if tails:
-        pr_sizes = profile.traces.get('pr_sizes')
-        if isinstance(pr_sizes, list) and pr_sizes:
-            max_present, ratio = _peak_info(pr_sizes)
-            if ratio < 0.5:
-                tails.variance = (
-                    f"pic {max_present} isolé, habituel plus bas (niveau sur l'habituel)"
-                )
+    # AXES contient toujours 'size' (sinon scorers[axe] a déjà levé au-dessus) :
+    # le next() n'a pas besoin de valeur par défaut, l'absence est impossible.
+    tails = next(a for a in axes if a.axe == 'size')
+    pr_sizes = profile.traces.get('pr_sizes')
+    if isinstance(pr_sizes, list) and pr_sizes:
+        max_present, ratio = _peak_info(pr_sizes)
+        if ratio < 0.5:
+            tails.variance = f"pic {max_present} isolé, habituel plus bas (niveau sur l'habituel)"
 
     undecided_axes = [a for a in axes if a.level is None]
     low_conf_axes = [a for a in axes if a.level is not None and a.confidence < CONFIDENCE_THRESHOLD]

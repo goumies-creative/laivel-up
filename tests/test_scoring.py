@@ -294,6 +294,17 @@ def test_normalize_parallel_projects_float_non_entier_refuse():
     assert any('parallel_projects' in e for e in verdict.data_errors)
 
 
+def test_normalize_parallel_projects_float_entier_accepte():
+    """3.0 doit être accepté et ramené à int (B2 float acceptance).
+
+    L'autre bras de `is_integer()` : 3.0 est déjà entier, donc tronqué sans
+    erreur. Le refus de 3.7 reste couvert par son test voisin.
+    """
+    verdict = evaluate(p(traces={'parallel_projects': 3.0}))
+    assert not verdict.decided
+    assert not [e for e in verdict.data_errors if 'parallel_projects' in e]
+
+
 def test_confiance_basse_refuse():
     # Ratio non triangulé => confiance du global < 0.5 => refus.
     profile = p(
