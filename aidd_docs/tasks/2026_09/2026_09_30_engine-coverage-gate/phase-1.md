@@ -49,7 +49,7 @@ journey
 
 ### `2)` Remove the unreachable `if tails:` guard
 
-> `AXES` is a fixed 4-tuple that always contains `'size'` (`src/laivelup/model.py:56`), so `axes` always holds a `size` entry and `tails` is never `None`. The false arm at line 400 is reported as the partial branch `400->409` and cannot execute.
+> `AXES` is `GRID.axis_ids` (`src/laivelup/model.py:56`) — grid-derived from `grille/aidd.md` and overridable via `LAIVELUP_GRID`, so not a fixed constant. `'size'` is still guaranteed present, because `scoring_defaults._check_size_levels` reads `GRID.cells[level.id]['size']` at import and a grid without a `size` axis raises `KeyError` before `evaluate()` is callable. So `axes` always holds a `size` entry and `tails` is never `None`. The false arm at line 400 is reported as the partial branch `400->409` and cannot execute.
 
 1. Open `src/laivelup/scoring.py` at lines 399-407 and read the `tails = next(...)` / `if tails:` block that annotates variance from an isolated `pr_sizes` peak.
 2. Replace the `if tails:` wrapper with its body dedented one level, so the variance annotation runs directly against the `size` axis score.

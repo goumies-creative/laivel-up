@@ -101,7 +101,10 @@ n'est pas modifiée. Issue #11.
 
 ### Négatives
 - Maintenance des tests = ~573 tests (572 passés, 1 ignoré), ~88% de couverture globale
-- Le seuil de 100% coûte une seconde passe pytest complète (~100 s) par exécution de CI, sur 3 OS × 3 Python
+- Le seuil de 100% coûte une seconde passe pytest complète (~90 s), exécutée sur
+  une seule OS (les 3 versions de Python) et non sur les 9 cellules de la matrice :
+  `scoring.py` ne contient aucun branchement plateforme, donc le seuil est
+  identique partout. Le seuil global de 85% reste, lui, sur toute la matrice.
 
 ## Liens
 - Code : `pyproject.toml`

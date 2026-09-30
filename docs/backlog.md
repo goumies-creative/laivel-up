@@ -60,7 +60,7 @@ Constraint: do not touch `socle-qualite` worktree; do not change level calculati
 **Operation:** update  
 **Owner:** pyproject.toml coverage overrides  
 **Before:** ~~Override module path to the exact engine package; remove scripts from coverage source or add separate override.~~ **This framing was wrong.** coverage.py has no `[overrides]` section in any released version, so the block was read, never warned about, and silently discarded — the 100% gate never ran. The engine sat at 99% (`Missing: 122, 400->409`) behind the only live threshold, the global `--cov-fail-under=85`.  
-**After:** The dead block is deleted and a real engine-scoped pass is added as its own CI step — `--cov=laivelup.scoring --cov-branch --cov-fail-under=100` over the full suite. The two real gaps are closed: a test for the integral float at `scoring.py:122`, and removal of the `if tails:` guard, whose false arm is unreachable because `AXES` always contains `size`.  
+**After:** The dead block is deleted and a real engine-scoped pass is added as its own CI step — `--cov=laivelup.scoring --cov-branch --cov-fail-under=100` over the full suite. The two real gaps are closed: a test for the integral float at `scoring.py:122`, and removal of the `if tails:` guard, whose false arm is unreachable because a grid lacking a `size` axis raises `KeyError` at import (`scoring_defaults._check_size_levels`), before `evaluate()` can run.  
 **Evidence:** User request item 5; `pyproject.toml:143-162`; verified against `coverage` 7.11.3 and upstream tags 7.4.0–7.11.3. ADR-0009 corrected.  
 **Acceptance:** Coverage gate measures engine precisely and hits 100%.
 

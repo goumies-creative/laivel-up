@@ -396,8 +396,12 @@ def evaluate(profile: ProfileData) -> Verdict:
     for axe in AXES:
         level, confidence, evidence = scorers[axe](profile.traces)
         axes.append(AxisScore(axe=axe, level=level, confidence=confidence, evidence=evidence))
-    # AXES contient toujours 'size' (sinon scorers[axe] a déjà levé au-dessus) :
-    # le next() n'a pas besoin de valeur par défaut, l'absence est impossible.
+    # 'size' est garanti à l'exécution : scoring_defaults lit
+    # GRID.cells[level.id]['size'] dès l'import (_check_size_levels), donc une
+    # grille sans axe 'size' lève KeyError au chargement du module, avant que
+    # evaluate() ne soit appelable. AXES vient de la grille (grille/aidd.md,
+    # surchargeable via LAIVELUP_GRID) : ce n'est pas une constante, mais
+    # l'absence de 'size' reste inatteignable ici. D'où pas de valeur par défaut.
     tails = next(a for a in axes if a.axe == 'size')
     pr_sizes = profile.traces.get('pr_sizes')
     if isinstance(pr_sizes, list) and pr_sizes:
