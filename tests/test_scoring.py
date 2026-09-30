@@ -294,6 +294,17 @@ def test_normalize_parallel_projects_float_non_entier_refuse():
     assert any('parallel_projects' in e for e in verdict.data_errors)
 
 
+def test_normalize_parallel_projects_float_entier_accepte():
+    """3.0 doit passer la validation des traces (autre bras de `is_integer()`).
+
+    Le contrôle B2 rejette un float non entier (3.7, cas du test voisin) mais
+    accepte un float déjà entier. La valeur n'est pas réécrite dans le profil :
+    seule l'absence d'erreur de données est observable ici.
+    """
+    verdict = evaluate(p(traces={'parallel_projects': 3.0}))
+    assert not verdict.data_errors
+
+
 def test_confiance_basse_refuse():
     # Ratio non triangulé => confiance du global < 0.5 => refus.
     profile = p(

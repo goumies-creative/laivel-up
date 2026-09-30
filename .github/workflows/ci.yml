@@ -38,6 +38,20 @@ jobs:
           pip install -e ".[dev]"
       - name: Test
         run: pytest -q --tb=short
+      # ADR-0009 : le moteur de scoring est tenu à 100 % (statements + branches).
+      # Passe distincte : un run pytest n'a qu'un seul `source` de coverage, donc
+      # deux seuils sur deux périmètres différents exigent deux runs. `-o addopts=""`
+      # neutralise les addopts partagés (--cov=src/laivelup --cov=scripts
+      # --cov-fail-under=85) qui écraseraient le périmètre et le seuil du gate.
+      # Forme module obligatoire : `--cov=src/laivelup/scoring.py` ne collecte rien
+      # et rapporte 0 % au lieu d'une erreur d'usage visible.
+      # scoring.py ne contient aucun branchement plateforme (aucun sys.platform,
+      # os.name ou équivalent) : le seuil est identique sur les 3 OS. On l'exécute
+      # donc sur une seule OS, sur les 3 versions de Python — 3 cellules au lieu de
+      # 9. Le seuil global de 85 % reste, lui, sur toute la matrice.
+      - name: Engine coverage gate (laivelup.scoring 100%)
+        if: matrix.os == 'ubuntu-latest'
+        run: pytest -q -o addopts="" --cov=laivelup.scoring --cov-branch --cov-fail-under=100 --cov-report=term-missing
 
   security:
     runs-on: ubuntu-latest

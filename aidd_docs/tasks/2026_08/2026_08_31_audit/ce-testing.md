@@ -212,3 +212,30 @@ runner = "python -m pytest tests/test_scoring.py tests/test_scoring_edge.py test
 3. **🟢 minor** — mutmut configuré sur `scoring.py` uniquement, sans rapport de Survivant visible. Étendre à `team.py`/`cli.py` ou documenter la décision.
 
 **Aucun finding critique ou warning.** Le project dépasse tous les seuils du Goumies Creative Quality Framework.
+
+---
+
+## Correction du 2026-09-30 — la ligne « scoring.py = 100% (override) » était fausse
+
+Les lignes **26** (`| scoring.py couverture | fail_under = 100 | = 100% | ✅ |`) et
+**153** (`- ✅ scoring.py = 100% (override)`) de cet audit reposaient sur un bloc
+`[[tool.coverage.overrides]]` qui n'a jamais produit d'effet : **coverage.py n'a
+aucune section `[overrides]` dans aucune version publiée** (vérifié sur `coverage`
+7.11.3 installé et sur `coverage/config.py` amont aux tags 7.4.0 à 7.11.3, où la
+chaîne `overrides` apparaît zéro fois). Le bloc était lu, jamais signalé, puis
+silencieusement ignoré.
+
+Conséquence réelle au moment de cet audit : `coverage debug config` rapportait
+`fail_under: 0.0` et aucune machinerie d'override, le seul seuil vivant étant
+`--cov-fail-under=85`. `scoring.py` n'était donc pas tenu à 100% mais à **99%**
+(`Missing: 122, 400->409`).
+
+Corrigé par l'**issue #11** : bloc mort supprimé de `pyproject.toml`, gaps réels
+fermés (test du float intégral `3.0`, retrait du garde `if tails:` structurellement
+inatteignable), et gate réel ajouté en CI — step « Engine coverage gate » du job
+`test`, `--cov=laivelup.scoring --cov-branch --cov-fail-under=100` sur la suite
+complète. `scoring.py` y reporte désormais 100% statements et 100% branches, sans
+`Missing`. ADR-0009 corrigée en conséquence.
+
+Les lignes d'origine sont laissées intactes : un audit enregistre ce qui était cru
+à sa date, et les réécrire détruirait la preuve que cette croyance était fausse.
